@@ -19,7 +19,12 @@
     "add": "Add",
     "empty": "No apps configured",
     "start": "Start",
-    "stop": "Stop"
+    "stop": "Stop",
+    "add_modal_title": "Add app",
+    "add_modal_name": "Name",
+    "add_modal_exe": "Executable path",
+    "add_modal_cancel": "Cancel",
+    "add_modal_confirm": "Add"
   },
   "log": {
     "title": "Event log",
