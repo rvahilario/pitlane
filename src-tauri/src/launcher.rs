@@ -386,8 +386,10 @@ mod tests {
     #[test]
     #[ignore]
     fn manual_should_launch_winver_and_return_pid() {
+        let windir = std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_string());
+        let winver = format!("{windir}\\System32\\winver.exe");
         // winver.exe is a true Win32 app (not MSIX) — TerminateProcess works reliably
-        let mut app = ManagedApp::new("p1", "WinVer", "C:/Windows/System32/winver.exe");
+        let mut app = ManagedApp::new("p1", "WinVer", winver);
         app.start_minimized = true;
 
         let result = launch(&app);

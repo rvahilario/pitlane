@@ -308,15 +308,18 @@ mod tests {
     // Run with:
     //   cargo test --manifest-path src-tauri/Cargo.toml -- --ignored --nocapture
 
+    fn winver_path() -> String {
+        let root = std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_string());
+        format!("{root}\\System32\\winver.exe")
+    }
+
     #[test]
     #[ignore]
     fn manual_should_gracefully_kill_winver() {
         use std::process::Command;
 
-        // winver.exe is a true Win32 app (not MSIX) — reliable for kill tests
-        let child = Command::new("C:/Windows/System32/winver.exe")
-            .spawn()
-            .expect("failed to spawn winver");
+        let path = winver_path();
+        let child = Command::new(&path).spawn().expect("failed to spawn winver");
         let pid = child.id();
         println!("[killer integration] spawned winver PID: {pid}");
 
@@ -334,9 +337,8 @@ mod tests {
     fn manual_should_force_kill_winver() {
         use std::process::Command;
 
-        let child = Command::new("C:/Windows/System32/winver.exe")
-            .spawn()
-            .expect("failed to spawn winver");
+        let path = winver_path();
+        let child = Command::new(&path).spawn().expect("failed to spawn winver");
         let pid = child.id();
         println!("[killer integration] spawned winver PID: {pid}");
 
