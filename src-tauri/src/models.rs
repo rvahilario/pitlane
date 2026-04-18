@@ -29,6 +29,11 @@ pub struct ManagedApp {
     pub max_restart_attempts: u32,
     #[serde(default)]
     pub startup_delay_secs: f64,
+    /// For launcher-style apps (e.g. Squirrel updaters) that spawn a child
+    /// process with a different name/path — set this to the real process name
+    /// so the controller can find and kill it on iRacing exit.
+    #[serde(default)]
+    pub track_process_name: Option<String>,
 }
 
 impl ManagedApp {
@@ -45,6 +50,7 @@ impl ManagedApp {
             restart_on_crash: false,
             max_restart_attempts: 3,
             startup_delay_secs: 0.0,
+            track_process_name: None,
         }
     }
 }
@@ -158,6 +164,26 @@ mod tests {
         assert_eq!(app.startup_delay_secs, 0.0);
         assert!(app.args.is_none());
         assert!(app.working_dir.is_none());
+        assert!(app.track_process_name.is_none());
+    }
+
+    #[test]
+    fn should_deserialize_track_process_name_as_none_when_missing() {
+        let json = r#"{
+            "id": "abc", "profile_id": "p1",
+            "name": "Kapps", "exe_path": "C:/Kapps/Kapps.exe"
+        }"#;
+        let app: ManagedApp = serde_json::from_str(json).unwrap();
+        assert!(app.track_process_name.is_none());
+    }
+
+    #[test]
+    fn should_round_trip_track_process_name() {
+        let mut app = ManagedApp::new("p1", "Kapps", "C:/Kapps/Kapps.exe");
+        app.track_process_name = Some("Kapps.exe".into());
+        let json = serde_json::to_string(&app).unwrap();
+        let restored: ManagedApp = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.track_process_name, Some("Kapps.exe".into()));
     }
 
     #[test]

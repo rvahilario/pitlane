@@ -270,10 +270,10 @@ mod tests {
         });
 
         loop {
-            match rx.recv_timeout(Duration::from_secs(120)) {
+            match rx.recv_timeout(Duration::from_secs(20)) {
                 Ok(MonitorEvent::Stopped) => break,
                 Ok(MonitorEvent::Started) => continue,
-                Err(_) => { println!("[monitor integration] Timeout — no events in 120s."); break; }
+                Err(_) => { println!("[monitor integration] Timeout — no events in 20s."); break; }
             }
         }
 
