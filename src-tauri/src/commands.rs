@@ -1,8 +1,9 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use serde::Deserialize;
 use tauri::State;
 
 use crate::config::save_config;
+use crate::controller::{AppStatus, Controller};
 use crate::models::{AppConfig, ManagedApp, Profile, Settings};
 
 #[derive(Debug, Deserialize)]
@@ -19,7 +20,8 @@ pub struct NewApp {
     pub track_process_name: Option<String>,
 }
 
-pub struct ConfigState(pub Mutex<AppConfig>);
+pub struct ConfigState(pub Arc<Mutex<AppConfig>>);
+pub struct ControllerState(pub Arc<Controller>);
 
 pub fn apps_for_active_profile(config: &AppConfig) -> Vec<ManagedApp> {
     config
@@ -55,6 +57,21 @@ pub fn save_settings(state: State<ConfigState>, settings: Settings) -> Result<()
     let mut config = state.0.lock().unwrap();
     config.settings = settings;
     save_config(&config)
+}
+
+#[tauri::command]
+pub fn get_app_statuses(state: State<ControllerState>) -> Vec<AppStatus> {
+    state.0.app_statuses()
+}
+
+#[tauri::command]
+pub fn force_launch_app(state: State<ControllerState>, app_id: String) -> Result<(), String> {
+    state.0.force_launch(&app_id)
+}
+
+#[tauri::command]
+pub fn force_kill_app(state: State<ControllerState>, app_id: String) {
+    state.0.force_kill(&app_id);
 }
 
 #[tauri::command]
