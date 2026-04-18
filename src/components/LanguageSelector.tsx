@@ -12,6 +12,7 @@ const LANGUAGE_LABELS: Record<Language, string> = {
   "en":    "English",
 };
 
+// TODO: improve selector — native select is ugly, replace with custom dropdown
 export function LanguageSelector({ variant = "default" }: LanguageSelectorProps) {
   const { i18n } = useTranslation();
   const current = i18n.language as Language;
