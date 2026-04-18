@@ -1,7 +1,9 @@
 mod commands;
 mod config;
+mod launcher;
 mod models;
 mod monitor;
+mod process_killer;
 
 use commands::ConfigState;
 use monitor::{Monitor, MonitorEvent};
