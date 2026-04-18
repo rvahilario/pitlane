@@ -33,3 +33,14 @@ windows = { version = "0.58", features = [
 ] }
 log = "0.4"
 
+[[bin]]
+name = "fixture-dummy"
+path = "tests/fixtures/dummy.rs"
+
+[[bin]]
+name = "fixture-crash"
+path = "tests/fixtures/crash.rs"
+
+[[bin]]
+name = "fixture-stub"
+path = "tests/fixtures/stub.rs"
