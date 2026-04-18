@@ -4,7 +4,7 @@
 
 Pitlane monitora o iRacing e gerencia automaticamente o ciclo de vida de apps companheiros (SimHub, CrewChief, VoiceAttack, etc.).
 
-**Motivação:** Alternativas existentes como o iManager têm funcionalidades limitadas e parecem abandonadas. O iGnition resolveu isso, mas (Python + pywebview) consome ~150–300 MB idle. Pitlane mantém ~15–30 MB — a janela só é instanciada quando o usuário abre as configurações.
+**Motivação:** Alternativas existentes como o iRacingManager têm funcionalidades limitadas e parecem abandonadas. O iGnition resolveu isso, mas (Python + pywebview) consome ~150–300 MB idle. Pitlane mantém ~15–30 MB — a janela só é instanciada quando o usuário abre as configurações.
 
 ---
 
