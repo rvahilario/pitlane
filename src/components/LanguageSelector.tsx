@@ -4,51 +4,40 @@ import { LANGUAGES, setLanguage, type Language } from "@/i18n";
 import { cn } from "@/lib/cn";
 
 interface LanguageSelectorProps {
-  variant?: "pills" | "compact";
+  variant?: "default" | "compact";
 }
 
-export function LanguageSelector({ variant = "pills" }: LanguageSelectorProps) {
+const LANGUAGE_LABELS: Record<Language, string> = {
+  "pt-BR": "Português (BR)",
+  "en":    "English",
+};
+
+export function LanguageSelector({ variant = "default" }: LanguageSelectorProps) {
   const { i18n } = useTranslation();
   const current = i18n.language as Language;
 
-  if (variant === "compact") {
-    return (
-      <div className="flex items-center gap-1">
-        <Globe className="w-3.5 h-3.5 text-text-muted shrink-0" />
-        {LANGUAGES.map((lang) => (
-          <button
-            key={lang}
-            onClick={() => setLanguage(lang)}
-            className={cn(
-              "text-xs px-1.5 py-0.5 rounded transition-colors",
-              current === lang
-                ? "text-accent font-semibold"
-                : "text-text-disabled hover:text-text-muted",
-            )}
-          >
-            {lang === "pt-BR" ? "PT" : "EN"}
-          </button>
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex gap-1.5">
-      {LANGUAGES.map((lang) => (
-        <button
-          key={lang}
-          onClick={() => setLanguage(lang)}
-          className={cn(
-            "px-3 py-1.5 text-xs rounded border transition-colors",
-            current === lang
-              ? "bg-accent/15 border-accent/40 text-accent font-semibold"
-              : "border-border-strong text-text-muted hover:border-elevated hover:text-text-secondary",
-          )}
-        >
-          {lang === "pt-BR" ? "Português (BR)" : "English"}
-        </button>
-      ))}
+    <div className={cn("flex items-center gap-1.5", variant === "compact" && "gap-1")}>
+      <Globe className={cn(
+        "shrink-0 text-text-muted",
+        variant === "compact" ? "w-3 h-3" : "w-3.5 h-3.5",
+      )} />
+      <select
+        value={current}
+        onChange={(e) => setLanguage(e.target.value as Language)}
+        className={cn(
+          "bg-transparent text-text-muted hover:text-text-secondary cursor-pointer",
+          "border-none outline-none appearance-none transition-colors",
+          "focus:text-text",
+          variant === "compact" ? "text-xs" : "text-xs py-1",
+        )}
+      >
+        {LANGUAGES.map((lang) => (
+          <option key={lang} value={lang} className="bg-canvas text-text">
+            {variant === "compact" ? lang : LANGUAGE_LABELS[lang]}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

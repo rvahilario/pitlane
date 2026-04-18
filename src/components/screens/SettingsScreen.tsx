@@ -69,7 +69,7 @@ export function SettingsScreen() {
           <div>
             <p className="text-xs font-medium text-text-secondary">{t("settings.language_label")}</p>
           </div>
-          <LanguageSelector variant="pills" />
+          <LanguageSelector variant="default" />
         </div>
       </section>
 
