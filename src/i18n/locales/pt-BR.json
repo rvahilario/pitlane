@@ -1,0 +1,63 @@
+{
+  "status": {
+    "paused": "PAUSADO",
+    "racing": "Em corrida",
+    "iracing_open": "iRacing aberto",
+    "iracing_offline": "iRacing offline",
+    "apps_running_one": "{{count}} app rodando",
+    "apps_running_other": "{{count}} apps rodando"
+  },
+  "nav": {
+    "apps": "Apps",
+    "log": "Log",
+    "history": "Histórico",
+    "settings": "Configurações"
+  },
+  "apps": {
+    "title": "Apps gerenciados",
+    "profile_label": "Perfil: {{name}}",
+    "add": "Adicionar",
+    "empty": "Nenhum app configurado",
+    "start": "Iniciar",
+    "stop": "Parar"
+  },
+  "log": {
+    "title": "Log de eventos",
+    "clear": "Limpar",
+    "types": {
+      "launch": "LAUNCH",
+      "stop": "STOP",
+      "error": "ERROR",
+      "iracing": "iRACING",
+      "skip": "SKIP",
+      "info": "INFO"
+    }
+  },
+  "history": {
+    "title": "Histórico de sessões",
+    "clear": "Limpar",
+    "empty": "Nenhuma sessão registrada"
+  },
+  "settings": {
+    "title": "Configurações",
+    "save": "Salvar",
+    "sections": {
+      "monitoring": "Monitoramento",
+      "system": "Sistema"
+    },
+    "poll_interval_label": "Intervalo de verificação (segundos)",
+    "trigger_label": "Trigger padrão",
+    "trigger_hint": "Qual processo detectar para iniciar os apps",
+    "trigger_ui": "iRacingUI.exe",
+    "trigger_race": "iRacingSim64DX11.exe",
+    "autostart_label": "Iniciar com o Windows",
+    "autostart_hint": "Adiciona ao registro de inicialização",
+    "notifications_label": "Notificações",
+    "notifications_hint": "Toast ao iniciar sessão",
+    "language_label": "Idioma",
+    "languages": {
+      "pt-BR": "Português (BR)",
+      "en": "English"
+    }
+  }
+}
