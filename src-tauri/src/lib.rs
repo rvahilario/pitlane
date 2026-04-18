@@ -16,6 +16,14 @@ use tauri::{
 };
 
 pub const EVENT_IRACING_STATUS: &str = "iracing-status";
+
+fn show_window(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.unminimize();
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
+}
 pub const STATUS_ONLINE: &str = "online";
 pub const STATUS_OFFLINE: &str = "offline";
 
@@ -45,30 +53,21 @@ pub fn run() {
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
+                .menu_on_left_click(false)
                 .tooltip("Pitlane")
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "show" => {
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = w.show();
-                            let _ = w.set_focus();
-                        }
-                    }
+                    "show" => show_window(app),
                     "quit" => app.exit(0),
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
-                    // Double-click or left-click → show window
                     if let TrayIconEvent::Click {
                         button: MouseButton::Left,
                         button_state: MouseButtonState::Up,
                         ..
                     } = event
                     {
-                        let app = tray.app_handle();
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = w.show();
-                            let _ = w.set_focus();
-                        }
+                        show_window(tray.app_handle());
                     }
                 })
                 .build(app)?;
@@ -87,9 +86,7 @@ pub fn run() {
             app.manage(ControllerState(ctrl));
 
             // Show the window on first launch
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.show();
-            }
+            show_window(app.handle());
 
             Ok(())
         })
