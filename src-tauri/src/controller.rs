@@ -143,7 +143,7 @@ impl Controller {
 
     // ── iRacing lifecycle ─────────────────────────────────────────────────────
 
-    fn launch_active_apps(&self) {
+    pub(crate) fn launch_active_apps(&self) {
         let apps: Vec<ManagedApp> = {
             let config = self.config.lock().unwrap();
             let profile_id = &config.active_profile_id.clone();
@@ -182,7 +182,7 @@ impl Controller {
         }
     }
 
-    fn kill_all_running(&self) {
+    pub(crate) fn kill_all_running(&self) {
         let running = self.logic.lock().unwrap().running_apps();
         for (app_id, pid) in running {
             self.watchdog.unwatch(&app_id);
@@ -394,5 +394,142 @@ mod tests {
 
         assert_eq!(logic.app_state("simhub"), AppState::Idle);
         assert_eq!(logic.app_state("crewchief"), AppState::Running { pid: 200, restart_count: 0 });
+    }
+
+    // ── E2E integration tests ─────────────────────────────────────────────────
+    //
+    // Require fixture binaries to be built first:
+    //   cargo build --bins --manifest-path src-tauri/Cargo.toml
+    //
+    // Run with:
+    //   cargo test --manifest-path src-tauri/Cargo.toml -- --ignored --nocapture
+
+    fn fixture(name: &str) -> String {
+        let dir = env!("CARGO_MANIFEST_DIR");
+        format!("{dir}\\target\\debug\\{name}.exe")
+    }
+
+    fn make_controller(app: ManagedApp) -> Arc<Controller> {
+        use std::sync::{Arc, Mutex};
+        let mut config = AppConfig::default();
+        let profile_id = config.active_profile_id.clone();
+        let mut app = app;
+        app.profile_id = profile_id;
+        config.apps.push(app);
+        Controller::start(Arc::new(Mutex::new(config)), TriggerMode::Ui, 1.0, |_| {})
+    }
+
+    #[test]
+    #[ignore]
+    fn manual_e2e_should_launch_and_kill_dummy_app() {
+        let app = ManagedApp::new("p1", "Dummy", fixture("fixture-dummy"));
+        let app_id = app.id.clone();
+        let ctrl = make_controller(app);
+
+        ctrl.launch_active_apps();
+        // resolve_real_pid sleeps 500ms inside the spawned thread; give it margin
+        std::thread::sleep(std::time::Duration::from_millis(1500));
+
+        let state = ctrl.logic.lock().unwrap().app_state(&app_id);
+        let pid = match state {
+            AppState::Running { pid, .. } => { println!("[e2e] launched pid={pid}"); pid }
+            other => panic!("[e2e] expected Running, got {other:?}"),
+        };
+
+        assert!(process_killer::is_pid_alive(pid), "dummy should be alive");
+
+        ctrl.kill_all_running();
+        std::thread::sleep(std::time::Duration::from_millis(500));
+
+        assert!(!process_killer::is_pid_alive(pid), "dummy should be dead after kill");
+        assert_eq!(ctrl.logic.lock().unwrap().app_state(&app_id), AppState::Idle);
+        println!("[e2e] ✓ launch and kill");
+    }
+
+    #[test]
+    #[ignore]
+    fn manual_e2e_should_skip_already_running_app_on_iracing_start() {
+        let app = ManagedApp::new("p1", "Dummy", fixture("fixture-dummy"));
+        let app_id = app.id.clone();
+        let ctrl = make_controller(app);
+
+        // Simulate user manually launching the app before iRacing starts
+        ctrl.force_launch(&app_id).expect("force_launch failed");
+        std::thread::sleep(std::time::Duration::from_millis(800));
+
+        let pid_before = match ctrl.logic.lock().unwrap().app_state(&app_id) {
+            AppState::Running { pid, .. } => { println!("[e2e] manual launch pid={pid}"); pid }
+            other => panic!("[e2e] expected Running after force_launch, got {other:?}"),
+        };
+
+        // iRacing starts — should NOT re-launch an already running app
+        ctrl.launch_active_apps();
+        std::thread::sleep(std::time::Duration::from_millis(800));
+
+        let pid_after = match ctrl.logic.lock().unwrap().app_state(&app_id) {
+            AppState::Running { pid, .. } => pid,
+            other => panic!("[e2e] expected still Running after launch_active_apps, got {other:?}"),
+        };
+
+        assert_eq!(pid_before, pid_after, "PID must not change — app was already running");
+        println!("[e2e] ✓ already-running app not re-launched (pid unchanged: {pid_before})");
+
+        ctrl.kill_all_running();
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        assert!(!process_killer::is_pid_alive(pid_before), "dummy should be dead");
+        println!("[e2e] ✓ killed");
+    }
+
+    #[test]
+    #[ignore]
+    fn manual_e2e_should_restart_crashing_app_then_give_up() {
+        let mut app = ManagedApp::new("p1", "Crash", fixture("fixture-crash"));
+        app.restart_on_crash = true;
+        app.max_restart_attempts = 2;
+        let app_id = app.id.clone();
+        let ctrl = make_controller(app);
+
+        ctrl.launch_active_apps();
+
+        // Watchdog polls every 2s; with 2 restart attempts we need ~3 cycles
+        // Wait long enough for all retries to exhaust
+        let wait = std::time::Duration::from_secs(10);
+        println!("[e2e] waiting {wait:?} for watchdog to exhaust restarts…");
+        std::thread::sleep(wait);
+
+        let state = ctrl.logic.lock().unwrap().app_state(&app_id);
+        assert_eq!(state, AppState::Crashed, "app should be Crashed after max attempts");
+        println!("[e2e] ✓ app reached Crashed state after {attempts} failed restarts",
+            attempts = 2);
+    }
+
+    #[test]
+    #[ignore]
+    fn manual_e2e_should_resolve_real_pid_from_stub_launcher() {
+        // fixture-stub spawns fixture-dummy then exits immediately.
+        // track_process_name tells the controller to find the real process by name.
+        let mut app = ManagedApp::new("p1", "Stub", fixture("fixture-stub"));
+        app.track_process_name = Some("fixture-dummy.exe".into());
+        let app_id = app.id.clone();
+        let ctrl = make_controller(app);
+
+        ctrl.launch_active_apps();
+        // Give stub time to spawn child and resolve_real_pid to find it
+        std::thread::sleep(std::time::Duration::from_millis(1500));
+
+        let pid = match ctrl.logic.lock().unwrap().app_state(&app_id) {
+            AppState::Running { pid, .. } => { println!("[e2e] resolved child pid={pid}"); pid }
+            other => panic!("[e2e] expected Running with child pid, got {other:?}"),
+        };
+
+        // The tracked PID must be fixture-dummy (alive), not fixture-stub (dead)
+        assert!(process_killer::is_pid_alive(pid), "resolved pid should be alive (fixture-dummy)");
+        assert!(!process_killer::find_pids_by_name("fixture-stub").contains(&pid),
+            "tracked pid must not be the stub");
+
+        ctrl.kill_all_running();
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        assert!(!process_killer::is_pid_alive(pid), "fixture-dummy should be dead after kill");
+        println!("[e2e] ✓ stub pid resolved to child, child killed");
     }
 }

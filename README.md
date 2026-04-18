@@ -25,13 +25,13 @@ Pitlane monitora o iRacing e gerencia automaticamente o ciclo de vida de apps co
 | 0 — Scaffold | ✅ |
 | 1 — UI Shell | ✅ |
 | 2 — Models + Config + Commands | ✅ |
-| 3 — Monitor (iRacing detection) | 🔄 |
-| 4 — Launcher + Process Killer | ⬜ |
-| 5 — Controller | ⬜ |
-| 6 — Watchdog | ⬜ |
-| 7 — CRUD completo | ⬜ |
-| 8 — Tray + Single Instance | ⬜ |
-| 9 — Autostart + Import/Export | ⬜ |
+| 3 — Monitor (iRacing detection) | ✅ |
+| 4 — Launcher + Process Killer | ✅ |
+| 5 — Watchdog (crash detection + auto-restart) | ✅ |
+| 6 — Controller (orchestrator) | ✅ |
+| 7 — Tray + Single Instance | ⬜ |
+| 8 — Autostart | ⬜ |
+| 9 — UI wired to controller (app statuses) | ⬜ |
 | 10 — Build | ⬜ |
 
 ## Desenvolvimento
@@ -46,8 +46,12 @@ npm run dev
 # Testes frontend
 npm run test
 
-# Testes Rust
+# Testes Rust (unitários)
 cargo test --manifest-path src-tauri/Cargo.toml
+
+# Testes de integração (requer build dos fixtures primeiro)
+cargo build --bins --manifest-path src-tauri/Cargo.toml
+cargo test --manifest-path src-tauri/Cargo.toml -- --ignored --nocapture
 ```
 
 ## Requisitos
