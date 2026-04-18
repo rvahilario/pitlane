@@ -66,4 +66,6 @@ export const api = {
   getAppStatuses: () => invoke<AppStatus[]>("get_app_statuses"),
   forceLaunchApp: (appId: string) => invoke<void>("force_launch_app", { appId }),
   forceKillApp: (appId: string) => invoke<void>("force_kill_app", { appId }),
+  setTrayLabels: (showLabel: string, quitLabel: string) =>
+    invoke<void>("set_tray_labels", { showLabel, quitLabel }),
 };

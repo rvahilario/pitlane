@@ -9,9 +9,21 @@ mod watchdog;
 
 use commands::{ConfigState, ControllerState};
 use std::sync::{Arc, Mutex};
-use tauri::{Emitter, Manager};
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Emitter, Manager, WindowEvent,
+};
 
 pub const EVENT_IRACING_STATUS: &str = "iracing-status";
+
+fn show_window(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.unminimize();
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
+}
 pub const STATUS_ONLINE: &str = "online";
 pub const STATUS_OFFLINE: &str = "offline";
 
@@ -24,8 +36,43 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            // Second instance tried to open — bring existing window to front
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .manage(ConfigState(Arc::clone(&config_arc)))
         .setup(move |app| {
+            // ── Tray icon ────────────────────────────────────────────────────
+            let show = MenuItem::with_id(app, "show", "Show Pitlane", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show, &quit])?;
+
+            TrayIconBuilder::with_id("main")
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .menu_on_left_click(false)
+                .tooltip("Pitlane")
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "show" => show_window(app),
+                    "quit" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        show_window(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+
+            // ── Controller ───────────────────────────────────────────────────
             let handle = app.handle().clone();
             let ctrl = controller::Controller::start(
                 Arc::clone(&config_arc),
@@ -37,7 +84,20 @@ pub fn run() {
                 },
             );
             app.manage(ControllerState(ctrl));
+
+            // Show the window on first launch
+            show_window(app.handle());
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Close button → hide to tray instead of quitting
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_profiles,
@@ -49,6 +109,7 @@ pub fn run() {
             commands::get_app_statuses,
             commands::force_launch_app,
             commands::force_kill_app,
+            commands::set_tray_labels,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

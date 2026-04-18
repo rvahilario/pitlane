@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "pitlane",
+        "label": "main",
+        "title": "Pitlane",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "visible": false
       }
     ],
     "security": {

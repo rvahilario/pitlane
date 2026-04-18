@@ -43,6 +43,10 @@
     "clear": "Clear",
     "empty": "No sessions recorded"
   },
+  "tray": {
+    "show": "Show Pitlane",
+    "quit": "Quit"
+  },
   "settings": {
     "title": "Settings",
     "save": "Save",

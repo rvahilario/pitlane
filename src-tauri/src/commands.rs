@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 use serde::Deserialize;
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
+use tauri::menu::{Menu, MenuItem};
 
 use crate::config::save_config;
 use crate::controller::{AppStatus, Controller};
@@ -57,6 +58,19 @@ pub fn save_settings(state: State<ConfigState>, settings: Settings) -> Result<()
     let mut config = state.0.lock().unwrap();
     config.settings = settings;
     save_config(&config)
+}
+
+#[tauri::command]
+pub fn set_tray_labels(app: AppHandle, show_label: String, quit_label: String) -> Result<(), String> {
+    let tray = app.tray_by_id("main").ok_or("tray not found")?;
+    let show = MenuItem::with_id(&app, "show", show_label, true, None::<&str>)
+        .map_err(|e| e.to_string())?;
+    let quit = MenuItem::with_id(&app, "quit", quit_label, true, None::<&str>)
+        .map_err(|e| e.to_string())?;
+    let menu = Menu::with_items(&app, &[&show, &quit])
+        .map_err(|e| e.to_string())?;
+    tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]

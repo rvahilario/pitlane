@@ -246,7 +246,7 @@ feat(ui/apps): drag-and-drop reorder
 5. `commands.rs`: `quit_app`, `open_config_folder`
 
 **O que fazer (Frontend):**
-1. Botão "Fechar para bandeja" no header
+1. Titlebar customizada (`decorations: false`) com botões na ordem: **minimize-to-tray** → minimize → maximize → close
 2. Menu do tray mostra perfil ativo e status iRacing
 
 **Commits:**
