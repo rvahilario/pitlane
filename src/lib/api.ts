@@ -45,6 +45,17 @@ export interface NewApp {
   track_process_name?: string;
 }
 
+export type AppStateType =
+  | { type: "idle" }
+  | { type: "running"; pid: number; restart_count: number }
+  | { type: "crashed" };
+
+export interface AppStatus {
+  app_id: string;
+  name: string;
+  state: AppStateType;
+}
+
 export const api = {
   getProfiles: () => invoke<Profile[]>("get_profiles"),
   getApps: () => invoke<ManagedApp[]>("get_apps"),
@@ -52,4 +63,7 @@ export const api = {
   getActiveProfileId: () => invoke<string>("get_active_profile_id"),
   saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
   addApp: (app: NewApp) => invoke<ManagedApp>("add_app", { app }),
+  getAppStatuses: () => invoke<AppStatus[]>("get_app_statuses"),
+  forceLaunchApp: (appId: string) => invoke<void>("force_launch_app", { appId }),
+  forceKillApp: (appId: string) => invoke<void>("force_kill_app", { appId }),
 };
