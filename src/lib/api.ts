@@ -31,10 +31,23 @@ export interface Settings {
   autostart: boolean;
 }
 
+export interface NewApp {
+  name: string;
+  exe_path: string;
+  args?: string;
+  working_dir?: string;
+  enabled?: boolean;
+  start_minimized?: boolean;
+  restart_on_crash?: boolean;
+  max_restart_attempts?: number;
+  startup_delay_secs?: number;
+}
+
 export const api = {
   getProfiles: () => invoke<Profile[]>("get_profiles"),
   getApps: () => invoke<ManagedApp[]>("get_apps"),
   getSettings: () => invoke<Settings>("get_settings"),
   getActiveProfileId: () => invoke<string>("get_active_profile_id"),
   saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
+  addApp: (app: NewApp) => invoke<ManagedApp>("add_app", { app }),
 };
