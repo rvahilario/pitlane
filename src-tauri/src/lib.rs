@@ -1,6 +1,7 @@
 mod commands;
 mod config;
 mod models;
+mod monitor;
 
 use commands::ConfigState;
 use std::sync::Mutex;
