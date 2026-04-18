@@ -5,21 +5,20 @@ import { AppsScreen } from "@/components/screens/AppsScreen";
 import { LogScreen } from "@/components/screens/LogScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
 import { SettingsScreen } from "@/components/screens/SettingsScreen";
-
-// Mock state — will be replaced by Rust IPC in Layer 3
-const MOCK_STATUS = {
-  iRacingRunning: true,
-  sessionType: "service" as const,
-  managedCount: 2,
-  paused: false,
-};
+import { useIRacingStatus } from "@/hooks/useIRacingStatus";
 
 function App() {
   const [tab, setTab] = useState<Tab>("apps");
+  const iRacingRunning = useIRacingStatus();
 
   return (
     <div className="flex flex-col h-screen bg-zinc-900">
-      <StatusBar {...MOCK_STATUS} />
+      <StatusBar
+        iRacingRunning={iRacingRunning}
+        sessionType={null}
+        managedCount={0}
+        paused={false}
+      />
 
       <div className="flex flex-1 min-h-0">
         <Sidebar active={tab} onChange={setTab} />
