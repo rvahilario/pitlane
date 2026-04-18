@@ -12,6 +12,7 @@ export interface ManagedApp {
   restart_on_crash: boolean;
   max_restart_attempts: number;
   startup_delay_secs: number;
+  track_process_name: string | null;
 }
 
 export interface Profile {
@@ -41,6 +42,7 @@ export interface NewApp {
   restart_on_crash?: boolean;
   max_restart_attempts?: number;
   startup_delay_secs?: number;
+  track_process_name?: string;
 }
 
 export const api = {

@@ -16,6 +16,7 @@ pub struct NewApp {
     pub restart_on_crash: Option<bool>,
     pub max_restart_attempts: Option<u32>,
     pub startup_delay_secs: Option<f64>,
+    pub track_process_name: Option<String>,
 }
 
 pub struct ConfigState(pub Mutex<AppConfig>);
@@ -67,6 +68,7 @@ pub fn add_app(state: State<ConfigState>, app: NewApp) -> Result<ManagedApp, Str
     if let Some(v) = app.restart_on_crash { managed.restart_on_crash = v; }
     if let Some(v) = app.max_restart_attempts { managed.max_restart_attempts = v; }
     if let Some(v) = app.startup_delay_secs   { managed.startup_delay_secs = v; }
+    if let Some(v) = app.track_process_name   { managed.track_process_name = Some(v); }
     config.apps.push(managed.clone());
     save_config(&config)?;
     Ok(managed)
@@ -132,6 +134,7 @@ mod tests {
             restart_on_crash: None,
             max_restart_attempts: None,
             startup_delay_secs: None,
+            track_process_name: None,
         }
     }
 
@@ -144,6 +147,7 @@ mod tests {
         if let Some(v) = input.restart_on_crash { managed.restart_on_crash = v; }
         if let Some(v) = input.max_restart_attempts { managed.max_restart_attempts = v; }
         if let Some(v) = input.startup_delay_secs   { managed.startup_delay_secs = v; }
+        if let Some(v) = input.track_process_name   { managed.track_process_name = Some(v); }
         config.apps.push(managed.clone());
         managed
     }
@@ -180,6 +184,7 @@ mod tests {
             restart_on_crash: Some(true),
             max_restart_attempts: Some(5),
             startup_delay_secs: Some(2.5),
+            track_process_name: Some("CrewChiefV4.exe".into()),
         };
         let added = add_app_to(&mut config, input);
         assert_eq!(added.args, Some("--flag".into()));
@@ -187,5 +192,6 @@ mod tests {
         assert!(added.restart_on_crash);
         assert_eq!(added.max_restart_attempts, 5);
         assert_eq!(added.startup_delay_secs, 2.5);
+        assert_eq!(added.track_process_name, Some("CrewChiefV4.exe".into()));
     }
 }
