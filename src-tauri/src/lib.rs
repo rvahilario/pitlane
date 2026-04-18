@@ -18,6 +18,7 @@ pub fn run() {
             commands::get_settings,
             commands::get_active_profile_id,
             commands::save_settings,
+            commands::add_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
