@@ -1,6 +1,7 @@
 import { Circle, Gauge } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 interface StatusBarProps {
   iRacingRunning: boolean;
@@ -23,10 +24,16 @@ export function StatusBar({ iRacingRunning, sessionType, managedCount, paused }:
         <span className="text-sm font-semibold tracking-wide text-text">Pitlane</span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {paused && (
           <span className="text-xs text-warning font-medium tracking-wide">
             {t("status.paused")}
+          </span>
+        )}
+
+        {iRacingRunning && managedCount > 0 && (
+          <span className="text-xs text-text-muted">
+            {t("status.apps_running", { count: managedCount })}
           </span>
         )}
 
@@ -43,11 +50,9 @@ export function StatusBar({ iRacingRunning, sessionType, managedCount, paused }:
           {sessionLabel}
         </div>
 
-        {iRacingRunning && managedCount > 0 && (
-          <span className="text-xs text-text-muted">
-            {t("status.apps_running", { count: managedCount })}
-          </span>
-        )}
+        <div className="w-px h-4 bg-border" />
+
+        <LanguageSelector variant="compact" />
       </div>
     </header>
   );

@@ -7,8 +7,7 @@ export const LANGUAGES = ["pt-BR", "en"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const saved = localStorage.getItem("pitlane_lang") as Language | null;
-const browserLang = navigator.language.startsWith("pt") ? "pt-BR" : "en";
-const defaultLang: Language = saved ?? browserLang;
+const defaultLang: Language = saved ?? "en";
 
 i18n.use(initReactI18next).init({
   resources: {

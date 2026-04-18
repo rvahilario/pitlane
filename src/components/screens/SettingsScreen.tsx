@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { LANGUAGES, setLanguage, type Language } from "@/i18n";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 export function SettingsScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-col gap-6 p-4 h-full overflow-y-auto">
@@ -69,21 +69,7 @@ export function SettingsScreen() {
           <div>
             <p className="text-xs font-medium text-text-secondary">{t("settings.language_label")}</p>
           </div>
-          <div className="flex gap-1.5">
-            {LANGUAGES.map((lang) => (
-              <button
-                key={lang}
-                onClick={() => setLanguage(lang as Language)}
-                className="px-2.5 py-1 text-xs rounded border transition-colors
-                           data-[active=true]:bg-accent/15 data-[active=true]:border-accent/40 data-[active=true]:text-accent
-                           data-[active=false]:border-border-strong data-[active=false]:text-text-muted
-                           data-[active=false]:hover:border-elevated data-[active=false]:hover:text-text-secondary"
-                data-active={i18n.language === lang}
-              >
-                {t(`settings.languages.${lang}`)}
-              </button>
-            ))}
-          </div>
+          <LanguageSelector variant="pills" />
         </div>
       </section>
 
