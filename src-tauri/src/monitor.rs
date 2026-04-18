@@ -81,7 +81,7 @@ impl Monitor {
                         break;
                     }
 
-                    sys.refresh_processes(sysinfo::ProcessesToUpdate::All, false);
+                    sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
                     let target = logic.trigger_process_name();
                     let running = sys.processes().values().any(|p| {
                         p.name().to_string_lossy().eq_ignore_ascii_case(target)
@@ -238,5 +238,43 @@ mod tests {
         let mut monitor = Monitor::start(TriggerMode::Ui, 0.05, |_| {});
         monitor.stop();
         monitor.stop(); // second call must be a no-op
+    }
+
+    // ── Manual integration test (requires iRacing running) ──────────────────
+    //
+    // Run with:
+    //   cargo test --manifest-path src-tauri/Cargo.toml -- --ignored --nocapture
+    //
+    // Start iRacing UI before running, then close it during the 15s window to
+    // observe both Started and Stopped events.
+
+    #[test]
+    #[ignore]
+    fn manual_should_detect_real_iracing_process() {
+        use std::sync::mpsc;
+
+        let (tx, rx) = mpsc::channel::<MonitorEvent>();
+
+        println!("\n[monitor integration] Watching for iRacingUI.exe...");
+        println!("[monitor integration] Open iRacing UI, then close it. Test ends on Stopped.\n");
+
+        let mut monitor = Monitor::start(TriggerMode::Ui, 1.0, move |event| {
+            match &event {
+                MonitorEvent::Started => println!("[monitor integration] ✓ Started"),
+                MonitorEvent::Stopped => println!("[monitor integration] ✓ Stopped"),
+            }
+            let _ = tx.send(event);
+        });
+
+        loop {
+            match rx.recv_timeout(Duration::from_secs(120)) {
+                Ok(MonitorEvent::Stopped) => break,
+                Ok(MonitorEvent::Started) => continue,
+                Err(_) => { println!("[monitor integration] Timeout — no events in 120s."); break; }
+            }
+        }
+
+        monitor.stop();
+        println!("[monitor integration] Done.");
     }
 }
