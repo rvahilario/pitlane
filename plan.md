@@ -7,6 +7,28 @@ Cada camada termina com commits Conventional Commits agrupados por domínio.
 
 ---
 
+## Estado atual (última atualização: 2026-04-18)
+
+| Camada | Estado | Observação |
+|---|---|---|
+| 0 — Scaffold | ✅ Done | |
+| 1 — UI Shell | ✅ Done | Dark theme, layout, status bar, i18n |
+| 2 — models + config + commands | 🔄 Implementado, aguardando teste | Código escrito; `npm run tauri dev` para validar |
+| 3 — monitor.rs | ⬜ Próxima | |
+| 4 — launcher + process_killer | ⬜ | |
+| 5 — controller | ⬜ | |
+| 6 — watchdog | ⬜ | |
+| 7 — CRUD completo | ⬜ | |
+| 8 — Tray + Single Instance | ⬜ | |
+| 9 — Autostart + Import/Export | ⬜ | |
+| 10 — Build | ⬜ | |
+
+**Para retomar:** rode `npm run tauri dev` para testar a Camada 2 (settings persistindo em `%LOCALAPPDATA%\Pitlane\config.json`). Se passar, commite e inicie a Camada 3.
+
+**Nota de ambiente:** `cargo test` requer Developer Command Prompt do VS (Git's `link.exe` shadowing MSVC no PATH padrão).
+
+---
+
 ## Camada 0 — Ambiente funcional ✅ (scaffold)
 
 **Objetivo:** `npm run tauri dev` abre janela com scaffold Tauri padrão.
@@ -20,7 +42,7 @@ chore(scaffold): initialize Tauri v2 + React + TypeScript project
 
 ---
 
-## Camada 1 — UI Shell (dark theme + layout)
+## Camada 1 — UI Shell (dark theme + layout) ✅
 
 **Objetivo:** janela com o visual final do app — dark theme, paleta zinc, accent vermelho — mas com dados mockados. Sem Rust novo ainda.
 
@@ -42,7 +64,7 @@ feat(ui): status bar with mocked iRacing indicator
 
 ---
 
-## Camada 2 — models.rs + config.rs (persistência)
+## Camada 2 — models.rs + config.rs (persistência) 🔄
 
 **Objetivo:** app lê e salva `config.json` real; frontend exibe perfis e apps vindos do Rust.
 

@@ -144,6 +144,7 @@ chore(tooling): configure Tailwind v4 and path aliases
 ```
 
 **Regras:**
+- **Só commitar quando o usuário pedir explicitamente**
 - Um commit por domínio — não misturar `monitor` com `ui/apps` no mesmo commit
 - Mensagem em inglês, verbo no imperativo ("add", "fix", "remove", não "added", "fixes")
 - Nunca commitar uma camada incompleta — deve ser testável antes do commit
