@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { StatusBar } from "@/components/StatusBar";
 import { Sidebar, type Tab } from "@/components/Sidebar";
 import { AppsScreen } from "@/components/screens/AppsScreen";
@@ -6,10 +7,16 @@ import { LogScreen } from "@/components/screens/LogScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
 import { SettingsScreen } from "@/components/screens/SettingsScreen";
 import { useIRacingStatus } from "@/hooks/useIRacingStatus";
+import { api } from "@/lib/api";
 
 function App() {
   const [tab, setTab] = useState<Tab>("apps");
   const iRacingRunning = useIRacingStatus();
+  const { t, i18n } = useTranslation();
+
+  useEffect(() => {
+    api.setTrayLabels(t("tray.show"), t("tray.quit")).catch(() => {});
+  }, [i18n.language]);
 
   return (
     <div className="flex flex-col h-screen bg-zinc-900">

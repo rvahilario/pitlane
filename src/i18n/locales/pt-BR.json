@@ -43,6 +43,10 @@
     "clear": "Limpar",
     "empty": "Nenhuma sessão registrada"
   },
+  "tray": {
+    "show": "Mostrar Pitlane",
+    "quit": "Sair"
+  },
   "settings": {
     "title": "Configurações",
     "save": "Salvar",

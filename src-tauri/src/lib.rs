@@ -50,7 +50,7 @@ pub fn run() {
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show, &quit])?;
 
-            TrayIconBuilder::new()
+            TrayIconBuilder::with_id("main")
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .menu_on_left_click(false)
@@ -109,6 +109,7 @@ pub fn run() {
             commands::get_app_statuses,
             commands::force_launch_app,
             commands::force_kill_app,
+            commands::set_tray_labels,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
