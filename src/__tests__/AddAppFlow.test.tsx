@@ -88,7 +88,8 @@ describe("Add app flow", () => {
       target: { value: "C:\\CrewChief\\CrewChiefV4.exe" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /add/i, hidden: false }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(dialog.querySelector("button[type='submit']")!);
 
     await waitFor(() => {
       expect(api.addApp).toHaveBeenCalledWith({
@@ -115,7 +116,8 @@ describe("Add app flow", () => {
       target: { value: "C:\\CrewChief\\CrewChiefV4.exe" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /add/i, hidden: false }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(dialog.querySelector("button[type='submit']")!);
 
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
