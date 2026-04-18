@@ -3,10 +3,12 @@ use std::path::{Path, PathBuf};
 
 use crate::models::AppConfig;
 
+pub const APP_NAME: &str = "Pitlane";
+
 pub fn config_path() -> PathBuf {
     dirs::data_local_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("Pitlane")
+        .join(APP_NAME)
         .join("config.json")
 }
 
