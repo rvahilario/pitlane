@@ -4,6 +4,7 @@ mod launcher;
 mod models;
 mod monitor;
 mod process_killer;
+mod watchdog;
 
 use commands::ConfigState;
 use monitor::{Monitor, MonitorEvent};
