@@ -32,20 +32,24 @@ pub struct MonitorLogic {
 
 impl MonitorLogic {
     pub fn new(trigger: TriggerMode) -> Self {
-        todo!()
+        Self { online: false, trigger }
     }
 
     /// Feed the current observation; returns an event only on state transitions.
     pub fn tick(&mut self, is_running: bool) -> Option<MonitorEvent> {
-        todo!()
+        match (self.online, is_running) {
+            (false, true)  => { self.online = true;  Some(MonitorEvent::Started) }
+            (true,  false) => { self.online = false; Some(MonitorEvent::Stopped) }
+            _              => None,
+        }
     }
 
     pub fn is_online(&self) -> bool {
-        todo!()
+        self.online
     }
 
     pub fn trigger_process_name(&self) -> &'static str {
-        todo!()
+        process_name_for(&self.trigger)
     }
 }
 
@@ -62,12 +66,45 @@ impl Monitor {
     where
         F: Fn(MonitorEvent) + Send + 'static,
     {
-        todo!()
+        let stop_flag = Arc::new(Mutex::new(false));
+        let stop_clone = Arc::clone(&stop_flag);
+
+        let handle = thread::Builder::new()
+            .name("iracing-monitor".into())
+            .spawn(move || {
+                let mut logic = MonitorLogic::new(trigger);
+                let mut sys = System::new();
+                let interval = Duration::from_secs_f64(poll_interval_secs.max(0.25));
+
+                loop {
+                    if *stop_clone.lock().unwrap() {
+                        break;
+                    }
+
+                    sys.refresh_processes(sysinfo::ProcessesToUpdate::All, false);
+                    let target = logic.trigger_process_name();
+                    let running = sys.processes().values().any(|p| {
+                        p.name().to_string_lossy().eq_ignore_ascii_case(target)
+                    });
+
+                    if let Some(event) = logic.tick(running) {
+                        on_event(event);
+                    }
+
+                    thread::sleep(interval);
+                }
+            })
+            .expect("failed to spawn monitor thread");
+
+        Self { handle: Some(handle), stop_flag }
     }
 
     /// Signals the thread to stop and waits for it to finish (max 3 s).
     pub fn stop(&mut self) {
-        todo!()
+        *self.stop_flag.lock().unwrap() = true;
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
     }
 }
 
