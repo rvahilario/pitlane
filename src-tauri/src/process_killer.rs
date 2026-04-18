@@ -94,6 +94,27 @@ pub fn kill_by_name(name: &str, grace_secs: f64) {
 
 // ── Pure helpers (fully testable) ────────────────────────────────────────────
 
+/// Returns true if a process with the given PID is currently running.
+pub fn is_pid_alive(pid: u32) -> bool {
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+
+    let handle = unsafe {
+        match OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
+            Ok(h) => h,
+            Err(_) => return false,
+        }
+    };
+
+    use windows::Win32::System::Threading::GetExitCodeProcess;
+    let mut exit_code: u32 = 0;
+    let still_active = unsafe {
+        GetExitCodeProcess(handle, &mut exit_code).is_ok() && exit_code == 259 // STILL_ACTIVE
+    };
+    unsafe { let _ = CloseHandle(handle); }
+    still_active
+}
+
 /// Returns true when a graceful WM_CLOSE should be attempted before force-killing.
 pub fn needs_graceful_close(grace_secs: f64) -> bool {
     grace_secs > 0.0
@@ -289,14 +310,14 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn manual_should_gracefully_kill_notepad() {
+    fn manual_should_gracefully_kill_calc() {
         use std::process::Command;
 
-        let child = Command::new("C:/Windows/System32/notepad.exe")
+        let child = Command::new("C:/Windows/System32/calc.exe")
             .spawn()
-            .expect("failed to spawn notepad");
+            .expect("failed to spawn calc");
         let pid = child.id();
-        println!("[killer integration] spawned notepad PID: {pid}");
+        println!("[killer integration] spawned calc PID: {pid}");
 
         std::thread::sleep(Duration::from_secs(1));
 
@@ -310,14 +331,14 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn manual_should_force_kill_notepad() {
+    fn manual_should_force_kill_calc() {
         use std::process::Command;
 
-        let child = Command::new("C:/Windows/System32/notepad.exe")
+        let child = Command::new("C:/Windows/System32/calc.exe")
             .spawn()
-            .expect("failed to spawn notepad");
+            .expect("failed to spawn calc");
         let pid = child.id();
-        println!("[killer integration] spawned notepad PID: {pid}");
+        println!("[killer integration] spawned calc PID: {pid}");
 
         std::thread::sleep(Duration::from_secs(1));
         force_kill(pid);

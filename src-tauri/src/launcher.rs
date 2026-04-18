@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::time::Duration;
 
 use crate::models::ManagedApp;
 
@@ -193,6 +194,55 @@ fn spawn_minimized(cmd: Vec<String>, cwd: &str) -> Result<u32, LaunchError> {
     Ok(pid)
 }
 
+// ── Stub launcher / child process resolution ─────────────────────────────────
+
+/// Pure resolution logic — takes closures so it can be unit tested without sysinfo.
+///
+/// After spawning a stub launcher (e.g. Squirrel, UWP shims), the stub may exit
+/// immediately and hand off to a child with a different PID. This function:
+/// 1. Returns `stub_pid` if it is still alive (normal app, no handoff).
+/// 2. Searches by `track_process_name` if configured.
+/// 3. Falls back to searching by `exe_path` (Squirrel subdir matching).
+/// 4. Returns `stub_pid` as last resort (controller will handle the dead PID).
+pub fn resolve_real_pid_impl(
+    stub_pid: u32,
+    track_name: Option<&str>,
+    exe_path: &str,
+    is_alive: impl Fn(u32) -> bool,
+    find_by_name: impl Fn(&str) -> Vec<u32>,
+    find_by_exe_path: impl Fn(&str) -> Vec<u32>,
+) -> u32 {
+    if is_alive(stub_pid) {
+        return stub_pid;
+    }
+
+    if let Some(name) = track_name {
+        if let Some(&pid) = find_by_name(name).first() {
+            return pid;
+        }
+    }
+
+    if let Some(&pid) = find_by_exe_path(exe_path).first() {
+        return pid;
+    }
+
+    stub_pid
+}
+
+/// Resolves the real PID after spawning — waits briefly then delegates to
+/// `resolve_real_pid_impl` with real sysinfo lookups.
+pub fn resolve_real_pid(stub_pid: u32, app: &ManagedApp) -> u32 {
+    std::thread::sleep(Duration::from_millis(500));
+    resolve_real_pid_impl(
+        stub_pid,
+        app.track_process_name.as_deref(),
+        &app.exe_path,
+        crate::process_killer::is_pid_alive,
+        |name| crate::process_killer::find_pids_by_name(name),
+        |path| crate::process_killer::find_pids_by_exe_path(path),
+    )
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -261,6 +311,73 @@ mod tests {
         assert_eq!(result, Err(LaunchError::ExeNotFound("C:/nonexistent/ghost.exe".into())));
     }
 
+    // ── resolve_real_pid_impl ────────────────────────────────────────────────
+
+    #[test]
+    fn should_return_stub_pid_when_process_is_still_alive() {
+        let pid = resolve_real_pid_impl(
+            1234,
+            None,
+            "C:/app/app.exe",
+            |_| true,   // stub is alive
+            |_| vec![],
+            |_| vec![],
+        );
+        assert_eq!(pid, 1234);
+    }
+
+    #[test]
+    fn should_find_by_track_name_when_stub_dies() {
+        let pid = resolve_real_pid_impl(
+            1234,
+            Some("RealApp.exe"),
+            "C:/app/launcher.exe",
+            |_| false,          // stub died
+            |_| vec![5678],     // found by name
+            |_| vec![],
+        );
+        assert_eq!(pid, 5678);
+    }
+
+    #[test]
+    fn should_prefer_track_name_over_exe_path_search() {
+        let pid = resolve_real_pid_impl(
+            1234,
+            Some("RealApp.exe"),
+            "C:/app/launcher.exe",
+            |_| false,
+            |_| vec![5678],  // track name result
+            |_| vec![9999],  // exe path result — should be ignored
+        );
+        assert_eq!(pid, 5678);
+    }
+
+    #[test]
+    fn should_find_by_exe_path_when_stub_dies_and_no_track_name() {
+        let pid = resolve_real_pid_impl(
+            1234,
+            None,
+            "C:/Kapps/Kapps.exe",
+            |_| false,
+            |_| vec![],
+            |_| vec![5678],  // found via Squirrel subdir matching
+        );
+        assert_eq!(pid, 5678);
+    }
+
+    #[test]
+    fn should_return_stub_pid_as_fallback_when_nothing_found() {
+        let pid = resolve_real_pid_impl(
+            1234,
+            Some("Ghost.exe"),
+            "C:/app/launcher.exe",
+            |_| false,
+            |_| vec![],  // not found by name
+            |_| vec![],  // not found by path
+        );
+        assert_eq!(pid, 1234);
+    }
+
     // ── Manual integration tests (require real executables) ──────────────────
     //
     // Run with:
@@ -269,18 +386,50 @@ mod tests {
     #[test]
     #[ignore]
     fn manual_should_launch_notepad_and_return_pid() {
-        let mut app = ManagedApp::new("p1", "Notepad", "C:/Windows/System32/notepad.exe");
+        let mut app = ManagedApp::new("p1", "Notepad", "C:/Windows/notepad.exe");
         app.start_minimized = true;
 
         let result = launch(&app);
         assert!(result.is_ok(), "launch failed: {:?}", result);
 
-        let pid = result.unwrap();
-        assert!(pid > 0);
-        println!("[launcher integration] notepad PID: {pid}");
+        let stub_pid = result.unwrap();
+        assert!(stub_pid > 0);
+        println!("[launcher integration] PID: {stub_pid}");
 
-        // Give it a moment then kill it
-        std::thread::sleep(std::time::Duration::from_secs(2));
-        crate::process_killer::force_kill(pid);
+        let real_pid = resolve_real_pid(stub_pid, &app);
+        println!("[launcher integration] resolved PID: {real_pid}");
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        crate::process_killer::force_kill(real_pid);
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        assert!(!crate::process_killer::is_pid_alive(real_pid), "process should be dead");
+        println!("[launcher integration] ✓ process killed");
+    }
+
+    #[test]
+    #[ignore]
+    fn manual_should_resolve_real_pid_for_stub_launcher() {
+        // calc.exe may be a UWP stub (spawns Calculator.exe and exits) or the real
+        // process directly, depending on Windows build. Either way the resolved PID
+        // must be alive after launch.
+        let mut app = ManagedApp::new("p1", "Calculator", "C:/Windows/System32/calc.exe");
+        app.track_process_name = Some("Calculator.exe".into());
+
+        let result = launch(&app);
+        assert!(result.is_ok(), "launch failed: {:?}", result);
+
+        let stub_pid = result.unwrap();
+        println!("[launcher integration] calc PID: {stub_pid}");
+
+        let real_pid = resolve_real_pid(stub_pid, &app);
+        println!("[launcher integration] resolved PID: {real_pid}");
+
+        assert!(crate::process_killer::is_pid_alive(real_pid), "resolved process must be alive");
+        println!("[launcher integration] ✓ process alive");
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        crate::process_killer::graceful_kill(real_pid, 3.0);
+        println!("[launcher integration] ✓ killed");
     }
 }
