@@ -8,6 +8,10 @@ use monitor::{Monitor, MonitorEvent};
 use std::sync::Mutex;
 use tauri::Emitter;
 
+pub const EVENT_IRACING_STATUS: &str = "iracing-status";
+pub const STATUS_ONLINE: &str = "online";
+pub const STATUS_OFFLINE: &str = "offline";
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let config = config::load_config();
@@ -30,10 +34,10 @@ pub fn run() {
 
             Monitor::start(trigger, poll_interval, move |event| {
                 let status = match event {
-                    MonitorEvent::Started => "online",
-                    MonitorEvent::Stopped => "offline",
+                    MonitorEvent::Started => STATUS_ONLINE,
+                    MonitorEvent::Stopped => STATUS_OFFLINE,
                 };
-                let _ = handle.emit("iracing-status", status);
+                let _ = handle.emit(EVENT_IRACING_STATUS, status);
             });
 
             Ok(())

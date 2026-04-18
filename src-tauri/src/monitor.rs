@@ -8,10 +8,13 @@ use crate::models::TriggerMode;
 
 // ── Process names ────────────────────────────────────────────────────────────
 
+pub const PROCESS_IRACING_UI: &str = "iRacingUI.exe";
+pub const PROCESS_IRACING_SIM: &str = "iRacingSim64DX11.exe";
+
 pub fn process_name_for(trigger: &TriggerMode) -> &'static str {
     match trigger {
-        TriggerMode::Ui   => "iRacingUI.exe",
-        TriggerMode::Race => "iRacingSim64DX11.exe",
+        TriggerMode::Ui   => PROCESS_IRACING_UI,
+        TriggerMode::Race => PROCESS_IRACING_SIM,
     }
 }
 
