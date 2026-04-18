@@ -310,38 +310,41 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn manual_should_gracefully_kill_calc() {
+    fn manual_should_gracefully_kill_winver() {
         use std::process::Command;
 
-        let child = Command::new("C:/Windows/System32/calc.exe")
+        // winver.exe is a true Win32 app (not MSIX) — reliable for kill tests
+        let child = Command::new("C:/Windows/System32/winver.exe")
             .spawn()
-            .expect("failed to spawn calc");
+            .expect("failed to spawn winver");
         let pid = child.id();
-        println!("[killer integration] spawned calc PID: {pid}");
+        println!("[killer integration] spawned winver PID: {pid}");
 
         std::thread::sleep(Duration::from_secs(1));
 
         graceful_kill(pid, 3.0);
         std::thread::sleep(Duration::from_millis(500));
 
-        // Verify process is gone
-        let alive = wait_for_exit(pid, Duration::from_millis(100));
-        println!("[killer integration] process exited: {}", !alive);
+        assert!(!is_pid_alive(pid), "winver should be dead after graceful_kill");
+        println!("[killer integration] ✓ process killed");
     }
 
     #[test]
     #[ignore]
-    fn manual_should_force_kill_calc() {
+    fn manual_should_force_kill_winver() {
         use std::process::Command;
 
-        let child = Command::new("C:/Windows/System32/calc.exe")
+        let child = Command::new("C:/Windows/System32/winver.exe")
             .spawn()
-            .expect("failed to spawn calc");
+            .expect("failed to spawn winver");
         let pid = child.id();
-        println!("[killer integration] spawned calc PID: {pid}");
+        println!("[killer integration] spawned winver PID: {pid}");
 
         std::thread::sleep(Duration::from_secs(1));
         force_kill(pid);
-        println!("[killer integration] force_kill sent");
+        std::thread::sleep(Duration::from_millis(200));
+
+        assert!(!is_pid_alive(pid), "winver should be dead after force_kill");
+        println!("[killer integration] ✓ process killed");
     }
 }

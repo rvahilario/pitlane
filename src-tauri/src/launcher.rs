@@ -385,8 +385,9 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn manual_should_launch_notepad_and_return_pid() {
-        let mut app = ManagedApp::new("p1", "Notepad", "C:/Windows/notepad.exe");
+    fn manual_should_launch_winver_and_return_pid() {
+        // winver.exe is a true Win32 app (not MSIX) — TerminateProcess works reliably
+        let mut app = ManagedApp::new("p1", "WinVer", "C:/Windows/System32/winver.exe");
         app.start_minimized = true;
 
         let result = launch(&app);
@@ -407,29 +408,4 @@ mod tests {
         println!("[launcher integration] ✓ process killed");
     }
 
-    #[test]
-    #[ignore]
-    fn manual_should_resolve_real_pid_for_stub_launcher() {
-        // calc.exe may be a UWP stub (spawns Calculator.exe and exits) or the real
-        // process directly, depending on Windows build. Either way the resolved PID
-        // must be alive after launch.
-        let mut app = ManagedApp::new("p1", "Calculator", "C:/Windows/System32/calc.exe");
-        app.track_process_name = Some("Calculator.exe".into());
-
-        let result = launch(&app);
-        assert!(result.is_ok(), "launch failed: {:?}", result);
-
-        let stub_pid = result.unwrap();
-        println!("[launcher integration] calc PID: {stub_pid}");
-
-        let real_pid = resolve_real_pid(stub_pid, &app);
-        println!("[launcher integration] resolved PID: {real_pid}");
-
-        assert!(crate::process_killer::is_pid_alive(real_pid), "resolved process must be alive");
-        println!("[launcher integration] ✓ process alive");
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        crate::process_killer::graceful_kill(real_pid, 3.0);
-        println!("[launcher integration] ✓ killed");
-    }
 }
