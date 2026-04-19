@@ -14,6 +14,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager, WindowEvent,
 };
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 
 pub const EVENT_IRACING_STATUS: &str = "iracing-status";
 
@@ -32,9 +33,11 @@ pub fn run() {
     let config = config::load_config();
     let trigger = config.settings.default_trigger.clone();
     let poll_interval = config.settings.poll_interval_secs;
+    let autostart = config.settings.autostart;
     let config_arc = Arc::new(Mutex::new(config));
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             // Second instance tried to open — bring existing window to front
@@ -71,6 +74,14 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+
+            // ── Autostart sync ───────────────────────────────────────────────
+            // Sync registry to match config (handles installs/reinstalls)
+            if autostart {
+                let _ = app.autolaunch().enable();
+            } else {
+                let _ = app.autolaunch().disable();
+            }
 
             // ── Controller ───────────────────────────────────────────────────
             let handle = app.handle().clone();
@@ -110,6 +121,7 @@ pub fn run() {
             commands::force_launch_app,
             commands::force_kill_app,
             commands::set_tray_labels,
+            commands::get_autostart_enabled,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

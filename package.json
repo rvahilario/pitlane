@@ -10,7 +10,9 @@
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "rust:build": "cargo build --manifest-path src-tauri/Cargo.toml",
+    "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",

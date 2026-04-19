@@ -60,8 +60,8 @@ describe("SettingsScreen", () => {
     render(<SettingsScreen />);
     await screen.findByRole("spinbutton");
 
-    const toggles = screen.getAllByRole("button");
-    const autostartToggle = toggles.find((b) => b.closest("div")?.textContent?.includes("Start with Windows"));
+    const autostartToggle = screen.getAllByRole("switch")
+      .find((b) => b.closest("div")?.textContent?.includes("Start with Windows"));
     expect(autostartToggle).toBeDefined();
 
     await userEvent.click(autostartToggle!);
