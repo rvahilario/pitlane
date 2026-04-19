@@ -85,11 +85,32 @@ pub fn kill_by_exe_path(exe_path: &str, grace_secs: f64) {
     }
 }
 
+/// Kills all processes matching `exe_path`, plus their entire child process trees.
+pub fn kill_tree_by_exe_path(exe_path: &str, grace_secs: f64) {
+    for pid in find_pids_by_exe_path(exe_path) {
+        kill_tree(pid, grace_secs);
+    }
+}
+
 /// Kills all processes matching `name` (case-insensitive).
 pub fn kill_by_name(name: &str, grace_secs: f64) {
     for pid in find_pids_by_name(name) {
         graceful_kill(pid, grace_secs);
     }
+}
+
+/// Kills a process and all its descendants using `taskkill /F /T`.
+/// Falls back to a plain force kill if taskkill fails.
+pub fn kill_tree(pid: u32, grace_secs: f64) {
+    if needs_graceful_close(grace_secs) {
+        send_wm_close(pid);
+        if wait_for_exit(pid, std::time::Duration::from_secs_f64(grace_secs)) {
+            return;
+        }
+    }
+    let _ = std::process::Command::new("taskkill")
+        .args(["/F", "/T", "/PID", &pid.to_string()])
+        .output();
 }
 
 // ── Pure helpers (fully testable) ────────────────────────────────────────────
@@ -122,12 +143,13 @@ pub fn needs_graceful_close(grace_secs: f64) -> bool {
 
 // ── Win32 helpers ─────────────────────────────────────────────────────────────
 
-/// Enumerates all top-level windows and sends WM_CLOSE to those owned by `pid`.
+/// Enumerates all top-level windows and posts WM_CLOSE to those owned by `pid`.
+/// Uses PostMessageW (async) so each app processes the close in its own event loop,
+/// avoiding race conditions when multiple windows receive WM_CLOSE simultaneously.
 pub fn send_wm_close(pid: u32) {
     use windows::Win32::Foundation::{HWND, LPARAM, BOOL};
     use windows::Win32::UI::WindowsAndMessaging::{
-        EnumWindows, GetWindowThreadProcessId, SendMessageTimeoutW,
-        SMTO_ABORTIFHUNG, WM_CLOSE,
+        EnumWindows, GetWindowThreadProcessId, PostMessageW, WM_CLOSE,
     };
 
     unsafe extern "system" fn enum_cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
@@ -136,15 +158,7 @@ pub fn send_wm_close(pid: u32) {
         unsafe { GetWindowThreadProcessId(hwnd, Some(&mut window_pid)) };
         if window_pid == target_pid {
             unsafe {
-                let _ = SendMessageTimeoutW(
-                    hwnd,
-                    WM_CLOSE,
-                    None,
-                    None,
-                    SMTO_ABORTIFHUNG,
-                    2000,
-                    None,
-                );
+                let _ = PostMessageW(hwnd, WM_CLOSE, None, None);
             }
         }
         BOOL(1)

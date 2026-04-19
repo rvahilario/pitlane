@@ -117,6 +117,7 @@ pub fn run() {
             commands::get_active_profile_id,
             commands::save_settings,
             commands::add_app,
+            commands::get_iracing_status,
             commands::get_app_statuses,
             commands::force_launch_app,
             commands::force_kill_app,

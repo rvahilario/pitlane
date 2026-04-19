@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -72,12 +73,17 @@ impl Monitor {
         let stop_flag = Arc::new(Mutex::new(false));
         let stop_clone = Arc::clone(&stop_flag);
 
+        let log_path = dirs::data_local_dir()
+            .unwrap_or_else(|| std::env::temp_dir())
+            .join("Pitlane")
+            .join("debug.log");
         let handle = thread::Builder::new()
             .name("iracing-monitor".into())
             .spawn(move || {
                 let mut logic = MonitorLogic::new(trigger);
                 let mut sys = System::new();
                 let interval = Duration::from_secs_f64(poll_interval_secs.max(0.25));
+                let mut tick_count = 0u32;
 
                 loop {
                     if *stop_clone.lock().unwrap() {
@@ -86,11 +92,29 @@ impl Monitor {
 
                     sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
                     let target = logic.trigger_process_name();
+                    // target may be "iRacingUI.exe"; sysinfo on Windows may omit the extension
+                    let target_bare = target.trim_end_matches(".exe");
                     let running = sys.processes().values().any(|p| {
-                        p.name().to_string_lossy().eq_ignore_ascii_case(target)
+                        let name = p.name().to_string_lossy();
+                        name.eq_ignore_ascii_case(target) || name.eq_ignore_ascii_case(target_bare)
                     });
 
+                    // On first tick and every 10 ticks, log a sample of process names to file
+                    if tick_count % 10 == 0 {
+                        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&log_path) {
+                            let sample: Vec<String> = sys.processes().values()
+                                .map(|p| p.name().to_string_lossy().into_owned())
+                                .filter(|n| n.to_lowercase().contains("iracing") || n.to_lowercase().contains("pitlane"))
+                                .collect();
+                            let _ = writeln!(f, "[monitor tick={tick_count}] target={target} running={running} iracing_procs={sample:?}");
+                        }
+                    }
+                    tick_count += 1;
+
                     if let Some(event) = logic.tick(running) {
+                        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&log_path) {
+                            let _ = writeln!(f, "[monitor] EVENT={event:?} target={target}");
+                        }
                         on_event(event);
                     }
 
