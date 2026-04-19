@@ -68,4 +68,5 @@ export const api = {
   forceKillApp: (appId: string) => invoke<void>("force_kill_app", { appId }),
   setTrayLabels: (showLabel: string, quitLabel: string) =>
     invoke<void>("set_tray_labels", { showLabel, quitLabel }),
+  getAutostartEnabled: () => invoke<boolean>("get_autostart_enabled"),
 };

@@ -1,7 +1,8 @@
 use std::sync::{Arc, Mutex};
 use serde::Deserialize;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
 use tauri::menu::{Menu, MenuItem};
+use tauri_plugin_autostart::ManagerExt;
 
 use crate::config::save_config;
 use crate::controller::{AppStatus, Controller};
@@ -23,6 +24,14 @@ pub struct NewApp {
 
 pub struct ConfigState(pub Arc<Mutex<AppConfig>>);
 pub struct ControllerState(pub Arc<Controller>);
+
+pub fn autostart_changed(old: &Settings, new: &Settings) -> Option<bool> {
+    if old.autostart != new.autostart {
+        Some(new.autostart)
+    } else {
+        None
+    }
+}
 
 pub fn apps_for_active_profile(config: &AppConfig) -> Vec<ManagedApp> {
     config
@@ -54,10 +63,22 @@ pub fn get_active_profile_id(state: State<ConfigState>) -> String {
 }
 
 #[tauri::command]
-pub fn save_settings(state: State<ConfigState>, settings: Settings) -> Result<(), String> {
+pub fn save_settings(app: AppHandle, state: State<ConfigState>, settings: Settings) -> Result<(), String> {
     let mut config = state.0.lock().unwrap();
+    if let Some(enabled) = autostart_changed(&config.settings, &settings) {
+        if enabled {
+            app.autolaunch().enable().map_err(|e| e.to_string())?;
+        } else {
+            app.autolaunch().disable().map_err(|e| e.to_string())?;
+        }
+    }
     config.settings = settings;
     save_config(&config)
+}
+
+#[tauri::command]
+pub fn get_autostart_enabled(app: AppHandle) -> Result<bool, String> {
+    app.autolaunch().is_enabled().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -109,6 +130,48 @@ pub fn add_app(state: State<ConfigState>, app: NewApp) -> Result<ManagedApp, Str
 mod tests {
     use super::*;
     use crate::models::ManagedApp;
+
+    // ── autostart_changed ─────────────────────────────────────────────────────
+
+    #[test]
+    fn autostart_changed_returns_none_when_unchanged() {
+        let s = Settings::default(); // autostart: false
+        assert_eq!(autostart_changed(&s, &s.clone()), None);
+    }
+
+    #[test]
+    fn autostart_changed_returns_none_when_both_true() {
+        let s = Settings { autostart: true, ..Settings::default() };
+        assert_eq!(autostart_changed(&s, &s.clone()), None);
+    }
+
+    #[test]
+    fn autostart_changed_returns_some_true_when_enabled() {
+        let old = Settings { autostart: false, ..Settings::default() };
+        let new = Settings { autostart: true, ..Settings::default() };
+        assert_eq!(autostart_changed(&old, &new), Some(true));
+    }
+
+    #[test]
+    fn autostart_changed_returns_some_false_when_disabled() {
+        let old = Settings { autostart: true, ..Settings::default() };
+        let new = Settings { autostart: false, ..Settings::default() };
+        assert_eq!(autostart_changed(&old, &new), Some(false));
+    }
+
+    // ── manual integration test (needs Windows registry) ─────────────────────
+
+    /// cargo test -p pitlane -- autostart_registry --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn autostart_registry_key_is_created_and_removed() {
+        // This test requires a running Tauri app with the autostart plugin — not
+        // callable in unit-test context. Verify manually via regedit:
+        //   HKCU\Software\Microsoft\Windows\CurrentVersion\Run\pitlane
+        // Enable: save_settings with autostart=true → key should appear.
+        // Disable: save_settings with autostart=false → key should disappear.
+        println!("Run the app, toggle autostart in Settings, and verify the registry key.");
+    }
 
     fn config_with_two_profiles() -> AppConfig {
         let mut config = AppConfig::default();
