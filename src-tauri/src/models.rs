@@ -34,6 +34,14 @@ pub struct ManagedApp {
     /// so the controller can find and kill it on iRacing exit.
     #[serde(default)]
     pub track_process_name: Option<String>,
+    /// Skip WM_CLOSE and go straight to TerminateProcess on stop.
+    /// Use for apps with broken shutdown handlers (e.g. OBS 32.x crashes on WM_CLOSE).
+    #[serde(default)]
+    pub force_kill_on_stop: bool,
+    /// Also kill all child processes spawned by this app on stop.
+    /// Use for apps that spawn helper processes (e.g. G Hub spawns multiple lghub.exe).
+    #[serde(default)]
+    pub kill_process_tree: bool,
 }
 
 impl ManagedApp {
@@ -51,6 +59,8 @@ impl ManagedApp {
             max_restart_attempts: 3,
             startup_delay_secs: 0.0,
             track_process_name: None,
+            force_kill_on_stop: false,
+            kill_process_tree: false,
         }
     }
 }
