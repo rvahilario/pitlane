@@ -94,6 +94,13 @@ function statusDot(status: AppStatus | undefined): string {
   return "bg-zinc-600";
 }
 
+function statusLabel(status: AppStatus | undefined): string {
+  if (!status || status.state.type === "idle") return "Idle";
+  if (status.state.type === "running") return `Running (PID ${status.state.pid})`;
+  if (status.state.type === "crashed") return "Crashed";
+  return "Unknown";
+}
+
 export function AppsScreen() {
   const { t } = useTranslation();
   const [apps, setApps] = useState<ManagedApp[]>([]);
@@ -157,7 +164,10 @@ export function AppsScreen() {
                   !app.enabled && "opacity-40",
                 )}
               >
-                <div className={cn("w-2 h-2 rounded-full shrink-0 transition-colors", statusDot(status))} />
+                <div
+                  title={statusLabel(status)}
+                  className={cn("w-2 h-2 rounded-full shrink-0 transition-colors cursor-default", statusDot(status))}
+                />
 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-text truncate">{app.name}</p>

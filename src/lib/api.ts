@@ -63,6 +63,7 @@ export const api = {
   getActiveProfileId: () => invoke<string>("get_active_profile_id"),
   saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
   addApp: (app: NewApp) => invoke<ManagedApp>("add_app", { app }),
+  getIRacingStatus: () => invoke<boolean>("get_iracing_status"),
   getAppStatuses: () => invoke<AppStatus[]>("get_app_statuses"),
   forceLaunchApp: (appId: string) => invoke<void>("force_launch_app", { appId }),
   forceKillApp: (appId: string) => invoke<void>("force_kill_app", { appId }),
