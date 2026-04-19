@@ -28,3 +28,9 @@ dist-ssr
 # Project-specific
 prompt-continuation.txt
 *.local.md
+
+# Playwright
+playwright-report/
+test-results/
+.e2e-pid
+*.tsbuildinfo
