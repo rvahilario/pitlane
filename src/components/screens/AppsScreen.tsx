@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Plus, Play, LayoutList, X } from "lucide-react";
+import { Plus, Play, Square, LayoutList, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
-import { api, type ManagedApp, type Profile } from "@/lib/api";
+import { api, type AppStatus, type ManagedApp, type Profile } from "@/lib/api";
+import { useAppStatuses } from "@/hooks/useAppStatuses";
 
 function AddAppModal({ onClose, onAdded }: { onClose: () => void; onAdded: (app: ManagedApp) => void }) {
   const { t } = useTranslation();
@@ -86,11 +87,19 @@ function AddAppModal({ onClose, onAdded }: { onClose: () => void; onAdded: (app:
   );
 }
 
+function statusDot(status: AppStatus | undefined): string {
+  if (!status) return "bg-zinc-600";
+  if (status.state.type === "running") return "bg-green-500";
+  if (status.state.type === "crashed") return "bg-accent";
+  return "bg-zinc-600";
+}
+
 export function AppsScreen() {
   const { t } = useTranslation();
   const [apps, setApps] = useState<ManagedApp[]>([]);
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const statuses = useAppStatuses();
 
   function loadApps() {
     return Promise.all([api.getApps(), api.getProfiles(), api.getActiveProfileId()]).then(
@@ -136,30 +145,45 @@ export function AppsScreen() {
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
-          {apps.map((app) => (
-            <li
-              key={app.id}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg border bg-surface transition-all",
-                "border-border-strong",
-                !app.enabled && "opacity-40",
-              )}
-            >
-              <div className="w-2 h-2 rounded-full shrink-0 bg-elevated" />
-
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-text truncate">{app.name}</p>
-                <p className="text-xs text-text-muted truncate font-mono">{app.exe_path}</p>
-              </div>
-
-              <button
-                title={t("apps.start")}
-                className="p-1.5 rounded transition-colors text-text-muted hover:text-text-secondary hover:bg-elevated"
+          {apps.map((app) => {
+            const status = statuses.find((s) => s.app_id === app.id);
+            const running = status?.state.type === "running";
+            return (
+              <li
+                key={app.id}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg border bg-surface transition-all",
+                  "border-border-strong",
+                  !app.enabled && "opacity-40",
+                )}
               >
-                <Play className="w-3.5 h-3.5" />
-              </button>
-            </li>
-          ))}
+                <div className={cn("w-2 h-2 rounded-full shrink-0 transition-colors", statusDot(status))} />
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-text truncate">{app.name}</p>
+                  <p className="text-xs text-text-muted truncate font-mono">{app.exe_path}</p>
+                </div>
+
+                {running ? (
+                  <button
+                    title={t("apps.stop")}
+                    onClick={() => api.forceKillApp(app.id)}
+                    className="p-1.5 rounded transition-colors text-text-muted hover:text-accent hover:bg-elevated"
+                  >
+                    <Square className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    title={t("apps.start")}
+                    onClick={() => api.forceLaunchApp(app.id)}
+                    className="p-1.5 rounded transition-colors text-text-muted hover:text-text-secondary hover:bg-elevated"
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 
