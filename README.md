@@ -31,7 +31,7 @@ Pitlane monitora o iRacing e gerencia automaticamente o ciclo de vida de apps co
 | 6 — Controller (orchestrator) + integration tests | ✅ |
 | 7 — Tray + Single Instance | ✅ |
 | 8 — Autostart (Windows registry) | ✅ |
-| 9 — UI wired to controller (app statuses) | ⬜ |
+| 9 — UI wired to controller (app statuses) | ✅ |
 | 10 — Build + installer | ⬜ |
 
 ## Desenvolvimento
