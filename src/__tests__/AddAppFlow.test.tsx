@@ -26,6 +26,7 @@ const mockApp: ManagedApp = {
   restart_on_crash: true,
   max_restart_attempts: 3,
   startup_delay_secs: 0,
+  track_process_name: null,
 };
 
 const newApp: ManagedApp = {
@@ -40,6 +41,7 @@ const newApp: ManagedApp = {
   restart_on_crash: true,
   max_restart_attempts: 3,
   startup_delay_secs: 0,
+  track_process_name: null,
 };
 
 beforeEach(() => {
@@ -47,6 +49,7 @@ beforeEach(() => {
   vi.mocked(api.getProfiles).mockResolvedValue([mockProfile]);
   vi.mocked(api.getActiveProfileId).mockResolvedValue("profile-1");
   vi.mocked(api.addApp).mockResolvedValue(newApp);
+  vi.mocked(api.getAppStatuses).mockResolvedValue([]);
 });
 
 describe("Add app flow", () => {
