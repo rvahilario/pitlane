@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -72,6 +73,17 @@ impl ControllerLogic {
             })
             .collect()
     }
+
+    /// IDs of apps that were launched but are now in Crashed state
+    /// (e.g. Squirrel stub exited, real process running under a different PID).
+    pub fn crashed_app_ids(&self) -> Vec<String> {
+        self.states
+            .iter()
+            .filter_map(|(id, state)| {
+                if *state == AppState::Crashed { Some(id.clone()) } else { None }
+            })
+            .collect()
+    }
 }
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
@@ -87,6 +99,8 @@ pub struct Controller {
     logic: Arc<Mutex<ControllerLogic>>,
     watchdog: Arc<Watchdog>,
     config: Arc<Mutex<AppConfig>>,
+    iracing_online: Arc<std::sync::atomic::AtomicBool>,
+    _monitor: std::sync::OnceLock<Monitor>,
 }
 
 impl Controller {
@@ -99,11 +113,14 @@ impl Controller {
         poll_interval: f64,
         on_status: impl Fn(bool) + Send + 'static,
     ) -> Arc<Self> {
+        let iracing_online = Arc::new(AtomicBool::new(false));
         let (watchdog, watchdog_rx) = Watchdog::new();
         let ctrl = Arc::new(Self {
             logic: Arc::new(Mutex::new(ControllerLogic::new())),
             watchdog: Arc::new(watchdog),
             config,
+            iracing_online: Arc::clone(&iracing_online),
+            _monitor: std::sync::OnceLock::new(),
         });
 
         // Thread: consume watchdog events and update logic state
@@ -123,22 +140,30 @@ impl Controller {
 
         // Monitor callback — spawns threads so the monitor is never blocked
         let ctrl_mon = Arc::clone(&ctrl);
-        Monitor::start(trigger, poll_interval, move |event| {
+        let monitor = Monitor::start(trigger, poll_interval, move |event| {
             match event {
                 MonitorEvent::Started => {
+                    iracing_online.store(true, Ordering::Relaxed);
                     on_status(true);
                     let c = Arc::clone(&ctrl_mon);
                     thread::spawn(move || c.launch_active_apps());
                 }
                 MonitorEvent::Stopped => {
+                    iracing_online.store(false, Ordering::Relaxed);
                     on_status(false);
                     let c = Arc::clone(&ctrl_mon);
                     thread::spawn(move || c.kill_all_running());
                 }
             }
         });
+        // Keep the monitor alive for the lifetime of the controller
+        let _ = ctrl._monitor.set(monitor);
 
         ctrl
+    }
+
+    pub fn is_iracing_online(&self) -> bool {
+        self.iracing_online.load(Ordering::Relaxed)
     }
 
     // ── iRacing lifecycle ─────────────────────────────────────────────────────
@@ -147,12 +172,20 @@ impl Controller {
         let apps: Vec<ManagedApp> = {
             let config = self.config.lock().unwrap();
             let profile_id = &config.active_profile_id.clone();
-            apps_to_launch(&config.apps)
+            let all = apps_to_launch(&config.apps);
+            println!("[controller] iRacing started — active_profile={profile_id}, enabled_apps={}", all.len());
+            let filtered: Vec<ManagedApp> = all
                 .into_iter()
                 .filter(|a| &a.profile_id == profile_id)
                 .cloned()
-                .collect()
+                .collect();
+            println!("[controller] apps to launch for profile: {}", filtered.iter().map(|a| a.name.as_str()).collect::<Vec<_>>().join(", "));
+            filtered
         };
+
+        if apps.is_empty() {
+            println!("[controller] no apps to launch (list empty or all already running)");
+        }
 
         for app in apps {
             // Skip if already running (e.g. manual launch before iRacing started)
@@ -160,33 +193,71 @@ impl Controller {
                 self.logic.lock().unwrap().app_state(&app.id),
                 AppState::Running { .. }
             ) {
+                println!("[controller] skipping '{}' — already running", app.name);
                 continue;
             }
 
+            println!("[controller] spawning launch thread for '{}'", app.name);
             let logic = Arc::clone(&self.logic);
             let watchdog = Arc::clone(&self.watchdog);
 
             thread::spawn(move || {
                 if app.startup_delay_secs > 0.0 {
+                    println!("[controller] '{}' delay={:.1}s", app.name, app.startup_delay_secs);
                     thread::sleep(Duration::from_secs_f64(app.startup_delay_secs));
                 }
+                println!("[controller] launching '{}' at '{}'", app.name, app.exe_path);
                 match launcher::launch(&app) {
                     Ok(stub_pid) => {
+                        println!("[controller] '{}' stub_pid={stub_pid}", app.name);
                         let pid = launcher::resolve_real_pid(stub_pid, &app);
+                        println!("[controller] '{}' resolved pid={pid}", app.name);
                         watchdog.watch(app.clone(), pid);
                         logic.lock().unwrap().on_app_launched(&app.id, pid);
                     }
-                    Err(e) => eprintln!("[controller] Failed to launch '{}': {e}", app.name),
+                    Err(e) => eprintln!("[controller] FAILED to launch '{}': {e}", app.name),
                 }
             });
         }
     }
 
     pub(crate) fn kill_all_running(&self) {
-        let running = self.logic.lock().unwrap().running_apps();
-        for (app_id, pid) in running {
+        // Log all app states at kill time to diagnose tracking issues
+        {
+            let logic = self.logic.lock().unwrap();
+            let config = self.config.lock().unwrap();
+            for app in &config.apps {
+                if app.profile_id == config.active_profile_id {
+                    println!("[controller] kill_all_running state: '{}' = {:?}", app.name, logic.app_state(&app.id));
+                }
+            }
+        }
+
+        let ids_to_kill: Vec<String> = {
+            let logic = self.logic.lock().unwrap();
+            let mut ids: Vec<String> = logic.running_apps().into_iter().map(|(id, _)| id).collect();
+            // Also kill Crashed apps — the stub may have exited (e.g. Squirrel) while the
+            // real process is still running under a different PID.
+            ids.extend(logic.crashed_app_ids());
+            ids
+        };
+
+        for app_id in ids_to_kill {
             self.watchdog.unwatch(&app_id);
-            process_killer::graceful_kill(pid, DEFAULT_GRACE_SECS);
+
+            // Re-resolve at kill time: apps may have relaunched under a new PID since launch
+            if let Some(app) = self.config.lock().unwrap().apps.iter().find(|a| a.id == app_id).cloned() {
+                let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
+                println!("[controller] killing '{}' grace={grace}s tree={}", app.name, app.kill_process_tree);
+                if let Some(ref name) = app.track_process_name {
+                    process_killer::kill_by_name(name, grace);
+                } else if app.kill_process_tree {
+                    process_killer::kill_tree_by_exe_path(&app.exe_path, grace);
+                } else {
+                    process_killer::kill_by_exe_path(&app.exe_path, grace);
+                }
+            }
+
             self.logic.lock().unwrap().on_app_stopped(&app_id);
         }
     }
@@ -230,12 +301,19 @@ impl Controller {
 
     /// Manually kills an app and stops watching it.
     pub fn force_kill(&self, app_id: &str) {
-        let pid = match self.logic.lock().unwrap().app_state(app_id) {
-            AppState::Running { pid, .. } => pid,
-            _ => return,
-        };
+        if !matches!(self.logic.lock().unwrap().app_state(app_id), AppState::Running { .. }) {
+            return;
+        }
         self.watchdog.unwatch(app_id);
-        process_killer::graceful_kill(pid, DEFAULT_GRACE_SECS);
+
+        if let Some(app) = self.config.lock().unwrap().apps.iter().find(|a| a.id == app_id).cloned() {
+            if let Some(ref name) = app.track_process_name {
+                process_killer::kill_by_name(name, DEFAULT_GRACE_SECS);
+            } else {
+                process_killer::kill_by_exe_path(&app.exe_path, DEFAULT_GRACE_SECS);
+            }
+        }
+
         self.logic.lock().unwrap().on_app_stopped(app_id);
     }
 }
