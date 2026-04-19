@@ -1,11 +1,11 @@
 mod commands;
-mod config;
-mod controller;
-mod launcher;
-mod models;
-mod monitor;
-mod process_killer;
-mod watchdog;
+pub mod config;
+pub mod controller;
+pub mod launcher;
+pub mod models;
+pub mod monitor;
+pub mod process_killer;
+pub mod watchdog;
 
 use commands::{ConfigState, ControllerState};
 use std::sync::{Arc, Mutex};
@@ -17,17 +17,20 @@ use tauri::{
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 
 pub const EVENT_IRACING_STATUS: &str = "iracing-status";
+pub const STATUS_ONLINE: &str = "online";
+pub const STATUS_OFFLINE: &str = "offline";
+pub const TRAY_ID: &str = "main";
+pub const MENU_ITEM_SHOW: &str = "show";
+pub const MENU_ITEM_QUIT: &str = "quit";
+const WINDOW_MAIN: &str = "main";
 
 fn show_window(app: &tauri::AppHandle) {
-    if let Some(w) = app.get_webview_window("main") {
+    if let Some(w) = app.get_webview_window(WINDOW_MAIN) {
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
     }
 }
-pub const STATUS_ONLINE: &str = "online";
-pub const STATUS_OFFLINE: &str = "offline";
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let config = config::load_config();
@@ -49,18 +52,18 @@ pub fn run() {
         .manage(ConfigState(Arc::clone(&config_arc)))
         .setup(move |app| {
             // ── Tray icon ────────────────────────────────────────────────────
-            let show = MenuItem::with_id(app, "show", "Show Pitlane", true, None::<&str>)?;
-            let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let show = MenuItem::with_id(app, MENU_ITEM_SHOW, "Show Pitlane", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, MENU_ITEM_QUIT, "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show, &quit])?;
 
-            TrayIconBuilder::with_id("main")
+            TrayIconBuilder::with_id(TRAY_ID)
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .menu_on_left_click(false)
                 .tooltip("Pitlane")
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "show" => show_window(app),
-                    "quit" => app.exit(0),
+                    MENU_ITEM_SHOW => show_window(app),
+                    MENU_ITEM_QUIT => app.exit(0),
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
@@ -104,7 +107,7 @@ pub fn run() {
         .on_window_event(|window, event| {
             // Close button → hide to tray instead of quitting
             if let WindowEvent::CloseRequested { api, .. } = event {
-                if window.label() == "main" {
+                if window.label() == WINDOW_MAIN {
                     api.prevent_close();
                     let _ = window.hide();
                 }
