@@ -7,6 +7,7 @@ use tauri_plugin_autostart::ManagerExt;
 use crate::config::save_config;
 use crate::controller::{AppStatus, Controller};
 use crate::models::{AppConfig, ManagedApp, Profile, Settings};
+use crate::{MENU_ITEM_QUIT, MENU_ITEM_SHOW, TRAY_ID};
 
 #[derive(Debug, Deserialize)]
 pub struct NewApp {
@@ -20,6 +21,21 @@ pub struct NewApp {
     pub max_restart_attempts: Option<u32>,
     pub startup_delay_secs: Option<f64>,
     pub track_process_name: Option<String>,
+}
+
+impl NewApp {
+    pub fn into_managed(self, profile_id: &str) -> ManagedApp {
+        let mut managed = ManagedApp::new(profile_id, self.name, self.exe_path);
+        if let Some(v) = self.args                 { managed.args = Some(v); }
+        if let Some(v) = self.working_dir          { managed.working_dir = Some(v); }
+        if let Some(v) = self.enabled              { managed.enabled = v; }
+        if let Some(v) = self.start_minimized      { managed.start_minimized = v; }
+        if let Some(v) = self.restart_on_crash     { managed.restart_on_crash = v; }
+        if let Some(v) = self.max_restart_attempts { managed.max_restart_attempts = v; }
+        if let Some(v) = self.startup_delay_secs   { managed.startup_delay_secs = v; }
+        if let Some(v) = self.track_process_name   { managed.track_process_name = Some(v); }
+        managed
+    }
 }
 
 pub struct ConfigState(pub Arc<Mutex<AppConfig>>);
@@ -83,10 +99,10 @@ pub fn get_autostart_enabled(app: AppHandle) -> Result<bool, String> {
 
 #[tauri::command]
 pub fn set_tray_labels(app: AppHandle, show_label: String, quit_label: String) -> Result<(), String> {
-    let tray = app.tray_by_id("main").ok_or("tray not found")?;
-    let show = MenuItem::with_id(&app, "show", show_label, true, None::<&str>)
+    let tray = app.tray_by_id(TRAY_ID).ok_or("tray not found")?;
+    let show = MenuItem::with_id(&app, MENU_ITEM_SHOW, show_label, true, None::<&str>)
         .map_err(|e| e.to_string())?;
-    let quit = MenuItem::with_id(&app, "quit", quit_label, true, None::<&str>)
+    let quit = MenuItem::with_id(&app, MENU_ITEM_QUIT, quit_label, true, None::<&str>)
         .map_err(|e| e.to_string())?;
     let menu = Menu::with_items(&app, &[&show, &quit])
         .map_err(|e| e.to_string())?;
@@ -117,15 +133,7 @@ pub fn force_kill_app(state: State<ControllerState>, app_id: String) {
 #[tauri::command]
 pub fn add_app(state: State<ConfigState>, app: NewApp) -> Result<ManagedApp, String> {
     let mut config = state.0.lock().unwrap();
-    let mut managed = ManagedApp::new(&config.active_profile_id, app.name, app.exe_path);
-    if let Some(v) = app.args             { managed.args = Some(v); }
-    if let Some(v) = app.working_dir      { managed.working_dir = Some(v); }
-    if let Some(v) = app.enabled          { managed.enabled = v; }
-    if let Some(v) = app.start_minimized  { managed.start_minimized = v; }
-    if let Some(v) = app.restart_on_crash { managed.restart_on_crash = v; }
-    if let Some(v) = app.max_restart_attempts { managed.max_restart_attempts = v; }
-    if let Some(v) = app.startup_delay_secs   { managed.startup_delay_secs = v; }
-    if let Some(v) = app.track_process_name   { managed.track_process_name = Some(v); }
+    let managed = app.into_managed(&config.active_profile_id.clone());
     config.apps.push(managed.clone());
     save_config(&config)?;
     Ok(managed)
@@ -238,15 +246,7 @@ mod tests {
     }
 
     fn add_app_to(config: &mut AppConfig, input: NewApp) -> ManagedApp {
-        let mut managed = ManagedApp::new(&config.active_profile_id, input.name, input.exe_path);
-        if let Some(v) = input.args             { managed.args = Some(v); }
-        if let Some(v) = input.working_dir      { managed.working_dir = Some(v); }
-        if let Some(v) = input.enabled          { managed.enabled = v; }
-        if let Some(v) = input.start_minimized  { managed.start_minimized = v; }
-        if let Some(v) = input.restart_on_crash { managed.restart_on_crash = v; }
-        if let Some(v) = input.max_restart_attempts { managed.max_restart_attempts = v; }
-        if let Some(v) = input.startup_delay_secs   { managed.startup_delay_secs = v; }
-        if let Some(v) = input.track_process_name   { managed.track_process_name = Some(v); }
+        let managed = input.into_managed(&config.active_profile_id.clone());
         config.apps.push(managed.clone());
         managed
     }
