@@ -95,6 +95,11 @@ pub fn set_tray_labels(app: AppHandle, show_label: String, quit_label: String) -
 }
 
 #[tauri::command]
+pub fn get_iracing_status(state: State<ControllerState>) -> bool {
+    state.0.is_iracing_online()
+}
+
+#[tauri::command]
 pub fn get_app_statuses(state: State<ControllerState>) -> Vec<AppStatus> {
     state.0.app_statuses()
 }
