@@ -24,6 +24,7 @@ export function Sidebar({ active, onChange }: SidebarProps) {
       {items.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
+          data-testid={`nav-${id}`}
           onClick={() => onChange(id)}
           className={cn(
             "flex items-center gap-2.5 px-3 py-2 rounded text-sm font-medium transition-colors text-left w-full border",

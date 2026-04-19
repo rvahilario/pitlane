@@ -23,7 +23,7 @@ function App() {
   const managedCount = statuses.filter((s) => s.state.type === "running").length;
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-900">
+    <div className="flex flex-col h-screen bg-canvas">
       <StatusBar
         iRacingRunning={iRacingRunning}
         sessionType={null}
