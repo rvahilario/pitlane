@@ -136,11 +136,13 @@ function ToggleRow({
         <p className="text-xs text-text-disabled">{description}</p>
       </div>
       <button
+        role="switch"
+        aria-checked={enabled}
         onClick={() => onChange(!enabled)}
-        className={`w-10 h-5 rounded-full relative transition-colors ${enabled ? "bg-accent/30 border border-accent/50" : "bg-elevated border border-border-strong"}`}
+        className={`relative w-10 h-5 rounded-full transition-colors overflow-hidden ${enabled ? "bg-accent/60" : "bg-zinc-600"}`}
       >
         <span
-          className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform ${enabled ? "translate-x-5 bg-accent" : "translate-x-0.5 bg-text-muted"}`}
+          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${enabled ? "translate-x-5" : "translate-x-0"}`}
         />
       </button>
     </div>
