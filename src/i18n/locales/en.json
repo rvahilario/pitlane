@@ -42,7 +42,6 @@
       "name": "Name",
       "exe_path": "Executable path",
       "enabled": "Enabled",
-      "start_minimized": "Start minimized",
       "startup_delay": "Startup delay (seconds)",
       "args": "Arguments",
       "working_dir": "Working directory",

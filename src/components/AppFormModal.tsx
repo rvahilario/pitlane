@@ -15,7 +15,6 @@ interface FormState {
   name: string;
   exe_path: string;
   enabled: boolean;
-  start_minimized: boolean;
   startup_delay_secs: number;
   args: string;
   working_dir: string;
@@ -31,7 +30,6 @@ function initForm(initial?: ManagedApp): FormState {
     name:                 initial?.name                 ?? "",
     exe_path:             initial?.exe_path             ?? "",
     enabled:              initial?.enabled              ?? true,
-    start_minimized:      initial?.start_minimized      ?? false,
     startup_delay_secs:   initial?.startup_delay_secs   ?? 0,
     args:                 initial?.args                 ?? "",
     working_dir:          initial?.working_dir          ?? "",
@@ -155,7 +153,6 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
         name:                 form.name,
         exe_path:             form.exe_path,
         enabled:              form.enabled,
-        start_minimized:      form.start_minimized,
         startup_delay_secs:   form.startup_delay_secs,
         args:                 form.args   || undefined,
         working_dir:          form.working_dir || undefined,
@@ -215,12 +212,6 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
 
             {/* ── Startup ── */}
             <SectionDivider title={t("apps.form.section_startup")} />
-
-            <CheckRow
-              label={t("apps.form.start_minimized")}
-              checked={form.start_minimized}
-              onChange={(v) => patch("start_minimized", v)}
-            />
 
             <Field label={t("apps.form.startup_delay")}>
               <NumberInput value={form.startup_delay_secs} onChange={(v) => patch("startup_delay_secs", v)} step={0.5} />
