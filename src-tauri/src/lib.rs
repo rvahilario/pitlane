@@ -17,6 +17,7 @@ use tauri::{
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 
 pub const EVENT_IRACING_STATUS: &str = "iracing-status";
+pub const EVENT_LOG_ENTRY: &str = "log-entry";
 pub const STATUS_ONLINE: &str = "online";
 pub const STATUS_OFFLINE: &str = "offline";
 pub const TRAY_ID: &str = "main";
@@ -88,6 +89,7 @@ pub fn run() {
 
             // ── Controller ───────────────────────────────────────────────────
             let handle = app.handle().clone();
+            let handle_log = app.handle().clone();
             let ctrl = controller::Controller::start(
                 Arc::clone(&config_arc),
                 trigger,
@@ -95,6 +97,9 @@ pub fn run() {
                 move |online| {
                     let status = if online { STATUS_ONLINE } else { STATUS_OFFLINE };
                     let _ = handle.emit(EVENT_IRACING_STATUS, status);
+                },
+                move |entry| {
+                    let _ = handle_log.emit(EVENT_LOG_ENTRY, &entry);
                 },
             );
             app.manage(ControllerState(ctrl));
@@ -126,6 +131,7 @@ pub fn run() {
             commands::get_app_statuses,
             commands::force_launch_app,
             commands::force_kill_app,
+            commands::get_log,
             commands::set_tray_labels,
             commands::get_autostart_enabled,
         ])

@@ -5,7 +5,7 @@ use tauri::menu::{Menu, MenuItem};
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::config::save_config;
-use crate::controller::{AppStatus, Controller};
+use crate::controller::{AppStatus, Controller, LogEntry};
 use crate::models::{AppConfig, ManagedApp, Profile, Settings};
 use crate::{MENU_ITEM_QUIT, MENU_ITEM_SHOW, TRAY_ID};
 
@@ -165,6 +165,11 @@ pub fn force_launch_app(state: State<ControllerState>, app_id: String) -> Result
 #[tauri::command]
 pub fn force_kill_app(state: State<ControllerState>, app_id: String) {
     state.0.force_kill(&app_id);
+}
+
+#[tauri::command]
+pub fn get_log(state: State<ControllerState>) -> Vec<LogEntry> {
+    state.0.get_log()
 }
 
 #[tauri::command]
