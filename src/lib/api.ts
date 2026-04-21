@@ -13,6 +13,8 @@ export interface ManagedApp {
   max_restart_attempts: number;
   startup_delay_secs: number;
   track_process_name: string | null;
+  force_kill_on_stop: boolean;
+  kill_process_tree: boolean;
 }
 
 export interface Profile {
@@ -43,6 +45,33 @@ export interface NewApp {
   max_restart_attempts?: number;
   startup_delay_secs?: number;
   track_process_name?: string;
+  force_kill_on_stop?: boolean;
+  kill_process_tree?: boolean;
+}
+
+export interface UpdateApp {
+  name?: string;
+  exe_path?: string;
+  args?: string | null;
+  working_dir?: string | null;
+  enabled?: boolean;
+  start_minimized?: boolean;
+  restart_on_crash?: boolean;
+  max_restart_attempts?: number;
+  startup_delay_secs?: number;
+  track_process_name?: string | null;
+  force_kill_on_stop?: boolean;
+  kill_process_tree?: boolean;
+}
+
+export type LogKind = "launch" | "stop" | "iracing_start" | "iracing_stop";
+
+export interface LogEntry {
+  seq: number;
+  timestamp_ms: number;
+  kind: LogKind;
+  app: string | null;
+  msg: string;
 }
 
 export type AppStateType =
@@ -57,17 +86,20 @@ export interface AppStatus {
 }
 
 export const api = {
-  getProfiles: () => invoke<Profile[]>("get_profiles"),
-  getApps: () => invoke<ManagedApp[]>("get_apps"),
-  getSettings: () => invoke<Settings>("get_settings"),
-  getActiveProfileId: () => invoke<string>("get_active_profile_id"),
-  saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
-  addApp: (app: NewApp) => invoke<ManagedApp>("add_app", { app }),
-  getIRacingStatus: () => invoke<boolean>("get_iracing_status"),
-  getAppStatuses: () => invoke<AppStatus[]>("get_app_statuses"),
-  forceLaunchApp: (appId: string) => invoke<void>("force_launch_app", { appId }),
-  forceKillApp: (appId: string) => invoke<void>("force_kill_app", { appId }),
-  setTrayLabels: (showLabel: string, quitLabel: string) =>
-    invoke<void>("set_tray_labels", { showLabel, quitLabel }),
+  getProfiles:       () => invoke<Profile[]>("get_profiles"),
+  getApps:           () => invoke<ManagedApp[]>("get_apps"),
+  getSettings:       () => invoke<Settings>("get_settings"),
+  getActiveProfileId:() => invoke<string>("get_active_profile_id"),
+  saveSettings:      (settings: Settings) => invoke<void>("save_settings", { settings }),
+  addApp:            (app: NewApp) => invoke<ManagedApp>("add_app", { app }),
+  updateApp:         (appId: string, update: UpdateApp) => invoke<ManagedApp>("update_app", { appId, update }),
+  deleteApp:         (appId: string) => invoke<void>("delete_app", { appId }),
+  getLog:            () => invoke<LogEntry[]>("get_log"),
+  getIRacingStatus:  () => invoke<boolean>("get_iracing_status"),
+  getAppStatuses:    () => invoke<AppStatus[]>("get_app_statuses"),
+  forceLaunchApp:    (appId: string) => invoke<void>("force_launch_app", { appId }),
+  forceKillApp:      (appId: string) => invoke<void>("force_kill_app", { appId }),
+  setTrayLabels:     (showLabel: string, quitLabel: string) =>
+                       invoke<void>("set_tray_labels", { showLabel, quitLabel }),
   getAutostartEnabled: () => invoke<boolean>("get_autostart_enabled"),
 };

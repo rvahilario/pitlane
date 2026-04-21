@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
@@ -10,6 +10,57 @@ use crate::models::{AppConfig, ManagedApp, TriggerMode};
 use crate::monitor::{Monitor, MonitorEvent};
 use crate::watchdog::{Watchdog, WatchdogEvent};
 use crate::{launcher, process_killer};
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+
+const MAX_LOG_ENTRIES: usize = 200;
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LogKind {
+    Launch,
+    Stop,
+    IracingStart,
+    IracingStop,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LogEntry {
+    pub seq: u64,
+    pub timestamp_ms: u64,
+    pub kind: LogKind,
+    pub app: Option<String>,
+    pub msg: String,
+}
+
+pub struct LogSink {
+    log: Mutex<Vec<LogEntry>>,
+    seq: AtomicU64,
+    on_entry: Box<dyn Fn(LogEntry) + Send + Sync>,
+}
+
+impl LogSink {
+    fn push(&self, kind: LogKind, app: Option<String>, msg: String) {
+        let s = self.seq.fetch_add(1, Ordering::Relaxed);
+        let ts = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
+        let entry = LogEntry { seq: s, timestamp_ms: ts, kind, app, msg };
+        let mut log = self.log.lock().unwrap();
+        log.push(entry.clone());
+        if log.len() > MAX_LOG_ENTRIES {
+            let excess = log.len() - MAX_LOG_ENTRIES;
+            log.drain(..excess);
+        }
+        drop(log);
+        (self.on_entry)(entry);
+    }
+
+    pub fn entries(&self) -> Vec<LogEntry> {
+        self.log.lock().unwrap().clone()
+    }
+}
 
 const DEFAULT_GRACE_SECS: f64 = 5.0;
 
@@ -99,7 +150,8 @@ pub struct Controller {
     logic: Arc<Mutex<ControllerLogic>>,
     watchdog: Arc<Watchdog>,
     config: Arc<Mutex<AppConfig>>,
-    iracing_online: Arc<std::sync::atomic::AtomicBool>,
+    iracing_online: Arc<AtomicBool>,
+    sink: Arc<LogSink>,
     _monitor: std::sync::OnceLock<Monitor>,
 }
 
@@ -107,19 +159,30 @@ impl Controller {
     /// Starts the controller: wires Monitor → launch/kill, Watchdog → state updates.
     /// `on_status(true)` is called when iRacing starts; `on_status(false)` when it stops.
     /// Returns an `Arc<Controller>` ready to be stored as Tauri state.
+    pub fn get_log(&self) -> Vec<LogEntry> {
+        self.sink.entries()
+    }
+
     pub fn start(
         config: Arc<Mutex<AppConfig>>,
         trigger: TriggerMode,
         poll_interval: f64,
         on_status: impl Fn(bool) + Send + 'static,
+        on_log: impl Fn(LogEntry) + Send + Sync + 'static,
     ) -> Arc<Self> {
         let iracing_online = Arc::new(AtomicBool::new(false));
         let (watchdog, watchdog_rx) = Watchdog::new();
+        let sink = Arc::new(LogSink {
+            log: Mutex::new(Vec::new()),
+            seq: AtomicU64::new(0),
+            on_entry: Box::new(on_log),
+        });
         let ctrl = Arc::new(Self {
             logic: Arc::new(Mutex::new(ControllerLogic::new())),
             watchdog: Arc::new(watchdog),
             config,
             iracing_online: Arc::clone(&iracing_online),
+            sink,
             _monitor: std::sync::OnceLock::new(),
         });
 
@@ -146,12 +209,14 @@ impl Controller {
                     iracing_online.store(true, Ordering::Relaxed);
                     on_status(true);
                     let c = Arc::clone(&ctrl_mon);
+                    c.sink.push(LogKind::IracingStart, None, "iRacing detected".into());
                     thread::spawn(move || c.launch_active_apps());
                 }
                 MonitorEvent::Stopped => {
                     iracing_online.store(false, Ordering::Relaxed);
                     on_status(false);
                     let c = Arc::clone(&ctrl_mon);
+                    c.sink.push(LogKind::IracingStop, None, "iRacing closed".into());
                     thread::spawn(move || c.kill_all_running());
                 }
             }
@@ -205,6 +270,7 @@ impl Controller {
             println!("[controller] spawning launch thread for '{}'", app.name);
             let logic = Arc::clone(&self.logic);
             let watchdog = Arc::clone(&self.watchdog);
+            let sink = Arc::clone(&self.sink);
 
             thread::spawn(move || {
                 if app.startup_delay_secs > 0.0 {
@@ -219,6 +285,7 @@ impl Controller {
                         println!("[controller] '{}' resolved pid={pid}", app.name);
                         watchdog.watch(app.clone(), pid);
                         logic.lock().unwrap().on_app_launched(&app.id, pid);
+                        sink.push(LogKind::Launch, Some(app.name.clone()), format!("pid {pid}"));
                     }
                     Err(e) => eprintln!("[controller] FAILED to launch '{}': {e}", app.name),
                 }
@@ -261,6 +328,7 @@ impl Controller {
                 } else {
                     process_killer::kill_by_exe_path(&app.exe_path, grace);
                 }
+                self.sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
             }
 
             self.logic.lock().unwrap().on_app_stopped(&app_id);
@@ -317,6 +385,7 @@ impl Controller {
             } else {
                 process_killer::kill_by_exe_path(&app.exe_path, DEFAULT_GRACE_SECS);
             }
+            self.sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
         }
 
         self.logic.lock().unwrap().on_app_stopped(app_id);

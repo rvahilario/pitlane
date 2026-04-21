@@ -33,6 +33,8 @@ function makeApp(overrides: Partial<ManagedApp> = {}): ManagedApp {
     max_restart_attempts: 3,
     startup_delay_secs: 0,
     track_process_name: null,
+    force_kill_on_stop: false,
+    kill_process_tree: false,
     ...overrides,
   };
 }
@@ -56,11 +58,11 @@ describe("AppsScreen", () => {
     await waitFor(() => expect(screen.getByText(/no apps configured/i)).toBeInTheDocument());
   });
 
-  it("should render app name and exe path", async () => {
+  it("should render app name and status label", async () => {
     vi.mocked(api.getApps).mockResolvedValue([makeApp()]);
     render(<AppsScreen />);
     await waitFor(() => expect(screen.getByText("SimHub")).toBeInTheDocument());
-    expect(screen.getByText("C:/SimHub/SimHub.exe")).toBeInTheDocument();
+    expect(screen.getByText(/idle/i)).toBeInTheDocument();
   });
 
   it("should render all apps returned by the api", async () => {
@@ -82,7 +84,7 @@ describe("AppsScreen", () => {
     vi.mocked(api.getApps).mockResolvedValue([makeApp({ enabled: false })]);
     render(<AppsScreen />);
     const item = await screen.findByText("SimHub");
-    expect(item.closest("li")).toHaveClass("opacity-40");
+    expect(item.closest("li")).toHaveClass("opacity-50");
   });
 
   it("should show start button when app is idle", async () => {

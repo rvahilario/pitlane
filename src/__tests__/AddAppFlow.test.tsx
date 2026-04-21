@@ -27,6 +27,8 @@ const mockApp: ManagedApp = {
   max_restart_attempts: 3,
   startup_delay_secs: 0,
   track_process_name: null,
+  force_kill_on_stop: false,
+  kill_process_tree: false,
 };
 
 const newApp: ManagedApp = {
@@ -42,6 +44,8 @@ const newApp: ManagedApp = {
   max_restart_attempts: 3,
   startup_delay_secs: 0,
   track_process_name: null,
+  force_kill_on_stop: false,
+  kill_process_tree: false,
 };
 
 beforeEach(() => {
@@ -95,10 +99,12 @@ describe("Add app flow", () => {
     fireEvent.click(dialog.querySelector("button[type='submit']")!);
 
     await waitFor(() => {
-      expect(api.addApp).toHaveBeenCalledWith({
-        name: "CrewChief",
-        exe_path: "C:\\CrewChief\\CrewChiefV4.exe",
-      });
+      expect(api.addApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: "CrewChief",
+          exe_path: "C:\\CrewChief\\CrewChiefV4.exe",
+        }),
+      );
     });
   });
 

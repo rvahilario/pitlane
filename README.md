@@ -64,6 +64,15 @@ cargo test --manifest-path src-tauri/Cargo.toml -- --ignored --nocapture
 - MSVC Build Tools 2022
 - Node.js 20+
 
+## Future improvements
+
+- **Drag-and-drop** to reorder apps in the list
+- **Profile management UI** — create, rename, switch profiles, assign color
+- **App icon extraction** — display `.exe` icon in the app card (PowerShell → base64 PNG)
+- **Parallel kill cycle** — currently sequential (N apps × 5s grace); spawn per-app kill threads to cut shutdown time
+- **Conditional debug logging** — replace `println!` stubs with `cfg(debug_assertions)` gating before production build
+- **start_minimized** — launch apps minimized to taskbar; disabled until `spawn_minimized()` issue is resolved
+
 ## Licença
 
 GPL v3 — veja [LICENSE](./LICENSE).
