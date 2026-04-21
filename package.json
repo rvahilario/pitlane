@@ -13,8 +13,9 @@
     "test:coverage": "vitest run --coverage",
     "rust:build": "cargo build --manifest-path src-tauri/Cargo.toml",
     "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
+    "test:e2e": "playwright test --project=ui",
+    "test:e2e:integration": "playwright test --project=integration",
+    "test:e2e:ui": "playwright test --project=ui --ui",
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {

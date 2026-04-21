@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { startFakeIRacing, stopFakeIRacing } from "./helpers/fake-iracing";
+import { startFakeIRacing, stopFakeIRacing } from "../helpers/fake-iracing";
 
 /**
  * iRacing lifecycle tests.
