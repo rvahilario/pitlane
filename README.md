@@ -1,12 +1,17 @@
 # Pitlane
 
-> **Em construção** — rewrite do iGnition em Tauri v2.
-
 Pitlane monitora o iRacing e gerencia automaticamente o ciclo de vida de apps companheiros (SimHub, CrewChief, VoiceAttack, etc.).
 
-**Motivação:** Alternativas existentes como o iRacingManager têm funcionalidades limitadas e parecem abandonadas. O iGnition resolveu isso, mas (Python + pywebview) consome ~150–300 MB idle. Pitlane mantém ~15–30 MB — a janela só é instanciada quando o usuário abre as configurações.
+**Motivação:** Alternativas existentes têm funcionalidades limitadas ou parecem abandonadas. O iGnition resolveu isso, mas (Python + pywebview) consome ~150–300 MB idle. Pitlane mantém ~15–30 MB — a janela só é instanciada quando o usuário abre as configurações.
 
 ---
+
+## Instalação
+
+Baixe o instalador mais recente na [página de releases](https://github.com/rvahilario/pitlane/releases):
+
+- **`Pitlane_x.y.z_x64-setup.exe`** — NSIS installer (recomendado)
+- **`Pitlane_x.y.z_x64_en-US.msi`** — MSI
 
 ## Stack
 
@@ -31,8 +36,8 @@ Pitlane monitora o iRacing e gerencia automaticamente o ciclo de vida de apps co
 | 6 — Controller (orchestrator) + integration tests | ✅ |
 | 7 — Tray + Single Instance | ✅ |
 | 8 — Autostart (Windows registry) | ✅ |
-| 9 — UI wired to controller (app statuses) | ✅ |
-| 10 — Build + installer | ⬜ |
+| 9 — UI wired to controller (app statuses, log, edit/delete) | ✅ |
+| 10 — Build + installer + release pipeline | ✅ |
 
 ## Desenvolvimento
 
@@ -43,18 +48,14 @@ npm run tauri dev
 # Dev só frontend (sem compilar Rust)
 npm run dev
 
-# Build Rust incremental
-npm run rust:build
-
-# Testes Rust (unitários)
+# Testes Rust
 npm run rust:test
 
 # Testes frontend
 npm run test
 
-# Testes de integração Rust (requer build dos fixtures primeiro)
-cargo build --bins --manifest-path src-tauri/Cargo.toml
-cargo test --manifest-path src-tauri/Cargo.toml -- --ignored --nocapture
+# Build de produção local (gera instalador em src-tauri/target/release/bundle/)
+powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1
 ```
 
 ## Requisitos
@@ -68,10 +69,8 @@ cargo test --manifest-path src-tauri/Cargo.toml -- --ignored --nocapture
 
 - **Drag-and-drop** to reorder apps in the list
 - **Profile management UI** — create, rename, switch profiles, assign color
-- **App icon extraction** — display `.exe` icon in the app card (PowerShell → base64 PNG)
-- **Parallel kill cycle** — currently sequential (N apps × 5s grace); spawn per-app kill threads to cut shutdown time
-- **Conditional debug logging** — replace `println!` stubs with `cfg(debug_assertions)` gating before production build
-- **start_minimized** — launch apps minimized to taskbar; disabled until `spawn_minimized()` issue is resolved
+- **App icon extraction** — display `.exe` icon in the app card
+- **`start_minimized`** — launch apps minimized to taskbar; disabled until spawn issue is resolved
 
 ## Licença
 
