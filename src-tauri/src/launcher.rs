@@ -101,99 +101,13 @@ pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
         .stdin(Stdio::null())
         .creation_flags(CREATE_NEW_PROCESS_GROUP);
 
-    if app.start_minimized {
-        return spawn_minimized(cmd, cwd);
-    }
+    // TODO: spawn_minimized() is disabled — causes issues with some apps.
+    // Re-enable when fixed: if app.start_minimized { return spawn_minimized(cmd, cwd); }
 
     command
         .spawn()
         .map(|c| c.id())
         .map_err(|e| LaunchError::SpawnFailed(e.to_string()))
-}
-
-fn spawn_minimized(cmd: Vec<String>, cwd: &str) -> Result<u32, LaunchError> {
-    use std::ffi::OsStr;
-    use std::mem;
-    use std::os::windows::ffi::OsStrExt;
-
-    // Raw STARTUPINFOW layout — avoids the CreateProcessW import issue
-    // with the `windows` crate feature split in 0.58.
-    #[repr(C)]
-    #[allow(non_snake_case)]
-    struct STARTUPINFOW {
-        cb: u32, lpReserved: *mut u16, lpDesktop: *mut u16, lpTitle: *mut u16,
-        dwX: u32, dwY: u32, dwXSize: u32, dwYSize: u32,
-        dwXCountChars: u32, dwYCountChars: u32, dwFillAttribute: u32,
-        dwFlags: u32, wShowWindow: u16, cbReserved2: u16,
-        lpReserved2: *mut u8, hStdInput: isize, hStdOutput: isize, hStdError: isize,
-    }
-    #[repr(C)]
-    #[allow(non_snake_case)]
-    struct PROCESS_INFORMATION {
-        hProcess: isize, hThread: isize, dwProcessId: u32, dwThreadId: u32,
-    }
-
-    const STARTF_USESHOWWINDOW: u32 = 0x0000_0001;
-    const SW_SHOWMINNOACTIVE: u16 = 7;
-    const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
-
-    extern "system" {
-        fn CreateProcessW(
-            lpApplicationName: *const u16,
-            lpCommandLine: *mut u16,
-            lpProcessAttributes: *const u8,
-            lpThreadAttributes: *const u8,
-            bInheritHandles: i32,
-            dwCreationFlags: u32,
-            lpEnvironment: *const u8,
-            lpCurrentDirectory: *const u16,
-            lpStartupInfo: *const STARTUPINFOW,
-            lpProcessInformation: *mut PROCESS_INFORMATION,
-        ) -> i32;
-        fn CloseHandle(hObject: isize) -> i32;
-    }
-
-    let mut cmdline: Vec<u16> = OsStr::new(&cmd.join(" "))
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect();
-    let cwd_wide: Vec<u16> = OsStr::new(cwd)
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect();
-
-    let mut si: STARTUPINFOW = unsafe { mem::zeroed() };
-    si.cb = mem::size_of::<STARTUPINFOW>() as u32;
-    si.dwFlags = STARTF_USESHOWWINDOW;
-    si.wShowWindow = SW_SHOWMINNOACTIVE;
-
-    let mut pi: PROCESS_INFORMATION = unsafe { mem::zeroed() };
-
-    let ok = unsafe {
-        CreateProcessW(
-            std::ptr::null(),
-            cmdline.as_mut_ptr(),
-            std::ptr::null(),
-            std::ptr::null(),
-            0,
-            CREATE_NEW_PROCESS_GROUP,
-            std::ptr::null(),
-            cwd_wide.as_ptr(),
-            &si,
-            &mut pi,
-        )
-    };
-
-    if ok == 0 {
-        return Err(LaunchError::SpawnFailed("CreateProcessW failed".into()));
-    }
-
-    let pid = pi.dwProcessId;
-    unsafe {
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-    }
-    Ok(pid)
 }
 
 // ── Stub launcher / child process resolution ─────────────────────────────────

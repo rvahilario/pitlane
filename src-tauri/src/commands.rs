@@ -264,7 +264,6 @@ mod tests {
         let mut config = AppConfig::default();
         let added = add_app_to(&mut config, new_app("SimHub", "SimHub.exe"));
         assert!(added.enabled);
-        assert!(added.start_minimized);
         assert!(!added.restart_on_crash);
         assert_eq!(added.max_restart_attempts, 3);
         assert_eq!(added.startup_delay_secs, 0.0);

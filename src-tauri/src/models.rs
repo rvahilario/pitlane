@@ -21,7 +21,8 @@ pub struct ManagedApp {
     pub working_dir: Option<String>,
     #[serde(default = "default_true")]
     pub enabled: bool,
-    #[serde(default = "default_true")]
+    // TODO: re-enable start_minimized in UI once spawn_minimized() bug is fixed
+    #[serde(default)]
     pub start_minimized: bool,
     #[serde(default)]
     pub restart_on_crash: bool,
@@ -54,7 +55,7 @@ impl ManagedApp {
             args: None,
             working_dir: None,
             enabled: true,
-            start_minimized: true,
+            start_minimized: false,
             restart_on_crash: false,
             max_restart_attempts: 3,
             startup_delay_secs: 0.0,
@@ -168,7 +169,7 @@ mod tests {
     fn should_have_correct_managed_app_defaults() {
         let app = ManagedApp::new("p1", "SimHub", "C:/SimHub.exe");
         assert!(app.enabled);
-        assert!(app.start_minimized);
+        assert!(!app.start_minimized);
         assert!(!app.restart_on_crash);
         assert_eq!(app.max_restart_attempts, 3);
         assert_eq!(app.startup_delay_secs, 0.0);
@@ -254,7 +255,7 @@ mod tests {
         }"#;
         let app: ManagedApp = serde_json::from_str(json).unwrap();
         assert!(app.enabled);
-        assert!(app.start_minimized);
+        assert!(!app.start_minimized);
         assert!(!app.restart_on_crash);
         assert_eq!(app.max_restart_attempts, 3);
         assert_eq!(app.startup_delay_secs, 0.0);
