@@ -243,84 +243,71 @@ impl Controller {
             let config = self.config.lock().unwrap();
             let profile_id = &config.active_profile_id.clone();
             let all = apps_to_launch(&config.apps);
-            println!("[controller] iRacing started — active_profile={profile_id}, enabled_apps={}", all.len());
-            let filtered: Vec<ManagedApp> = all
-                .into_iter()
+            #[cfg(debug_assertions)]
+            println!("[controller] iRacing started — profile={profile_id} apps={}", all.len());
+            all.into_iter()
                 .filter(|a| &a.profile_id == profile_id)
                 .cloned()
-                .collect();
-            println!("[controller] apps to launch for profile: {}", filtered.iter().map(|a| a.name.as_str()).collect::<Vec<_>>().join(", "));
-            filtered
+                .collect()
         };
 
-        if apps.is_empty() {
-            println!("[controller] no apps to launch (list empty or all already running)");
-        }
-
         for app in apps {
-            // Skip if already running (e.g. manual launch before iRacing started)
             if matches!(
                 self.logic.lock().unwrap().app_state(&app.id),
                 AppState::Running { .. }
             ) {
+                #[cfg(debug_assertions)]
                 println!("[controller] skipping '{}' — already running", app.name);
                 continue;
             }
 
-            println!("[controller] spawning launch thread for '{}'", app.name);
             let logic = Arc::clone(&self.logic);
             let watchdog = Arc::clone(&self.watchdog);
             let sink = Arc::clone(&self.sink);
 
             thread::spawn(move || {
                 if app.startup_delay_secs > 0.0 {
-                    println!("[controller] '{}' delay={:.1}s", app.name, app.startup_delay_secs);
                     thread::sleep(Duration::from_secs_f64(app.startup_delay_secs));
                 }
-                println!("[controller] launching '{}' at '{}'", app.name, app.exe_path);
+                #[cfg(debug_assertions)]
+                println!("[controller] launching '{}'", app.name);
                 match launcher::launch(&app) {
                     Ok(stub_pid) => {
-                        println!("[controller] '{}' stub_pid={stub_pid}", app.name);
                         let pid = launcher::resolve_real_pid(stub_pid, &app);
-                        println!("[controller] '{}' resolved pid={pid}", app.name);
+                        #[cfg(debug_assertions)]
+                        println!("[controller] '{}' pid={pid}", app.name);
                         watchdog.watch(app.clone(), pid);
                         logic.lock().unwrap().on_app_launched(&app.id, pid);
                         sink.push(LogKind::Launch, Some(app.name.clone()), format!("pid {pid}"));
                     }
-                    Err(e) => eprintln!("[controller] FAILED to launch '{}': {e}", app.name),
+                    Err(e) => {
+                        #[cfg(debug_assertions)]
+                        eprintln!("[controller] FAILED to launch '{}': {e}", app.name);
+                        let _ = e;
+                    }
                 }
             });
         }
     }
 
     pub fn kill_all_running(&self) {
-        // Log all app states at kill time to diagnose tracking issues
-        {
-            let logic = self.logic.lock().unwrap();
-            let config = self.config.lock().unwrap();
-            for app in &config.apps {
-                if app.profile_id == config.active_profile_id {
-                    println!("[controller] kill_all_running state: '{}' = {:?}", app.name, logic.app_state(&app.id));
-                }
-            }
-        }
-
         let ids_to_kill: Vec<String> = {
             let logic = self.logic.lock().unwrap();
             let mut ids: Vec<String> = logic.running_apps().into_iter().map(|(id, _)| id).collect();
-            // Also kill Crashed apps — the stub may have exited (e.g. Squirrel) while the
-            // real process is still running under a different PID.
+            // Also kill Crashed apps — stub may have exited (Squirrel) while real process runs.
             ids.extend(logic.crashed_app_ids());
             ids
         };
 
-        for app_id in ids_to_kill {
-            self.watchdog.unwatch(&app_id);
+        let handles: Vec<_> = ids_to_kill.iter().filter_map(|app_id| {
+            self.watchdog.unwatch(app_id);
 
-            // Re-resolve at kill time: apps may have relaunched under a new PID since launch
-            if let Some(app) = self.config.lock().unwrap().apps.iter().find(|a| a.id == app_id).cloned() {
+            let app = self.config.lock().unwrap()
+                .apps.iter().find(|a| a.id == *app_id).cloned()?;
+            let sink = Arc::clone(&self.sink);
+
+            Some(thread::spawn(move || {
                 let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
-                println!("[controller] killing '{}' grace={grace}s tree={}", app.name, app.kill_process_tree);
                 if let Some(ref name) = app.track_process_name {
                     process_killer::kill_by_name(name, grace);
                 } else if app.kill_process_tree {
@@ -328,10 +315,14 @@ impl Controller {
                 } else {
                     process_killer::kill_by_exe_path(&app.exe_path, grace);
                 }
-                self.sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
-            }
+                sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
+            }))
+        }).collect();
 
-            self.logic.lock().unwrap().on_app_stopped(&app_id);
+        for h in handles { let _ = h.join(); }
+
+        for app_id in &ids_to_kill {
+            self.logic.lock().unwrap().on_app_stopped(app_id);
         }
     }
 
