@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Circle, LayoutList, Pencil, Plus, Square, Play, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { cn } from "@/lib/cn";
 import { api, type AppStatus, type ManagedApp, type NewApp, type Profile } from "@/lib/api";
 import { useAppStatuses } from "@/hooks/useAppStatuses";
@@ -27,7 +28,7 @@ function StatusIndicator({ status }: { status: AppStatus | undefined }) {
   );
 }
 
-function statusLabel(status: AppStatus | undefined, t: (k: string) => string): string {
+function statusLabel(status: AppStatus | undefined, t: TFunction): string {
   const type = status?.state.type ?? "idle";
   if (type === "running") {
     const pid = (status!.state as { pid: number }).pid;
@@ -181,19 +182,28 @@ export function AppsScreen() {
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
   const [confirmDelete, setConfirmDelete] = useState<ManagedApp | null>(null);
+  const [autoStop, setAutoStop] = useState(true);
   const statuses = useAppStatuses();
 
   async function loadApps() {
-    const [loadedApps, profiles, activeId] = await Promise.all([
+    const [loadedApps, profiles, activeId, autoStopVal] = await Promise.all([
       api.getApps(),
       api.getProfiles(),
       api.getActiveProfileId(),
+      api.getAutoStop(),
     ]);
     setApps(loadedApps);
     setActiveProfile(profiles.find((p) => p.id === activeId) ?? null);
+    setAutoStop(autoStopVal);
   }
 
   useEffect(() => { loadApps(); }, []);
+
+  async function handleAutoStopToggle() {
+    const next = !autoStop;
+    setAutoStop(next);
+    await api.setAutoStop(next);
+  }
 
   async function handleFormSubmit(data: NewApp) {
     if (modal?.type === "add") {
@@ -226,13 +236,32 @@ export function AppsScreen() {
             {t("apps.profile_label", { name: activeProfile?.name ?? "…" })}
           </p>
         </div>
-        <button
-          onClick={() => setModal({ type: "add" })}
-          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          {t("apps.add")}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleAutoStopToggle}
+            title={t("apps.auto_stop_hint")}
+            className={cn(
+              "flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border transition-colors",
+              autoStop
+                ? "bg-accent/10 text-accent border-accent/30 hover:bg-accent/20"
+                : "bg-elevated text-text-muted border-border-strong hover:text-text",
+            )}
+          >
+            <div className={cn(
+              "w-1.5 h-1.5 rounded-full shrink-0",
+              autoStop ? "bg-accent" : "bg-text-disabled",
+            )} />
+            {t("apps.auto_stop_label")}
+          </button>
+          <button
+            onClick={() => setModal({ type: "add" })}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            {t("apps.add")}
+          </button>
+        </div>
       </div>
 
       {/* App list */}

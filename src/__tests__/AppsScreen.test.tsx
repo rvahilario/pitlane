@@ -12,6 +12,8 @@ vi.mock("@/lib/api", () => ({
     getAppStatuses: vi.fn(),
     forceLaunchApp: vi.fn(),
     forceKillApp: vi.fn(),
+    getAutoStop: vi.fn(),
+    setAutoStop: vi.fn(),
   },
 }));
 
@@ -50,6 +52,8 @@ beforeEach(() => {
   vi.mocked(api.getAppStatuses).mockResolvedValue([]);
   vi.mocked(api.forceLaunchApp).mockResolvedValue(undefined);
   vi.mocked(api.forceKillApp).mockResolvedValue(undefined);
+  vi.mocked(api.getAutoStop).mockResolvedValue(true);
+  vi.mocked(api.setAutoStop).mockResolvedValue(undefined);
 });
 
 describe("AppsScreen", () => {
@@ -102,7 +106,7 @@ describe("AppsScreen", () => {
     ]);
     render(<AppsScreen />);
     await screen.findByText("SimHub");
-    await waitFor(() => expect(screen.getByTitle(/stop/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTitle("Stop")).toBeInTheDocument());
   });
 
   it("should show start button when app has crashed", async () => {
@@ -128,8 +132,8 @@ describe("AppsScreen", () => {
       makeStatus("42", { type: "running", pid: 99, restart_count: 0 }),
     ]);
     render(<AppsScreen />);
-    await waitFor(() => expect(screen.getByTitle(/stop/i)).toBeInTheDocument());
-    await userEvent.click(screen.getByTitle(/stop/i));
+    await waitFor(() => expect(screen.getByTitle("Stop")).toBeInTheDocument());
+    await userEvent.click(screen.getByTitle("Stop"));
     expect(vi.mocked(api.forceKillApp)).toHaveBeenCalledWith("42");
   });
 });

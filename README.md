@@ -1,78 +1,138 @@
-# Pitlane
+# 🏁 Pitlane
 
-> **Em construção** — rewrite do iGnition em Tauri v2.
+> **Your invisible co-pilot for iRacing.**
+> Automatic, lightweight, zero friction.
 
-Pitlane monitora o iRacing e gerencia automaticamente o ciclo de vida de apps companheiros (SimHub, CrewChief, VoiceAttack, etc.).
+Pitlane handles the full lifecycle of your companion apps while you focus on what matters: **racing**.
 
-**Motivação:** Alternativas existentes como o iRacingManager têm funcionalidades limitadas e parecem abandonadas. O iGnition resolveu isso, mas (Python + pywebview) consome ~150–300 MB idle. Pitlane mantém ~15–30 MB — a janela só é instanciada quando o usuário abre as configurações.
+It detects when iRacing opens or closes and orchestrates everything behind the scenes — launches, monitors, restarts on crash, and shuts everything down cleanly at the end of the session.
+
+Built for **SimHub, CrewChief, VoiceAttack, Kapps, OBS** and any other companion app you rely on.
+
+🇧🇷 [Leia em Português](./README.pt-BR.md)
 
 ---
 
-## Stack
+## ✨ Highlights
 
-| Camada | Tecnologia |
-|---|---|
-| Frontend | React 19 + TypeScript + Vite |
-| UI | shadcn/ui + Tailwind CSS v4 |
-| Backend | Rust (Tauri v2) |
-| IPC | Tauri Commands + Events |
-| Config | JSON em `%LOCALAPPDATA%\Pitlane\config.json` |
+- 🚀 **Smart auto-launch**
+  Your apps start automatically with iRacing — in the right order.
 
-## Status
+- 🛑 **Configurable auto-stop**
+  Kills everything when iRacing closes (toggle per session).
 
-| Camada | Estado |
-|---|---|
-| 0 — Scaffold | ✅ |
-| 1 — UI Shell | ✅ |
-| 2 — Models + Config + Commands | ✅ |
-| 3 — Monitor (iRacing detection) | ✅ |
-| 4 — Launcher + Process Killer | ✅ |
-| 5 — Watchdog (crash detection + auto-restart) | ✅ |
-| 6 — Controller (orchestrator) + integration tests | ✅ |
-| 7 — Tray + Single Instance | ✅ |
-| 8 — Autostart (Windows registry) | ✅ |
-| 9 — UI wired to controller (app statuses) | ✅ |
-| 10 — Build + installer | ⬜ |
+- 🧠 **Resilient watchdog**
+  Detects crashes and restarts apps automatically (up to a configurable limit).
 
-## Desenvolvimento
+- ⚙️ **Advanced process management**
+  `force kill`, `kill process tree`, and track-by-name support (great for stub launchers like G Hub).
+
+- 📜 **Real-time event log**
+  Track everything: launches, stops, iRacing events.
+
+- 🔁 **Start with Windows**
+  Optional startup registry integration.
+
+- 🧩 **System tray-first**
+  Runs in the background — UI opens on demand.
+
+- 🔒 **Single instance**
+  Prevents duplicates and brings the window to focus.
+
+- 🌍 **Multilingual**
+  🇧🇷 Português · 🇺🇸 English
+
+---
+
+## 🧱 Stack
+
+| Layer       | Technology                                         |
+| ----------- | -------------------------------------------------- |
+| 🎨 Frontend | React 19 · TypeScript · Vite                       |
+| 💅 UI       | Tailwind CSS v4 · Exclusive dark theme             |
+| ⚙️ Backend  | Rust · Tauri v2                                    |
+| 🔌 IPC      | Tauri Commands (`invoke`) + Events (`emit/listen`) |
+| 💾 Config   | JSON at `%LOCALAPPDATA%\Pitlane\config.json`       |
+
+### 💡 Why Tauri?
+
+The **iGnition** predecessor (Python + pywebview) used ~150–300 MB idle.
+Pitlane runs at **~15–30 MB** — WebView2 is only instantiated when the settings window opens.
+
+---
+
+## 📦 Installation
+
+Download the latest release:
+👉 [https://github.com/rvahilario/pitlane/releases](https://github.com/rvahilario/pitlane/releases)
+
+| File                             | Description                      |
+| -------------------------------- | -------------------------------- |
+| 🟢 `Pitlane_x.y.z_x64-setup.exe` | NSIS installer **(recommended)** |
+| ⚪ `Pitlane_x.y.z_x64_en-US.msi` | MSI                              |
+
+**Requirements:**
+
+- Windows 10/11 x64
+- WebView2 Runtime _(already bundled in Windows 11)_
+
+---
+
+## 🛠️ Development
+
+**Prerequisites:**
+
+- Node.js 20+
+- Rust (stable `x86_64-pc-windows-msvc`)
+- MSVC Build Tools 2022
 
 ```bash
-# Dev completo (Rust + React com hot reload)
+# Clone and setup
+git clone https://github.com/rvahilario/pitlane.git
+cd pitlane
+npm install
+
+# Full dev (Rust + React with hot reload)
 npm run tauri dev
 
-# Dev só frontend (sem compilar Rust)
+# Frontend only (fast UI iteration)
 npm run dev
 
-# Build Rust incremental
-npm run rust:build
+# Tests
+npm run test        # frontend (Vitest)
+npm run rust:test   # backend (cargo test)
 
-# Testes Rust (unitários)
-npm run rust:test
-
-# Testes frontend
-npm run test
-
-# Testes de integração Rust (requer build dos fixtures primeiro)
-cargo build --bins --manifest-path src-tauri/Cargo.toml
-cargo test --manifest-path src-tauri/Cargo.toml -- --ignored --nocapture
+# Local production build
+powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1
 ```
 
-## Requisitos
+**Output:**
 
-- Windows 11
-- [Rust](https://rustup.rs/) target `x86_64-pc-windows-msvc`
-- MSVC Build Tools 2022
-- Node.js 20+
+```
+src-tauri/target/release/bundle/nsis/   → .exe
+src-tauri/target/release/bundle/msi/    → .msi
+```
 
-## Future improvements
+### 🧪 Testing without opening iRacing
 
-- **Drag-and-drop** to reorder apps in the list
-- **Profile management UI** — create, rename, switch profiles, assign color
-- **App icon extraction** — display `.exe` icon in the app card (PowerShell → base64 PNG)
-- **Parallel kill cycle** — currently sequential (N apps × 5s grace); spawn per-app kill threads to cut shutdown time
-- **Conditional debug logging** — replace `println!` stubs with `cfg(debug_assertions)` gating before production build
-- **start_minimized** — launch apps minimized to taskbar; disabled until `spawn_minimized()` issue is resolved
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/fake-iracing.ps1
+```
 
-## Licença
+Simulates a full open/close cycle — perfect for fast development iteration.
 
-GPL v3 — veja [LICENSE](./LICENSE).
+---
+
+## 🗺️ Roadmap
+
+- 🎛️ Profile management UI
+- 🖼️ Executable icon extraction for app cards
+- 💤 `start_minimized` (pending spawn fix)
+- 🖱️ Drag-and-drop to reorder apps
+
+---
+
+## 📄 License
+
+Distributed under the **GPL v3**.
+See [`LICENSE`](./LICENSE) for details.

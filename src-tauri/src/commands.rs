@@ -173,6 +173,16 @@ pub fn get_log(state: State<ControllerState>) -> Vec<LogEntry> {
 }
 
 #[tauri::command]
+pub fn get_auto_stop(state: State<ControllerState>) -> bool {
+    state.0.get_auto_stop()
+}
+
+#[tauri::command]
+pub fn set_auto_stop(state: State<ControllerState>, enabled: bool) {
+    state.0.set_auto_stop(enabled);
+}
+
+#[tauri::command]
 pub fn add_app(state: State<ConfigState>, app: NewApp) -> Result<ManagedApp, String> {
     let mut config = state.0.lock().unwrap();
     let managed = app.into_managed(&config.active_profile_id.clone());

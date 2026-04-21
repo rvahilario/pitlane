@@ -172,7 +172,7 @@ fn make_controller(app: ManagedApp) -> Arc<Controller> {
     let mut app = app;
     app.profile_id = profile_id;
     config.apps.push(app);
-    Controller::start(Arc::new(Mutex::new(config)), TriggerMode::Ui, 1.0, |_| {})
+    Controller::start(Arc::new(Mutex::new(config)), TriggerMode::Ui, 1.0, |_| {}, |_| {})
 }
 
 #[test]
