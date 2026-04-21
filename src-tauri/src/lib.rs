@@ -132,6 +132,8 @@ pub fn run() {
             commands::force_launch_app,
             commands::force_kill_app,
             commands::get_log,
+            commands::get_auto_stop,
+            commands::set_auto_stop,
             commands::set_tray_labels,
             commands::get_autostart_enabled,
         ])

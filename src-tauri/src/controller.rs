@@ -151,6 +151,7 @@ pub struct Controller {
     watchdog: Arc<Watchdog>,
     config: Arc<Mutex<AppConfig>>,
     iracing_online: Arc<AtomicBool>,
+    auto_stop: Arc<AtomicBool>,
     sink: Arc<LogSink>,
     _monitor: std::sync::OnceLock<Monitor>,
 }
@@ -163,6 +164,14 @@ impl Controller {
         self.sink.entries()
     }
 
+    pub fn get_auto_stop(&self) -> bool {
+        self.auto_stop.load(Ordering::Relaxed)
+    }
+
+    pub fn set_auto_stop(&self, enabled: bool) {
+        self.auto_stop.store(enabled, Ordering::Relaxed);
+    }
+
     pub fn start(
         config: Arc<Mutex<AppConfig>>,
         trigger: TriggerMode,
@@ -171,6 +180,7 @@ impl Controller {
         on_log: impl Fn(LogEntry) + Send + Sync + 'static,
     ) -> Arc<Self> {
         let iracing_online = Arc::new(AtomicBool::new(false));
+        let auto_stop = Arc::new(AtomicBool::new(true));
         let (watchdog, watchdog_rx) = Watchdog::new();
         let sink = Arc::new(LogSink {
             log: Mutex::new(Vec::new()),
@@ -182,6 +192,7 @@ impl Controller {
             watchdog: Arc::new(watchdog),
             config,
             iracing_online: Arc::clone(&iracing_online),
+            auto_stop: Arc::clone(&auto_stop),
             sink,
             _monitor: std::sync::OnceLock::new(),
         });
@@ -217,7 +228,9 @@ impl Controller {
                     on_status(false);
                     let c = Arc::clone(&ctrl_mon);
                     c.sink.push(LogKind::IracingStop, None, "iRacing closed".into());
-                    thread::spawn(move || c.kill_all_running());
+                    if auto_stop.load(Ordering::Relaxed) {
+                        thread::spawn(move || c.kill_all_running());
+                    }
                 }
             }
         });
