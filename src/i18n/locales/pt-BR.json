@@ -54,7 +54,8 @@
       "kill_tree": "Encerrar árvore de processos",
       "kill_tree_hint": "Encerrar o app e todos os processos filhos",
       "cancel": "Cancelar",
-      "save": "Salvar"
+      "save": "Salvar",
+      "saved": "Salvo"
     }
   },
   "common": {

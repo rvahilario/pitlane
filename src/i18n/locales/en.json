@@ -54,7 +54,8 @@
       "kill_tree": "Kill process tree",
       "kill_tree_hint": "Kill app and all child processes",
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "saved": "Saved"
     }
   },
   "common": {

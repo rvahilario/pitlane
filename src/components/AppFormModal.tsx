@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { type ManagedApp, type NewApp } from "@/lib/api";
@@ -140,6 +140,8 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
   const [form, setForm] = useState<FormState>(initForm(initial));
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function patch<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -148,20 +150,25 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     try {
       await onSubmit({
         name:                 form.name,
         exe_path:             form.exe_path,
         enabled:              form.enabled,
         startup_delay_secs:   form.startup_delay_secs,
-        args:                 form.args   || undefined,
-        working_dir:          form.working_dir || undefined,
+        args:                 form.args,
+        working_dir:          form.working_dir,
         restart_on_crash:     form.restart_on_crash,
         max_restart_attempts: form.max_restart_attempts,
-        track_process_name:   form.track_process_name || undefined,
+        track_process_name:   form.track_process_name,
         force_kill_on_stop:   form.force_kill_on_stop,
         kill_process_tree:    form.kill_process_tree,
       });
+      setSaved(true);
+      setTimeout(onClose, 600);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
     }
@@ -278,21 +285,34 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-2 px-5 py-4 border-t border-border shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-xs px-3 py-1.5 rounded-md border border-border-strong text-text-muted hover:text-text transition-colors"
-            >
-              {t("apps.form.cancel")}
-            </button>
-            <button
-              type="submit"
-              disabled={saving || !form.name.trim() || !form.exe_path.trim()}
-              className="text-xs font-semibold px-3 py-1.5 rounded-md bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 transition-colors disabled:opacity-50"
-            >
-              {saving ? "…" : t("apps.form.save")}
-            </button>
+          <div className="flex flex-col gap-2 px-5 py-4 border-t border-border shrink-0">
+            {error && (
+              <p className="text-xs text-danger">{error}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={saving || saved}
+                className="text-xs px-3 py-1.5 rounded-md border border-border-strong text-text-muted hover:text-text transition-colors disabled:opacity-50"
+              >
+                {t("apps.form.cancel")}
+              </button>
+              <button
+                type="submit"
+                disabled={saving || saved || !form.name.trim() || !form.exe_path.trim()}
+                className={cn(
+                  "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md border transition-colors disabled:opacity-50",
+                  saved
+                    ? "bg-success/15 text-success border-success/30"
+                    : "bg-accent/15 hover:bg-accent/25 text-accent border-accent/30",
+                )}
+              >
+                {saved ? (
+                  <><Check className="w-3 h-3" />{t("apps.form.saved")}</>
+                ) : saving ? "…" : t("apps.form.save")}
+              </button>
+            </div>
           </div>
         </form>
       </div>

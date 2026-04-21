@@ -201,8 +201,8 @@ export function AppsScreen() {
     } else if (modal?.type === "edit") {
       await api.updateApp(modal.app.id, data);
     }
-    setModal(null);
-    loadApps();
+    await loadApps();
+    // modal closes itself after showing brief success state
   }
 
   async function handleDelete(app: ManagedApp) {
