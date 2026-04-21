@@ -64,6 +64,7 @@
   "log": {
     "title": "Log de eventos",
     "clear": "Limpar",
+    "empty": "Nenhum evento ainda — abra o iRacing para começar.",
     "types": {
       "launch": "LAUNCH",
       "stop": "STOP",

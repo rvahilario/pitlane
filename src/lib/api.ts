@@ -64,6 +64,16 @@ export interface UpdateApp {
   kill_process_tree?: boolean;
 }
 
+export type LogKind = "launch" | "stop" | "iracing_start" | "iracing_stop";
+
+export interface LogEntry {
+  seq: number;
+  timestamp_ms: number;
+  kind: LogKind;
+  app: string | null;
+  msg: string;
+}
+
 export type AppStateType =
   | { type: "idle" }
   | { type: "running"; pid: number; restart_count: number }
@@ -84,6 +94,7 @@ export const api = {
   addApp:            (app: NewApp) => invoke<ManagedApp>("add_app", { app }),
   updateApp:         (appId: string, update: UpdateApp) => invoke<ManagedApp>("update_app", { appId, update }),
   deleteApp:         (appId: string) => invoke<void>("delete_app", { appId }),
+  getLog:            () => invoke<LogEntry[]>("get_log"),
   getIRacingStatus:  () => invoke<boolean>("get_iracing_status"),
   getAppStatuses:    () => invoke<AppStatus[]>("get_app_statuses"),
   forceLaunchApp:    (appId: string) => invoke<void>("force_launch_app", { appId }),
