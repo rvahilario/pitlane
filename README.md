@@ -1,100 +1,138 @@
-# Pitlane
+# 🏁 Pitlane
 
-> Gerenciador de ciclo de vida de apps para iRacing — leve, automático, sem estresse.
+> **Your invisible co-pilot for iRacing.**
+> Automatic, lightweight, zero friction.
 
-Pitlane detecta quando o iRacing abre ou fecha e cuida de tudo: lança seus apps companheiros na ordem certa, reinicia em caso de crash e encerra tudo limpo ao fim da sessão.
+Pitlane handles the full lifecycle of your companion apps while you focus on what matters: **racing**.
 
-Feito para quem usa SimHub, CrewChief, VoiceAttack, Kapps, OBS e similares — sem precisar abrir e fechar cada um na mão toda vez que for correr.
+It detects when iRacing opens or closes and orchestrates everything behind the scenes — launches, monitors, restarts on crash, and shuts everything down cleanly at the end of the session.
 
----
+Built for **SimHub, CrewChief, VoiceAttack, Kapps, OBS** and any other companion app you rely on.
 
-## Funcionalidades
-
-- **Auto-launch** — inicia seus apps automaticamente quando o iRacing abre
-- **Auto-stop** — encerra todos os apps ao fechar o iRacing (toggle por sessão)
-- **Watchdog** — detecta crash e reinicia o app automaticamente até um limite configurável
-- **Kill inteligente** — suporte a `force kill`, `kill process tree` e rastreamento por nome de processo (para launchers stub como G Hub)
-- **Log de eventos** — histórico em tempo real de lançamentos, paradas e eventos do iRacing
-- **Múltiplos perfis** — organize apps por perfil (ex: treino vs. corrida)
-- **Iniciar com o Windows** — optionally registra no startup registry
-- **Bandeja do sistema** — roda em background, janela abre sob demanda
-- **Instância única** — segunda tentativa de abrir traz a janela ao foco
-- **Interface em pt-BR e English**
+🇧🇷 [Leia em Português](./README.pt-BR.md)
 
 ---
 
-## Stack
+## ✨ Highlights
 
-| Camada | Tecnologia |
-|---|---|
-| Frontend | React 19 + TypeScript + Vite |
-| UI | Tailwind CSS v4 · dark theme exclusivo |
-| Backend | Rust · Tauri v2 |
-| IPC | Tauri Commands (`invoke`) + Events (`emit/listen`) |
-| Config | JSON em `%LOCALAPPDATA%\Pitlane\config.json` |
+- 🚀 **Smart auto-launch**
+  Your apps start automatically with iRacing — in the right order.
 
-**Por que Tauri?** O iGnition (predecessor em Python + pywebview) consumia ~150–300 MB idle. Pitlane fica em ~15–30 MB — o WebView2 só é instanciado quando a janela de configurações é aberta.
+- 🛑 **Configurable auto-stop**
+  Kills everything when iRacing closes (toggle per session).
+
+- 🧠 **Resilient watchdog**
+  Detects crashes and restarts apps automatically (up to a configurable limit).
+
+- ⚙️ **Advanced process management**
+  `force kill`, `kill process tree`, and track-by-name support (great for stub launchers like G Hub).
+
+- 📜 **Real-time event log**
+  Track everything: launches, stops, iRacing events.
+
+- 🔁 **Start with Windows**
+  Optional startup registry integration.
+
+- 🧩 **System tray-first**
+  Runs in the background — UI opens on demand.
+
+- 🔒 **Single instance**
+  Prevents duplicates and brings the window to focus.
+
+- 🌍 **Multilingual**
+  🇧🇷 Português · 🇺🇸 English
 
 ---
 
-## Instalação
+## 🧱 Stack
 
-Baixe o instalador mais recente na [página de releases](https://github.com/rvahilario/pitlane/releases):
+| Layer       | Technology                                         |
+| ----------- | -------------------------------------------------- |
+| 🎨 Frontend | React 19 · TypeScript · Vite                       |
+| 💅 UI       | Tailwind CSS v4 · Exclusive dark theme             |
+| ⚙️ Backend  | Rust · Tauri v2                                    |
+| 🔌 IPC      | Tauri Commands (`invoke`) + Events (`emit/listen`) |
+| 💾 Config   | JSON at `%LOCALAPPDATA%\Pitlane\config.json`       |
 
-| Arquivo | Descrição |
-|---|---|
-| `Pitlane_x.y.z_x64-setup.exe` | NSIS installer **(recomendado)** |
-| `Pitlane_x.y.z_x64_en-US.msi` | MSI |
+### 💡 Why Tauri?
 
-Requisitos: **Windows 10/11 x64**, WebView2 Runtime (incluso no Windows 11).
+The **iGnition** predecessor (Python + pywebview) used ~150–300 MB idle.
+Pitlane runs at **~15–30 MB** — WebView2 is only instantiated when the settings window opens.
 
 ---
 
-## Desenvolvimento
+## 📦 Installation
 
-**Pré-requisitos:** Node.js 20+, Rust stable (`x86_64-pc-windows-msvc`), MSVC Build Tools 2022.
+Download the latest release:
+👉 [https://github.com/rvahilario/pitlane/releases](https://github.com/rvahilario/pitlane/releases)
+
+| File                             | Description                      |
+| -------------------------------- | -------------------------------- |
+| 🟢 `Pitlane_x.y.z_x64-setup.exe` | NSIS installer **(recommended)** |
+| ⚪ `Pitlane_x.y.z_x64_en-US.msi` | MSI                              |
+
+**Requirements:**
+
+- Windows 10/11 x64
+- WebView2 Runtime _(already bundled in Windows 11)_
+
+---
+
+## 🛠️ Development
+
+**Prerequisites:**
+
+- Node.js 20+
+- Rust (stable `x86_64-pc-windows-msvc`)
+- MSVC Build Tools 2022
 
 ```bash
-# Clonar e instalar dependências
+# Clone and setup
 git clone https://github.com/rvahilario/pitlane.git
 cd pitlane
 npm install
 
-# Dev completo — Rust + React com hot reload
+# Full dev (Rust + React with hot reload)
 npm run tauri dev
 
-# Só frontend (sem compilar Rust — ideal para iterar UI)
+# Frontend only (fast UI iteration)
 npm run dev
 
-# Testes
-npm run test          # frontend (Vitest)
-npm run rust:test     # backend (cargo test)
+# Tests
+npm run test        # frontend (Vitest)
+npm run rust:test   # backend (cargo test)
 
-# Build de produção local
+# Local production build
 powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1
-# → src-tauri/target/release/bundle/nsis/   (NSIS .exe)
-# → src-tauri/target/release/bundle/msi/    (.msi)
 ```
 
-### Testar sem abrir o iRacing
+**Output:**
+
+```
+src-tauri/target/release/bundle/nsis/   → .exe
+src-tauri/target/release/bundle/msi/    → .msi
+```
+
+### 🧪 Testing without opening iRacing
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/fake-iracing.ps1
 ```
 
-Simula o iRacing abrindo e fechando — útil para testar o ciclo completo sem o simulador.
+Simulates a full open/close cycle — perfect for fast development iteration.
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
-- [ ] **Drag-and-drop** para reordenar apps na lista
-- [ ] **Profile management UI** — criar, renomear, trocar perfis, atribuir cor
-- [ ] **App icon extraction** — exibir ícone do `.exe` no card
-- [ ] **`start_minimized`** — lançar apps minimizados na taskbar (desativado até resolver issue de spawn)
+- 🎛️ Profile management UI
+- 🖼️ Executable icon extraction for app cards
+- 💤 `start_minimized` (pending spawn fix)
+- 🖱️ Drag-and-drop to reorder apps
 
 ---
 
-## Licença
+## 📄 License
 
-[GPL v3](./LICENSE)
+Distributed under the **GPL v3**.
+See [`LICENSE`](./LICENSE) for details.
