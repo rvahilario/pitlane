@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Circle, LayoutList, Pencil, Plus, Square, Play, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { cn } from "@/lib/cn";
 import { api, type AppStatus, type ManagedApp, type NewApp, type Profile } from "@/lib/api";
 import { useAppStatuses } from "@/hooks/useAppStatuses";
@@ -27,7 +28,7 @@ function StatusIndicator({ status }: { status: AppStatus | undefined }) {
   );
 }
 
-function statusLabel(status: AppStatus | undefined, t: (k: string) => string): string {
+function statusLabel(status: AppStatus | undefined, t: TFunction): string {
   const type = status?.state.type ?? "idle";
   if (type === "running") {
     const pid = (status!.state as { pid: number }).pid;
