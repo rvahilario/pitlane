@@ -26,16 +26,53 @@ pub struct NewApp {
 impl NewApp {
     pub fn into_managed(self, profile_id: &str) -> ManagedApp {
         let mut managed = ManagedApp::new(profile_id, self.name, self.exe_path);
-        if let Some(v) = self.args                 { managed.args = Some(v); }
-        if let Some(v) = self.working_dir          { managed.working_dir = Some(v); }
+        if let Some(v) = self.args                 { managed.args = non_empty(v); }
+        if let Some(v) = self.working_dir          { managed.working_dir = non_empty(v); }
         if let Some(v) = self.enabled              { managed.enabled = v; }
         if let Some(v) = self.start_minimized      { managed.start_minimized = v; }
         if let Some(v) = self.restart_on_crash     { managed.restart_on_crash = v; }
         if let Some(v) = self.max_restart_attempts { managed.max_restart_attempts = v; }
         if let Some(v) = self.startup_delay_secs   { managed.startup_delay_secs = v; }
-        if let Some(v) = self.track_process_name   { managed.track_process_name = Some(v); }
+        if let Some(v) = self.track_process_name   { managed.track_process_name = non_empty(v); }
         managed
     }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateApp {
+    pub name: Option<String>,
+    pub exe_path: Option<String>,
+    pub args: Option<String>,
+    pub working_dir: Option<String>,
+    pub enabled: Option<bool>,
+    pub start_minimized: Option<bool>,
+    pub restart_on_crash: Option<bool>,
+    pub max_restart_attempts: Option<u32>,
+    pub startup_delay_secs: Option<f64>,
+    pub track_process_name: Option<String>,
+    pub force_kill_on_stop: Option<bool>,
+    pub kill_process_tree: Option<bool>,
+}
+
+impl UpdateApp {
+    pub fn apply_to(self, app: &mut ManagedApp) {
+        if let Some(v) = self.name                 { app.name = v; }
+        if let Some(v) = self.exe_path             { app.exe_path = v; }
+        if let Some(v) = self.args                 { app.args = non_empty(v); }
+        if let Some(v) = self.working_dir          { app.working_dir = non_empty(v); }
+        if let Some(v) = self.enabled              { app.enabled = v; }
+        if let Some(v) = self.start_minimized      { app.start_minimized = v; }
+        if let Some(v) = self.restart_on_crash     { app.restart_on_crash = v; }
+        if let Some(v) = self.max_restart_attempts { app.max_restart_attempts = v; }
+        if let Some(v) = self.startup_delay_secs   { app.startup_delay_secs = v; }
+        if let Some(v) = self.track_process_name   { app.track_process_name = non_empty(v); }
+        if let Some(v) = self.force_kill_on_stop   { app.force_kill_on_stop = v; }
+        if let Some(v) = self.kill_process_tree    { app.kill_process_tree = v; }
+    }
+}
+
+fn non_empty(s: String) -> Option<String> {
+    if s.trim().is_empty() { None } else { Some(s) }
 }
 
 pub struct ConfigState(pub Arc<Mutex<AppConfig>>);
@@ -137,6 +174,29 @@ pub fn add_app(state: State<ConfigState>, app: NewApp) -> Result<ManagedApp, Str
     config.apps.push(managed.clone());
     save_config(&config)?;
     Ok(managed)
+}
+
+#[tauri::command]
+pub fn update_app(state: State<ConfigState>, app_id: String, update: UpdateApp) -> Result<ManagedApp, String> {
+    let mut config = state.0.lock().unwrap();
+    let app = config.apps.iter_mut()
+        .find(|a| a.id == app_id)
+        .ok_or_else(|| format!("App not found: {app_id}"))?;
+    update.apply_to(app);
+    let updated = app.clone();
+    save_config(&config)?;
+    Ok(updated)
+}
+
+#[tauri::command]
+pub fn delete_app(state: State<ConfigState>, app_id: String) -> Result<(), String> {
+    let mut config = state.0.lock().unwrap();
+    let before = config.apps.len();
+    config.apps.retain(|a| a.id != app_id);
+    if config.apps.len() == before {
+        return Err(format!("App not found: {app_id}"));
+    }
+    save_config(&config)
 }
 
 #[cfg(test)]
@@ -291,5 +351,88 @@ mod tests {
         assert_eq!(added.max_restart_attempts, 5);
         assert_eq!(added.startup_delay_secs, 2.5);
         assert_eq!(added.track_process_name, Some("CrewChiefV4.exe".into()));
+    }
+
+    #[test]
+    fn should_treat_empty_string_as_none_for_nullable_fields() {
+        let mut config = AppConfig::default();
+        let input = NewApp {
+            name: "SimHub".into(),
+            exe_path: "SimHub.exe".into(),
+            args: Some("".into()),
+            working_dir: Some("   ".into()),
+            track_process_name: Some("".into()),
+            ..new_app("SimHub", "SimHub.exe")
+        };
+        let added = add_app_to(&mut config, input);
+        assert!(added.args.is_none());
+        assert!(added.working_dir.is_none());
+        assert!(added.track_process_name.is_none());
+    }
+
+    fn update_app_in(config: &mut AppConfig, app_id: &str, update: UpdateApp) -> Result<ManagedApp, String> {
+        let app = config.apps.iter_mut().find(|a| a.id == app_id)
+            .ok_or_else(|| format!("App not found: {app_id}"))?;
+        update.apply_to(app);
+        Ok(app.clone())
+    }
+
+    #[test]
+    fn should_update_app_name_and_exe() {
+        let mut config = AppConfig::default();
+        let added = add_app_to(&mut config, new_app("SimHub", "SimHub.exe"));
+        let update = UpdateApp {
+            name: Some("SimHub 2".into()),
+            exe_path: Some("SimHub2.exe".into()),
+            args: None, working_dir: None, enabled: None, start_minimized: None,
+            restart_on_crash: None, max_restart_attempts: None, startup_delay_secs: None,
+            track_process_name: None, force_kill_on_stop: None, kill_process_tree: None,
+        };
+        let updated = update_app_in(&mut config, &added.id, update).unwrap();
+        assert_eq!(updated.name, "SimHub 2");
+        assert_eq!(updated.exe_path, "SimHub2.exe");
+    }
+
+    #[test]
+    fn should_clear_nullable_field_with_empty_string_on_update() {
+        let mut config = AppConfig::default();
+        let mut app = ManagedApp::new(&config.active_profile_id, "SimHub", "SimHub.exe");
+        app.args = Some("--flag".into());
+        let id = app.id.clone();
+        config.apps.push(app);
+        let update = UpdateApp {
+            args: Some("".into()),
+            name: None, exe_path: None, working_dir: None, enabled: None,
+            start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
+            startup_delay_secs: None, track_process_name: None,
+            force_kill_on_stop: None, kill_process_tree: None,
+        };
+        let updated = update_app_in(&mut config, &id, update).unwrap();
+        assert!(updated.args.is_none());
+    }
+
+    #[test]
+    fn should_delete_app_by_id() {
+        let mut config = AppConfig::default();
+        let a = add_app_to(&mut config, new_app("SimHub", "SimHub.exe"));
+        add_app_to(&mut config, new_app("CrewChief", "CrewChief.exe"));
+        assert_eq!(config.apps.len(), 2);
+        config.apps.retain(|app| app.id != a.id);
+        assert_eq!(config.apps.len(), 1);
+        assert_eq!(config.apps[0].name, "CrewChief");
+    }
+
+    #[test]
+    fn should_return_error_when_updating_nonexistent_app() {
+        let mut config = AppConfig::default();
+        let update = UpdateApp {
+            name: Some("X".into()),
+            exe_path: None, args: None, working_dir: None, enabled: None,
+            start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
+            startup_delay_secs: None, track_process_name: None,
+            force_kill_on_stop: None, kill_process_tree: None,
+        };
+        let result = update_app_in(&mut config, "nonexistent-id", update);
+        assert!(result.is_err());
     }
 }
