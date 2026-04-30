@@ -21,6 +21,9 @@ pub struct NewApp {
     pub max_restart_attempts: Option<u32>,
     pub startup_delay_secs: Option<f64>,
     pub track_process_name: Option<String>,
+    pub force_kill_on_stop: Option<bool>,
+    pub kill_process_tree: Option<bool>,
+    pub stop_with_iracing: Option<bool>,
 }
 
 impl NewApp {
@@ -34,6 +37,9 @@ impl NewApp {
         if let Some(v) = self.max_restart_attempts { managed.max_restart_attempts = v; }
         if let Some(v) = self.startup_delay_secs   { managed.startup_delay_secs = v; }
         if let Some(v) = self.track_process_name   { managed.track_process_name = non_empty(v); }
+        if let Some(v) = self.force_kill_on_stop   { managed.force_kill_on_stop = v; }
+        if let Some(v) = self.kill_process_tree    { managed.kill_process_tree = v; }
+        if let Some(v) = self.stop_with_iracing    { managed.stop_with_iracing = v; }
         managed
     }
 }
@@ -52,6 +58,7 @@ pub struct UpdateApp {
     pub track_process_name: Option<String>,
     pub force_kill_on_stop: Option<bool>,
     pub kill_process_tree: Option<bool>,
+    pub stop_with_iracing: Option<bool>,
 }
 
 impl UpdateApp {
@@ -68,6 +75,7 @@ impl UpdateApp {
         if let Some(v) = self.track_process_name   { app.track_process_name = non_empty(v); }
         if let Some(v) = self.force_kill_on_stop   { app.force_kill_on_stop = v; }
         if let Some(v) = self.kill_process_tree    { app.kill_process_tree = v; }
+        if let Some(v) = self.stop_with_iracing    { app.stop_with_iracing = v; }
     }
 }
 
@@ -317,6 +325,9 @@ mod tests {
             max_restart_attempts: None,
             startup_delay_secs: None,
             track_process_name: None,
+            force_kill_on_stop: None,
+            kill_process_tree: None,
+            stop_with_iracing: None,
         }
     }
 
@@ -358,6 +369,9 @@ mod tests {
             max_restart_attempts: Some(5),
             startup_delay_secs: Some(2.5),
             track_process_name: Some("CrewChiefV4.exe".into()),
+            force_kill_on_stop: None,
+            kill_process_tree: None,
+            stop_with_iracing: None,
         };
         let added = add_app_to(&mut config, input);
         assert_eq!(added.args, Some("--flag".into()));
@@ -402,6 +416,7 @@ mod tests {
             args: None, working_dir: None, enabled: None, start_minimized: None,
             restart_on_crash: None, max_restart_attempts: None, startup_delay_secs: None,
             track_process_name: None, force_kill_on_stop: None, kill_process_tree: None,
+            stop_with_iracing: None,
         };
         let updated = update_app_in(&mut config, &added.id, update).unwrap();
         assert_eq!(updated.name, "SimHub 2");
@@ -420,7 +435,7 @@ mod tests {
             name: None, exe_path: None, working_dir: None, enabled: None,
             start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
             startup_delay_secs: None, track_process_name: None,
-            force_kill_on_stop: None, kill_process_tree: None,
+            force_kill_on_stop: None, kill_process_tree: None, stop_with_iracing: None,
         };
         let updated = update_app_in(&mut config, &id, update).unwrap();
         assert!(updated.args.is_none());
@@ -445,9 +460,57 @@ mod tests {
             exe_path: None, args: None, working_dir: None, enabled: None,
             start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
             startup_delay_secs: None, track_process_name: None,
-            force_kill_on_stop: None, kill_process_tree: None,
+            force_kill_on_stop: None, kill_process_tree: None, stop_with_iracing: None,
         };
         let result = update_app_in(&mut config, "nonexistent-id", update);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn new_app_defaults_stop_with_iracing_to_true_when_omitted() {
+        let mut config = AppConfig::default();
+        let added = add_app_to(&mut config, new_app("SimHub", "SimHub.exe"));
+        assert!(added.stop_with_iracing);
+    }
+
+    #[test]
+    fn new_app_respects_stop_with_iracing_false() {
+        let mut config = AppConfig::default();
+        let input = NewApp { stop_with_iracing: Some(false), ..new_app("SimHub", "SimHub.exe") };
+        let added = add_app_to(&mut config, input);
+        assert!(!added.stop_with_iracing);
+    }
+
+    #[test]
+    fn update_app_sets_stop_with_iracing_false() {
+        let mut config = AppConfig::default();
+        let added = add_app_to(&mut config, new_app("SimHub", "SimHub.exe"));
+        assert!(added.stop_with_iracing);
+        let update = UpdateApp {
+            stop_with_iracing: Some(false),
+            name: None, exe_path: None, args: None, working_dir: None, enabled: None,
+            start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
+            startup_delay_secs: None, track_process_name: None,
+            force_kill_on_stop: None, kill_process_tree: None,
+        };
+        let updated = update_app_in(&mut config, &added.id, update).unwrap();
+        assert!(!updated.stop_with_iracing);
+    }
+
+    #[test]
+    fn update_app_re_enables_stop_with_iracing() {
+        let mut config = AppConfig::default();
+        let input = NewApp { stop_with_iracing: Some(false), ..new_app("SimHub", "SimHub.exe") };
+        let added = add_app_to(&mut config, input);
+        assert!(!added.stop_with_iracing);
+        let update = UpdateApp {
+            stop_with_iracing: Some(true),
+            name: None, exe_path: None, args: None, working_dir: None, enabled: None,
+            start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
+            startup_delay_secs: None, track_process_name: None,
+            force_kill_on_stop: None, kill_process_tree: None,
+        };
+        let updated = update_app_in(&mut config, &added.id, update).unwrap();
+        assert!(updated.stop_with_iracing);
     }
 }

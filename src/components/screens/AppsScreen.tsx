@@ -89,9 +89,10 @@ interface AppCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onToggleEnabled: (enabled: boolean) => void;
+  onToggleStopWithIracing: (stop: boolean) => void;
 }
 
-function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabled }: AppCardProps) {
+function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabled, onToggleStopWithIracing }: AppCardProps) {
   const { t } = useTranslation();
   const running = status?.state.type === "running";
 
@@ -156,14 +157,24 @@ function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabl
         </div>
       </div>
 
-      {/* Row 2: auto-start toggle */}
-      <div className="flex items-center justify-between px-3 pb-2.5 -mt-0.5">
-        <span className="text-xs text-text-muted">{t("apps.auto_start")}</span>
-        <Toggle
-          checked={app.enabled}
-          onChange={onToggleEnabled}
-          label={t("apps.auto_start")}
-        />
+      {/* Row 2: auto-start / auto-stop toggles */}
+      <div className="flex items-center justify-between px-3 pb-2.5 -mt-0.5 gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-muted">{t("apps.auto_start")}</span>
+          <Toggle
+            checked={app.enabled}
+            onChange={onToggleEnabled}
+            label={t("apps.auto_start")}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-muted">{t("apps.auto_stop")}</span>
+          <Toggle
+            checked={app.stop_with_iracing}
+            onChange={onToggleStopWithIracing}
+            label={t("apps.auto_stop")}
+          />
+        </div>
       </div>
     </li>
   );
@@ -224,6 +235,11 @@ export function AppsScreen() {
   async function handleToggleEnabled(app: ManagedApp, enabled: boolean) {
     await api.updateApp(app.id, { enabled });
     setApps((prev) => prev.map((a) => a.id === app.id ? { ...a, enabled } : a));
+  }
+
+  async function handleToggleStopWithIracing(app: ManagedApp, stop_with_iracing: boolean) {
+    await api.updateApp(app.id, { stop_with_iracing });
+    setApps((prev) => prev.map((a) => a.id === app.id ? { ...a, stop_with_iracing } : a));
   }
 
   return (
@@ -292,6 +308,7 @@ export function AppsScreen() {
                 onEdit={() => setModal({ type: "edit", app })}
                 onDelete={() => setConfirmDelete(app)}
                 onToggleEnabled={(enabled) => handleToggleEnabled(app, enabled)}
+                onToggleStopWithIracing={(stop) => handleToggleStopWithIracing(app, stop)}
               />
             );
           })}

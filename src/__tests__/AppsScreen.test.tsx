@@ -14,6 +14,7 @@ vi.mock("@/lib/api", () => ({
     forceKillApp: vi.fn(),
     getAutoStop: vi.fn(),
     setAutoStop: vi.fn(),
+    updateApp: vi.fn(),
   },
 }));
 
@@ -37,6 +38,7 @@ function makeApp(overrides: Partial<ManagedApp> = {}): ManagedApp {
     track_process_name: null,
     force_kill_on_stop: false,
     kill_process_tree: false,
+    stop_with_iracing: true,
     ...overrides,
   };
 }
@@ -54,6 +56,7 @@ beforeEach(() => {
   vi.mocked(api.forceKillApp).mockResolvedValue(undefined);
   vi.mocked(api.getAutoStop).mockResolvedValue(true);
   vi.mocked(api.setAutoStop).mockResolvedValue(undefined);
+  vi.mocked(api.updateApp).mockResolvedValue(makeApp());
 });
 
 describe("AppsScreen", () => {
@@ -124,6 +127,32 @@ describe("AppsScreen", () => {
     await waitFor(() => expect(screen.getByTitle(/start/i)).toBeInTheDocument());
     await userEvent.click(screen.getByTitle(/start/i));
     expect(vi.mocked(api.forceLaunchApp)).toHaveBeenCalledWith("42");
+  });
+
+  it("should render stop-with-iracing toggle as checked by default", async () => {
+    vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: "1", stop_with_iracing: true })]);
+    render(<AppsScreen />);
+    await screen.findByText("SimHub");
+    const toggle = screen.getByRole("switch", { name: /stop with iracing/i });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("should render stop-with-iracing toggle as unchecked when false", async () => {
+    vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: "1", stop_with_iracing: false })]);
+    render(<AppsScreen />);
+    await screen.findByText("SimHub");
+    const toggle = screen.getByRole("switch", { name: /stop with iracing/i });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("should call updateApp with stop_with_iracing false when toggle clicked", async () => {
+    vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: "42", stop_with_iracing: true })]);
+    vi.mocked(api.updateApp).mockResolvedValue(makeApp({ id: "42", stop_with_iracing: false }));
+    render(<AppsScreen />);
+    await screen.findByText("SimHub");
+    const toggle = screen.getByRole("switch", { name: /stop with iracing/i });
+    await userEvent.click(toggle);
+    expect(vi.mocked(api.updateApp)).toHaveBeenCalledWith("42", { stop_with_iracing: false });
   });
 
   it("should call forceKillApp when stop is clicked", async () => {

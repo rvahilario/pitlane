@@ -43,6 +43,9 @@ pub struct ManagedApp {
     /// Use for apps that spawn helper processes (e.g. G Hub spawns multiple lghub.exe).
     #[serde(default)]
     pub kill_process_tree: bool,
+    /// Stop this app when iRacing closes. When false, the app keeps running after iRacing exits.
+    #[serde(default = "default_true")]
+    pub stop_with_iracing: bool,
 }
 
 impl ManagedApp {
@@ -62,6 +65,7 @@ impl ManagedApp {
             track_process_name: None,
             force_kill_on_stop: false,
             kill_process_tree: false,
+            stop_with_iracing: true,
         }
     }
 }
@@ -259,5 +263,31 @@ mod tests {
         assert!(!app.restart_on_crash);
         assert_eq!(app.max_restart_attempts, 3);
         assert_eq!(app.startup_delay_secs, 0.0);
+    }
+
+    #[test]
+    fn should_default_stop_with_iracing_to_true() {
+        let app = ManagedApp::new("p1", "SimHub", "SimHub.exe");
+        assert!(app.stop_with_iracing);
+    }
+
+    #[test]
+    fn should_deserialize_stop_with_iracing_as_true_when_missing() {
+        // Backward compat: configs saved before this field existed must default to true
+        let json = r#"{
+            "id": "abc", "profile_id": "p1",
+            "name": "SimHub", "exe_path": "SimHub.exe"
+        }"#;
+        let app: ManagedApp = serde_json::from_str(json).unwrap();
+        assert!(app.stop_with_iracing);
+    }
+
+    #[test]
+    fn should_round_trip_stop_with_iracing_false() {
+        let mut app = ManagedApp::new("p1", "SimHub", "SimHub.exe");
+        app.stop_with_iracing = false;
+        let json = serde_json::to_string(&app).unwrap();
+        let restored: ManagedApp = serde_json::from_str(&json).unwrap();
+        assert!(!restored.stop_with_iracing);
     }
 }
