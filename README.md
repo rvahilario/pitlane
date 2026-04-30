@@ -36,6 +36,9 @@ Built for **SimHub, CrewChief, VoiceAttack, Kapps, OBS** and any other companion
 - 🧩 **System tray-first**
   Runs in the background — UI opens on demand.
 
+- 🖼️ **App icons**
+  Each app card shows the real executable icon, extracted automatically.
+
 - 🔒 **Single instance**
   Prevents duplicates and brings the window to focus.
 
@@ -126,7 +129,6 @@ Simulates a full open/close cycle — perfect for fast development iteration.
 ## 🗺️ Roadmap
 
 - 🎛️ Profile management UI
-- 🖼️ Executable icon extraction for app cards
 - 💤 `start_minimized` (pending spawn fix)
 - 🖱️ Drag-and-drop to reorder apps
 

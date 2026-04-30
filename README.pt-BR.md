@@ -9,6 +9,8 @@ Ele detecta quando o iRacing abre ou fecha e orquestra tudo nos bastidores — i
 
 Perfeito para quem usa **SimHub, CrewChief, VoiceAttack, Kapps, OBS** e outros companions.
 
+🇺🇸 [Read in English](./README.md)
+
 ---
 
 ## ✨ Destaques
@@ -33,6 +35,9 @@ Perfeito para quem usa **SimHub, CrewChief, VoiceAttack, Kapps, OBS** e outros c
 
 - 🧩 **System tray-first**
   Roda em background — interface sob demanda.
+
+- 🖼️ **Ícones dos apps**
+  Cada card exibe o ícone real do executável, extraído automaticamente.
 
 - 🔒 **Instância única**
   Evita duplicação e traz a janela ao foco.
@@ -124,7 +129,6 @@ Simula o ciclo completo de abertura/fechamento — ideal para desenvolvimento r�
 ## 🗺️ Roadmap
 
 - 🎛️ UI de gerenciamento de perfis
-- 🖼️ Extração de ícones dos executáveis
 - 💤 `start_minimized` (aguardando ajuste de spawn)
 - 🖱️ Drag-and-drop para ordenação de apps
 
