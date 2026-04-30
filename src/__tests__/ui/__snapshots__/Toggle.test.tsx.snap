@@ -1,0 +1,44 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Toggle > snapshot — disabled 1`] = `
+<button
+  aria-checked="false"
+  aria-label="Auto start"
+  class="flex h-5 w-9 items-center rounded-full p-0.5 transition-colors shrink-0 disabled:cursor-not-allowed border border-border bg-elevated"
+  disabled=""
+  role="switch"
+  type="button"
+>
+  <span
+    class="h-4 w-4 rounded-full transition-transform translate-x-0 bg-text-disabled"
+  />
+</button>
+`;
+
+exports[`Toggle > snapshot — off 1`] = `
+<button
+  aria-checked="false"
+  aria-label="Auto start"
+  class="flex h-5 w-9 items-center rounded-full p-0.5 transition-colors shrink-0 disabled:cursor-not-allowed border border-accent-solid bg-elevated hover:bg-surface"
+  role="switch"
+  type="button"
+>
+  <span
+    class="h-4 w-4 rounded-full transition-transform translate-x-0 bg-accent-solid"
+  />
+</button>
+`;
+
+exports[`Toggle > snapshot — on 1`] = `
+<button
+  aria-checked="true"
+  aria-label="Auto start"
+  class="flex h-5 w-9 items-center rounded-full p-0.5 transition-colors shrink-0 disabled:cursor-not-allowed bg-accent-solid hover:bg-accent-solid-hover"
+  role="switch"
+  type="button"
+>
+  <span
+    class="h-4 w-4 rounded-full transition-transform translate-x-4 bg-on-accent"
+  />
+</button>
+`;

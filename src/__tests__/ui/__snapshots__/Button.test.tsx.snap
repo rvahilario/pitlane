@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Button > snapshot — danger md 1`] = `
+<button
+  class="inline-flex items-center justify-center gap-1.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-md border border-danger-solid bg-danger-solid text-on-danger hover:bg-danger-solid-hover px-3 py-1.5 text-sm"
+>
+  Delete
+</button>
+`;
+
+exports[`Button > snapshot — default accent 1`] = `
+<button
+  class="inline-flex items-center justify-center gap-1.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-md border border-accent-solid bg-accent-solid text-on-accent hover:bg-accent-solid-hover px-3 py-1.5 text-sm"
+>
+  Save
+</button>
+`;
+
+exports[`Button > snapshot — icon 1`] = `
+<button
+  aria-label="edit"
+  class="inline-flex items-center justify-center gap-1.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded text-text-secondary hover:text-text hover:bg-elevated text-sm p-1.5"
+/>
+`;

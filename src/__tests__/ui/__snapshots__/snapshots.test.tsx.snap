@@ -1,0 +1,406 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AppAvatar snapshot > color cycles by char code 1`] = `
+<div
+  class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 select-none bg-success/20 text-success"
+>
+  A
+</div>
+`;
+
+exports[`AppAvatar snapshot > color cycles by char code 2`] = `
+<div
+  class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 select-none bg-warning/20 text-warning"
+>
+  B
+</div>
+`;
+
+exports[`AppAvatar snapshot > renders first letter 1`] = `
+<div
+  class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 select-none bg-danger/20 text-danger"
+>
+  S
+</div>
+`;
+
+exports[`Badge snapshots > StatusBadge crashed 1`] = `
+<span
+  class="inline-flex items-center gap-1.5 rounded border bg-elevated px-1.5 py-0.5 text-xs font-medium border-warning text-warning"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-triangle-alert h-3.5 w-3.5 shrink-0 stroke-[2.5]"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+    />
+    <path
+      d="M12 9v4"
+    />
+    <path
+      d="M12 17h.01"
+    />
+  </svg>
+  Crashed
+</span>
+`;
+
+exports[`Badge snapshots > StatusBadge disabled 1`] = `
+<span
+  class="inline-flex items-center gap-1.5 rounded border bg-elevated px-1.5 py-0.5 text-xs font-medium border-border-strong text-text-muted"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-ban h-3.5 w-3.5 shrink-0 stroke-[2.5]"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle
+      cx="12"
+      cy="12"
+      r="10"
+    />
+    <path
+      d="M4.929 4.929 19.07 19.071"
+    />
+  </svg>
+  Disabled
+</span>
+`;
+
+exports[`Badge snapshots > StatusBadge idle 1`] = `
+<span
+  class="inline-flex items-center gap-1.5 rounded border bg-elevated px-1.5 py-0.5 text-xs font-medium border-border-strong text-text-secondary"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-clock3 lucide-clock-3 h-3.5 w-3.5 shrink-0 stroke-[2.5]"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle
+      cx="12"
+      cy="12"
+      r="10"
+    />
+    <path
+      d="M12 6v6h4"
+    />
+  </svg>
+  Idle
+</span>
+`;
+
+exports[`Badge snapshots > StatusBadge running 1`] = `
+<span
+  class="inline-flex items-center gap-1.5 rounded border bg-elevated px-1.5 py-0.5 text-xs font-medium border-success text-success"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-activity h-3.5 w-3.5 shrink-0 stroke-[2.5]"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+    />
+  </svg>
+  Running
+</span>
+`;
+
+exports[`Badge snapshots > Tag 1`] = `
+<span
+  class="text-xs px-1.5 py-0.5 rounded bg-elevated text-text-secondary"
+>
+  SimHub
+</span>
+`;
+
+exports[`Checkbox snapshots > checked 1`] = `
+<label
+  class="flex items-start gap-2.5 cursor-pointer group"
+>
+  <div
+    class="mt-0.5 w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors border-accent-solid bg-accent-solid"
+  >
+    <input
+      checked=""
+      class="sr-only"
+      type="checkbox"
+    />
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-check w-3 h-3 text-on-accent stroke-[2.5]"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M20 6 9 17l-5-5"
+      />
+    </svg>
+  </div>
+  <div>
+    <p
+      class="text-sm text-text leading-tight"
+    >
+      Restart on crash
+    </p>
+  </div>
+</label>
+`;
+
+exports[`Checkbox snapshots > unchecked 1`] = `
+<label
+  class="flex items-start gap-2.5 cursor-pointer group"
+>
+  <div
+    class="mt-0.5 w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors border-border-strong bg-elevated group-hover:border-accent/50"
+  >
+    <input
+      class="sr-only"
+      type="checkbox"
+    />
+  </div>
+  <div>
+    <p
+      class="text-sm text-text leading-tight"
+    >
+      Restart on crash
+    </p>
+  </div>
+</label>
+`;
+
+exports[`Checkbox snapshots > with hint 1`] = `
+<label
+  class="flex items-start gap-2.5 cursor-pointer group"
+>
+  <div
+    class="mt-0.5 w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors border-border-strong bg-elevated group-hover:border-accent/50"
+  >
+    <input
+      class="sr-only"
+      type="checkbox"
+    />
+  </div>
+  <div>
+    <p
+      class="text-sm text-text leading-tight"
+    >
+      Force kill
+    </p>
+    <p
+      class="text-xs text-text-muted mt-0.5"
+    >
+      Skips WM_CLOSE
+    </p>
+  </div>
+</label>
+`;
+
+exports[`EmptyState snapshot > with action 1`] = `
+<div
+  class="flex-1 flex flex-col items-center justify-center text-text-muted gap-3 h-full"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-activity w-8 h-8"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+    />
+  </svg>
+  <div
+    class="flex flex-col items-center gap-2"
+  >
+    <p
+      class="text-sm"
+    >
+      No apps yet
+    </p>
+    <button>
+      Add app
+    </button>
+  </div>
+</div>
+`;
+
+exports[`EmptyState snapshot > without action 1`] = `
+<div
+  class="flex-1 flex flex-col items-center justify-center text-text-muted gap-3 h-full"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-activity w-8 h-8"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+    />
+  </svg>
+  <div
+    class="flex flex-col items-center gap-2"
+  >
+    <p
+      class="text-sm"
+    >
+      No apps yet
+    </p>
+  </div>
+</div>
+`;
+
+exports[`FormField snapshot > with hint 1`] = `
+<div
+  class="flex flex-col gap-1"
+>
+  <label
+    class="text-xs text-text-muted"
+  >
+    Name
+  </label>
+  <input />
+  <p
+    class="text-xs text-text-muted"
+  >
+    Display name
+  </p>
+</div>
+`;
+
+exports[`FormField snapshot > with label only 1`] = `
+<div
+  class="flex flex-col gap-1"
+>
+  <label
+    class="text-xs text-text-muted"
+  >
+    Name
+  </label>
+  <input />
+</div>
+`;
+
+exports[`Input snapshots > NumberInput 1`] = `
+<input
+  class="text-sm bg-elevated border border-border-strong rounded-md px-3 py-1.5 text-text outline-none focus:border-accent placeholder:text-text-disabled transition-colors w-28"
+  min="1"
+  step="1"
+  type="number"
+  value="3"
+/>
+`;
+
+exports[`Input snapshots > TextInput default 1`] = `
+<input
+  class="text-sm bg-elevated border border-border-strong rounded-md px-3 py-1.5 text-text outline-none focus:border-accent placeholder:text-text-disabled transition-colors"
+  type="text"
+  value="SimHub"
+/>
+`;
+
+exports[`Input snapshots > TextInput mono 1`] = `
+<input
+  class="bg-elevated border border-border-strong rounded-md px-3 py-1.5 text-text outline-none focus:border-accent placeholder:text-text-disabled transition-colors font-mono text-xs"
+  type="text"
+  value="C:/SimHub/SimHub.exe"
+/>
+`;
+
+exports[`ScreenHeader snapshot > title only 1`] = `
+<div
+  class="flex items-center justify-between px-4 py-3 border-b border-border shrink-0"
+>
+  <h2
+    class="text-sm font-semibold text-text"
+  >
+    Apps
+  </h2>
+</div>
+`;
+
+exports[`ScreenHeader snapshot > with action 1`] = `
+<div
+  class="flex items-center justify-between px-4 py-3 border-b border-border shrink-0"
+>
+  <h2
+    class="text-sm font-semibold text-text"
+  >
+    History
+  </h2>
+  <button>
+    Clear
+  </button>
+</div>
+`;
+
+exports[`SectionDivider snapshot > renders 1`] = `
+<div
+  class="flex items-center gap-2 pt-1"
+>
+  <span
+    class="text-xs font-semibold uppercase tracking-widest text-text-muted"
+  >
+    Basic
+  </span>
+  <div
+    class="flex-1 h-px bg-border"
+  />
+</div>
+`;
