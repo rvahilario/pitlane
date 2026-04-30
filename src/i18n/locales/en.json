@@ -27,6 +27,7 @@
     "delete_confirm_message": "Remove \"{{name}}\"? This cannot be undone.",
     "delete_confirm": "Delete",
     "auto_start": "Auto-start with iRacing",
+    "auto_stop": "Stop with iRacing",
     "auto_stop_label": "Stop on close",
     "auto_stop_hint": "Stop all apps when iRacing closes",
     "status": {

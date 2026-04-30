@@ -27,6 +27,7 @@
     "delete_confirm_message": "Remover \"{{name}}\"? Esta ação não pode ser desfeita.",
     "delete_confirm": "Excluir",
     "auto_start": "Iniciar com iRacing",
+    "auto_stop": "Parar com iRacing",
     "auto_stop_label": "Parar ao fechar",
     "auto_stop_hint": "Parar todos os apps quando o iRacing fechar",
     "status": {

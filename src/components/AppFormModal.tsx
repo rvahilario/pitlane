@@ -23,6 +23,7 @@ interface FormState {
   track_process_name: string;
   force_kill_on_stop: boolean;
   kill_process_tree: boolean;
+  stop_with_iracing: boolean;
 }
 
 function initForm(initial?: ManagedApp): FormState {
@@ -38,6 +39,7 @@ function initForm(initial?: ManagedApp): FormState {
     track_process_name:   initial?.track_process_name   ?? "",
     force_kill_on_stop:   initial?.force_kill_on_stop   ?? false,
     kill_process_tree:    initial?.kill_process_tree    ?? false,
+    stop_with_iracing:    initial?.stop_with_iracing    ?? true,
   };
 }
 
@@ -164,6 +166,7 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
         track_process_name:   form.track_process_name,
         force_kill_on_stop:   form.force_kill_on_stop,
         kill_process_tree:    form.kill_process_tree,
+        stop_with_iracing:    form.stop_with_iracing,
       });
       setSaved(true);
       setTimeout(onClose, 600);
@@ -215,6 +218,12 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
               label={t("apps.form.enabled")}
               checked={form.enabled}
               onChange={(v) => patch("enabled", v)}
+            />
+
+            <CheckRow
+              label={t("apps.auto_stop")}
+              checked={form.stop_with_iracing}
+              onChange={(v) => patch("stop_with_iracing", v)}
             />
 
             {/* ── Startup ── */}

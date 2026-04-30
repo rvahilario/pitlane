@@ -15,6 +15,7 @@ export interface ManagedApp {
   track_process_name: string | null;
   force_kill_on_stop: boolean;
   kill_process_tree: boolean;
+  stop_with_iracing: boolean;
 }
 
 export interface Profile {
@@ -47,6 +48,7 @@ export interface NewApp {
   track_process_name?: string;
   force_kill_on_stop?: boolean;
   kill_process_tree?: boolean;
+  stop_with_iracing?: boolean;
 }
 
 export interface UpdateApp {
@@ -62,6 +64,7 @@ export interface UpdateApp {
   track_process_name?: string | null;
   force_kill_on_stop?: boolean;
   kill_process_tree?: boolean;
+  stop_with_iracing?: boolean;
 }
 
 export type LogKind = "launch" | "stop" | "iracing_start" | "iracing_stop";
