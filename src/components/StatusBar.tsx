@@ -41,7 +41,7 @@ export function StatusBar({ iRacingRunning, sessionType, managedCount, paused }:
             "flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
             iRacingRunning
               ? "bg-accent/10 border border-accent/25 text-accent"
-              : "bg-surface border border-border text-text-muted",
+              : "bg-surface border border-border-strong text-text-muted",
           )}
         >
           <Circle className={cn(

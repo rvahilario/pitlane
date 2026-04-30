@@ -29,6 +29,7 @@ const mockApp: ManagedApp = {
   track_process_name: null,
   force_kill_on_stop: false,
   kill_process_tree: false,
+  stop_with_iracing: true,
 };
 
 const newApp: ManagedApp = {
@@ -46,6 +47,7 @@ const newApp: ManagedApp = {
   track_process_name: null,
   force_kill_on_stop: false,
   kill_process_tree: false,
+  stop_with_iracing: true,
 };
 
 beforeEach(() => {

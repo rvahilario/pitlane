@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/cn";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { api, type Settings, type TriggerMode } from "@/lib/api";
 
@@ -75,7 +76,7 @@ export function SettingsScreen() {
               </button>
             ))}
           </div>
-          <p className="text-xs text-text-disabled">{t("settings.trigger_hint")}</p>
+          <p className="text-xs text-text-muted">{t("settings.trigger_hint")}</p>
         </div>
       </section>
 
@@ -133,16 +134,22 @@ function ToggleRow({
     <div className="flex items-center justify-between">
       <div>
         <p className="text-xs font-medium text-text-secondary">{label}</p>
-        <p className="text-xs text-text-disabled">{description}</p>
+        <p className="text-xs text-text-muted">{description}</p>
       </div>
       <button
         role="switch"
         aria-checked={enabled}
         onClick={() => onChange(!enabled)}
-        className={`relative w-10 h-5 rounded-full transition-colors overflow-hidden ${enabled ? "bg-accent/60" : "bg-zinc-600"}`}
+        className={cn(
+          "relative w-10 h-5 rounded-full transition-colors shrink-0",
+          enabled ? "bg-accent/40" : "bg-elevated border border-border-strong",
+        )}
       >
         <span
-          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${enabled ? "translate-x-5" : "translate-x-0"}`}
+          className={cn(
+            "absolute top-0.5 w-4 h-4 rounded-full transition-all",
+            enabled ? "left-[22px] bg-accent" : "left-0.5 bg-text-disabled",
+          )}
         />
       </button>
     </div>

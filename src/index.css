@@ -9,7 +9,7 @@
 
   /* --- Bordas --- */
   --color-border:        #2a1850;
-  --color-border-strong: #3d2d6a;
+  --color-border-strong: #8272b9; /* bumped from #3d2d6a — 3.2:1 on elevated, 4.4:1 on base */
 
   /* --- Texto (todos >= 4.5:1 sobre base e surface) --- */
   --color-text:           #f0eeff; /* 15.8:1 on base */

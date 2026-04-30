@@ -113,7 +113,7 @@ function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabl
             <StatusIndicator status={status} />
             <span className="text-sm font-medium text-text truncate">{app.name}</span>
           </div>
-          <p className="text-xs text-text-disabled truncate font-mono mt-0.5" title={statusLabel(status, t)}>
+          <p className="text-xs text-text-muted truncate font-mono mt-0.5" title={statusLabel(status, t)}>
             {statusLabel(status, t)}
           </p>
         </div>
@@ -123,7 +123,7 @@ function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabl
             <button
               title={t("apps.stop")}
               onClick={onStop}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded text-warning/80 hover:text-warning hover:bg-warning/10 transition-colors border border-transparent hover:border-warning/20"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded text-danger/80 hover:text-danger hover:bg-danger/10 transition-colors border border-transparent hover:border-danger/20"
             >
               <Square className="w-3 h-3" />
               {t("apps.stop")}
@@ -132,7 +132,7 @@ function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabl
             <button
               title={t("apps.start")}
               onClick={onStart}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded text-text-muted hover:text-text hover:bg-elevated transition-colors border border-transparent hover:border-border-strong"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded text-success/80 hover:text-success hover:bg-success/10 transition-colors border border-transparent hover:border-success/20"
             >
               <Play className="w-3 h-3" />
               {t("apps.start")}
