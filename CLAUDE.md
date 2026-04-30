@@ -42,8 +42,8 @@ npm run tauri dev
 # Dev só frontend (sem Rust, para iterar UI rapidamente)
 npm run dev
 
-# Testes backend (Rust)
-cargo test --manifest-path src-tauri/Cargo.toml
+# Testes backend (Rust) — usar --lib para não compilar o binário
+cargo test --manifest-path src-tauri/Cargo.toml --lib
 
 # Testes frontend
 npm run test
@@ -57,16 +57,17 @@ npm run tauri build
 ### Backend Rust (`src-tauri/src/`)
 
 ```
-lib.rs            # Entry point da lib; registra commands e inicializa plugins
-main.rs           # Entry point binário (só chama lib::run())
-models.rs         # ManagedApp, Profile, AppConfig — serde Serialize/Deserialize
-config.rs         # Load/save JSON atômico em %LOCALAPPDATA%\Pitlane\config.json
-monitor.rs        # Thread que policia iRacing via sysinfo; dispara callbacks
-launcher.rs       # Spawn de processos externos (STARTUPINFO para minimizado)
-process_killer.rs # WM_CLOSE → grace period → TerminateProcess (Win32)
-watchdog.rs       # Thread que detecta crash e reinicia até max_restart_attempts
-controller.rs     # Orquestrador: coordena monitor → launcher → watchdog → killer
-commands.rs       # Tauri commands (#[tauri::command]) — API surface do frontend
+lib.rs              # Entry point da lib; registra commands e inicializa plugins
+main.rs             # Entry point binário (só chama lib::run())
+models.rs           # ManagedApp, Profile, AppConfig — serde Serialize/Deserialize
+config.rs           # Load/save JSON atômico em %LOCALAPPDATA%\Pitlane\config.json
+monitor.rs          # Thread que policia iRacing via sysinfo; dispara callbacks
+launcher.rs         # Spawn de processos externos (STARTUPINFO para minimizado)
+process_killer.rs   # WM_CLOSE → grace period → TerminateProcess (Win32)
+watchdog.rs         # Thread que detecta crash e reinicia até max_restart_attempts
+controller.rs       # Orquestrador: coordena monitor → launcher → watchdog → killer
+commands.rs         # Tauri commands (#[tauri::command]) — API surface do frontend
+icon_extractor.rs   # Extrai ícone de exe via PowerShell subprocess; cache in-memory
 ```
 
 **Threading:**
@@ -78,15 +79,21 @@ commands.rs       # Tauri commands (#[tauri::command]) — API surface do fronte
 **IPC:**
 - JS → Rust: `invoke("command_name", args)` → `#[tauri::command]`
 - Rust → JS: `app.emit("event-name", payload)` → `listen("event-name", handler)`
+- **Args em camelCase:** Tauri v2 converte automaticamente `exePath` → `exe_path`. Sempre passar args como camelCase no JS — snake_case é rejeitado silenciosamente.
 
 ### Frontend React (`src/`)
 
 ```
-lib/api.ts            # Wrappers tipados sobre invoke() — toda chamada Rust passa aqui
-hooks/useStatus.ts    # Escuta "status-updated" e expõe estado reativo
-hooks/useLog.ts       # Poll get_log_since(seq) e mantém buffer local
-components/           # Componentes shadcn/ui + componentes do domínio
-App.tsx               # Shell: layout, roteamento entre abas
+lib/api.ts                  # Wrappers tipados sobre invoke() — toda chamada Rust passa aqui
+hooks/useStatus.ts          # Escuta "status-updated" e expõe estado reativo
+hooks/useLog.ts             # Poll get_log_since(seq) e mantém buffer local
+components/ui/              # Primitivos reutilizáveis: Button, Toggle, Input, Checkbox,
+                            #   Badge, Modal, Dropdown, EmptyState, SectionDivider
+components/layout/          # Helpers de layout: ScreenHeader, FormField
+components/AppAvatar.tsx    # Avatar de app: ícone extraído ou letra inicial
+components/AppCard.tsx      # Card de app com status, toggles e ações
+components/screens/         # Telas: AppsScreen, SettingsScreen, LogScreen, HistoryScreen
+App.tsx                     # Shell: layout, roteamento entre abas
 ```
 
 ## Referência iGnition
@@ -161,6 +168,10 @@ chore(tooling): configure Tailwind v4 and path aliases
 - Mensagem em inglês, verbo no imperativo ("add", "fix", "remove", não "added", "fixes")
 - Nunca commitar uma camada incompleta — deve ser testável antes do commit
 
+### Pull Requests
+
+O template de PR está em [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md). Toda PR description **MUST** seguir essa estrutura: Overview, What changed, Why, Screenshots/media, Test plan, Risk and rollout notes, Review focus. Rascunhos para revisão vão em `tmp/pr-<nome-da-branch>.md`.
+
 ### Design
 - Dark theme exclusivo — sem toggle
 - Paleta roxa escura + accent teal-aqua (definida em `src/index.css` via `@theme`):
@@ -218,7 +229,7 @@ powershell -ExecutionPolicy Bypass -File scripts/fake-iracing.ps1
 
 - Win32 via `windows` crate: `EnumWindows`, `PostMessageW`, `TerminateProcess`
 - Autostart: `tauri-plugin-autostart` (registry `HKCU\...\Run`)
-- Icon extraction: PowerShell subprocess → base64 PNG
+- Icon extraction: `powershell.exe` (Windows PowerShell 5.1, não `pwsh`) subprocess via `System.Drawing.Icon::ExtractAssociatedIcon` → base64 PNG; cache in-memory em `icon_extractor.rs`
 - Notificações: `tauri-plugin-notification`
 - Single instance: `tauri-plugin-single-instance`
 - `sysinfo` 0.32: `Process::name()` pode ou não incluir `.exe` — sempre fazer dual-match
