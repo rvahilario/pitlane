@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PitlaneLogo } from "@/components/PitlaneLogo";
+import { ThemeSelector } from "@/components/ThemeSelector";
 
 interface StatusBarProps {
   iRacingRunning: boolean;
@@ -53,6 +54,7 @@ export function StatusBar({ iRacingRunning, sessionType, managedCount, paused }:
 
         <div className="w-px h-4 bg-border" />
 
+        <ThemeSelector variant="compact" />
         <LanguageSelector variant="compact" />
       </div>
     </header>

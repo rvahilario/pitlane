@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { ThemeSelector } from "@/components/ThemeSelector";
 import { api, type Settings, type TriggerMode } from "@/lib/api";
 
 const DEFAULT_SETTINGS: Settings = {
@@ -66,8 +67,8 @@ export function SettingsScreen() {
               <button
                 key={mode}
                 onClick={() => patch("default_trigger", mode)}
-                className="px-3 py-1.5 text-xs rounded border transition-colors
-                           data-[active=true]:bg-accent/15 data-[active=true]:border-accent/40 data-[active=true]:text-accent
+                className="px-3 py-1.5 text-sm rounded border transition-colors
+                           data-[active=true]:bg-accent-solid data-[active=true]:border-accent-solid data-[active=true]:text-on-accent
                            data-[active=false]:border-border-strong data-[active=false]:text-text-muted
                            data-[active=false]:hover:border-elevated data-[active=false]:hover:text-text-secondary"
                 data-active={settings.default_trigger === mode}
@@ -104,13 +105,20 @@ export function SettingsScreen() {
           </div>
           <LanguageSelector variant="default" />
         </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-text-secondary">{t("settings.theme_label")}</p>
+          </div>
+          <ThemeSelector variant="default" />
+        </div>
       </section>
 
       <div className="flex justify-end pt-2">
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-1.5 text-xs font-semibold rounded bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 transition-colors disabled:opacity-50"
+          className="px-4 py-1.5 text-sm font-semibold rounded bg-accent-solid hover:bg-accent-solid-hover text-on-accent border border-accent-solid transition-colors disabled:opacity-50"
         >
           {saving ? "…" : t("settings.save")}
         </button>
@@ -141,14 +149,14 @@ function ToggleRow({
         aria-checked={enabled}
         onClick={() => onChange(!enabled)}
         className={cn(
-          "relative w-10 h-5 rounded-full transition-colors shrink-0",
-          enabled ? "bg-accent/40" : "bg-elevated border border-border-strong",
+          "flex h-5 w-10 items-center rounded-full p-0.5 transition-colors shrink-0",
+          enabled ? "bg-accent-solid hover:bg-accent-solid-hover" : "bg-elevated border border-accent-solid hover:bg-surface",
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 w-4 h-4 rounded-full transition-all",
-            enabled ? "left-[22px] bg-accent" : "left-0.5 bg-text-disabled",
+            "h-4 w-4 rounded-full transition-transform",
+            enabled ? "translate-x-5 bg-on-accent" : "translate-x-0 bg-accent-solid",
           )}
         />
       </button>
