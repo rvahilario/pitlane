@@ -1,13 +1,14 @@
 mod commands;
 pub mod config;
 pub mod controller;
+pub mod icon_extractor;
 pub mod launcher;
 pub mod models;
 pub mod monitor;
 pub mod process_killer;
 pub mod watchdog;
 
-use commands::{ConfigState, ControllerState};
+use commands::{ConfigState, ControllerState, IconCacheState};
 use std::sync::{Arc, Mutex};
 use tauri::{
     menu::{Menu, MenuItem},
@@ -39,6 +40,7 @@ pub fn run() {
     let poll_interval = config.settings.poll_interval_secs;
     let autostart = config.settings.autostart;
     let config_arc = Arc::new(Mutex::new(config));
+    let icon_cache = icon_extractor::new_cache();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
@@ -51,6 +53,7 @@ pub fn run() {
             }
         }))
         .manage(ConfigState(Arc::clone(&config_arc)))
+        .manage(IconCacheState(icon_cache))
         .setup(move |app| {
             // ── Tray icon ────────────────────────────────────────────────────
             let show = MenuItem::with_id(app, MENU_ITEM_SHOW, "Show Pitlane", true, None::<&str>)?;
@@ -136,6 +139,7 @@ pub fn run() {
             commands::set_auto_stop,
             commands::set_tray_labels,
             commands::get_autostart_enabled,
+            commands::extract_icon,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
