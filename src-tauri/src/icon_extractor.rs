@@ -25,28 +25,38 @@ pub fn extract(exe_path: &str, cache: &IconCache) -> Option<String> {
 fn run_powershell(exe_path: &str) -> Option<String> {
     let escaped = exe_path.replace('\'', "''");
     let script = format!(
-        "Add-Type -AssemblyName System.Drawing; \
+        "try {{ \
+         Add-Type -AssemblyName System.Drawing; \
          $p = '{escaped}'; \
          if (-not (Test-Path $p)) {{ exit 1 }}; \
          $icon = [System.Drawing.Icon]::ExtractAssociatedIcon($p); \
+         if ($null -eq $icon) {{ exit 2 }}; \
          $bmp = $icon.ToBitmap(); \
          $ms = New-Object System.IO.MemoryStream; \
          $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png); \
-         [Convert]::ToBase64String($ms.ToArray())"
+         [Convert]::ToBase64String($ms.ToArray()) \
+         }} catch {{ Write-Error $_.Exception.Message; exit 99 }}"
     );
 
-    std::process::Command::new("powershell")
+    let output = std::process::Command::new("powershell.exe")
         .args(["-NonInteractive", "-NoProfile", "-Command", &script])
-        .output()
-        .ok()
-        .and_then(|o| {
-            if o.status.success() {
-                let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
-                if s.is_empty() { None } else { Some(s) }
-            } else {
-                None
+        .output();
+
+    match output {
+        Err(e) => {
+            eprintln!("[icon_extractor] failed to spawn powershell: {e}");
+            None
+        }
+        Ok(o) => {
+            if !o.status.success() {
+                let stderr = String::from_utf8_lossy(&o.stderr);
+                eprintln!("[icon_extractor] powershell exit {:?} for {exe_path:?}: {stderr}", o.status.code());
+                return None;
             }
-        })
+            let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
+            if s.is_empty() { None } else { Some(s) }
+        }
+    }
 }
 
 #[cfg(test)]
