@@ -113,7 +113,7 @@ function CheckRow({
         className={cn(
           "mt-0.5 w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors",
           checked
-            ? "bg-accent/20 border-accent"
+            ? "bg-accent-solid border-accent-solid"
             : "bg-elevated border-border-strong group-hover:border-accent/50",
         )}
       >
@@ -124,7 +124,7 @@ function CheckRow({
           className="sr-only"
         />
         {checked && (
-          <svg className="w-3 h-3 text-accent" viewBox="0 0 12 12" fill="none">
+          <svg className="w-3 h-3 text-on-accent" viewBox="0 0 12 12" fill="none">
             <path d="M2 6l2.5 2.5L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
@@ -303,7 +303,7 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                 type="button"
                 onClick={onClose}
                 disabled={saving || saved}
-                className="text-xs px-3 py-1.5 rounded-md border border-border-strong text-text-muted hover:text-text transition-colors disabled:opacity-50"
+                className="text-sm px-3 py-1.5 rounded-md border border-border-strong text-text-muted hover:text-text transition-colors disabled:opacity-50"
               >
                 {t("apps.form.cancel")}
               </button>
@@ -311,10 +311,10 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                 type="submit"
                 disabled={saving || saved || !form.name.trim() || !form.exe_path.trim()}
                 className={cn(
-                  "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md border transition-colors disabled:opacity-50",
+                  "flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-md border transition-colors disabled:opacity-50",
                   saved
-                    ? "bg-success/15 text-success border-success/30"
-                    : "bg-accent/15 hover:bg-accent/25 text-accent border-accent/30",
+                    ? "bg-success-solid text-on-success border-success-solid"
+                    : "bg-accent-solid hover:bg-accent-solid-hover text-on-accent border-accent-solid",
                 )}
               >
                 {saved ? (

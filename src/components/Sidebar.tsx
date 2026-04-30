@@ -29,7 +29,7 @@ export function Sidebar({ active, onChange }: SidebarProps) {
           className={cn(
             "flex items-center gap-2.5 px-3 py-2 rounded text-sm font-medium transition-colors text-left w-full border",
             active === id
-              ? "bg-accent/10 text-text border-accent/20"
+              ? "bg-elevated text-text border-accent"
               : "text-text-muted hover:text-text hover:bg-surface border-transparent",
           )}
         >
