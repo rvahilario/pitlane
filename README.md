@@ -18,8 +18,11 @@ Built for **SimHub, CrewChief, VoiceAttack, Kapps, OBS** and any other companion
 - 🚀 **Smart auto-launch**
   Your apps start automatically with iRacing — in the right order.
 
+- 🛠️ **Full app management**
+  Add, edit, and delete apps at any time. Force-start or force-stop any app manually.
+
 - 🛑 **Configurable auto-stop**
-  Kills everything when iRacing closes (toggle per session).
+  Kills everything when iRacing closes. Toggle globally for a session, or disable per-app individually.
 
 - 🧠 **Resilient watchdog**
   Detects crashes and restarts apps automatically (up to a configurable limit).

@@ -18,8 +18,11 @@ Perfeito para quem usa **SimHub, CrewChief, VoiceAttack, Kapps, OBS** e outros c
 - 🚀 **Auto-launch inteligente**
   Seus apps iniciam automaticamente junto com o iRacing — na ordem certa.
 
+- 🛠️ **Gerenciamento completo de apps**
+  Adicione, edite e remova apps a qualquer momento. Inicie ou pare qualquer app manualmente.
+
 - 🛑 **Auto-stop configurável**
-  Encerra tudo ao sair do iRacing (com toggle por sessão).
+  Encerra tudo ao sair do iRacing. Toggle global por sessão ou desative individualmente por app.
 
 - 🧠 **Watchdog resiliente**
   Detecta crashes e reinicia apps automaticamente (com limite configurável).
