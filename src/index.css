@@ -71,40 +71,40 @@
 
 html[data-theme="pitlane-nebula"] {
   /* --- Primitive ramps: Pitlane Nebula --- */
-  --color-aqua-100:  #eefdfb;
-  --color-aqua-200:  #c4e7e3;
-  --color-aqua-300:  #93c7c1;
-  --color-aqua-400:  #6aa09b;
-  --color-aqua-500:  #4a7773;
-  --color-aqua-600:  #235c5a;
-  --color-aqua-700:  #174343;
-  --color-aqua-800:  #103030;
-  --color-aqua-900:  #0b2020;
-  --color-aqua-1000: #061313;
+  --color-aqua-100:  #effefb;
+  --color-aqua-200:  #c7e9e5;
+  --color-aqua-300:  #95c6c1;
+  --color-aqua-400:  #6b9f9a;
+  --color-aqua-500:  #4c7671;
+  --color-aqua-600:  #2a5e5b;
+  --color-aqua-700:  #183f3d;
+  --color-aqua-800:  #0e2c2b;
+  --color-aqua-900:  #081818;
+  --color-aqua-1000: #041010;
 
-  --color-purple-100:  #f1edff;
-  --color-purple-200:  #d8ccff;
-  --color-purple-300:  #b8a2ff;
-  --color-purple-400:  #9c82f2;
+  --color-purple-100:  #f3efff;
+  --color-purple-200:  #dfd2ff;
+  --color-purple-300:  #bfa4ff;
+  --color-purple-400:  #9d82f2;
   --color-purple-500:  #8168d8;
-  --color-purple-600:  #6b55bd;
-  --color-purple-700:  #45347f;
-  --color-purple-800:  #30245c;
-  --color-purple-900:  #1c1438;
+  --color-purple-600:  #6651b9;
+  --color-purple-700:  #47347f;
+  --color-purple-800:  #31245b;
+  --color-purple-900:  #1d1336;
   --color-purple-1000: #0d0718;
 
   --color-green-300:  #7be9b4;
-  --color-green-400:  #55d99a;
-  --color-green-500:  #35b875;
-  --color-green-600:  #279b63;
+  --color-green-400:  #4cd39b;
+  --color-green-500:  #2da66a;
+  --color-green-600:  #238b59;
 
   --color-amber-300:  #ffe082;
   --color-amber-400:  #f2c94c;
 
   --color-red-300:  #ff9a9a;
   --color-red-400:  #ff8585;
-  --color-red-500:  #e0646b;
-  --color-red-600:  #cf5259;
+  --color-red-500:  #d85a62;
+  --color-red-600:  #c44952;
 
   --color-canvas:   var(--color-aqua-1000);
   --color-base:     var(--color-aqua-900);
