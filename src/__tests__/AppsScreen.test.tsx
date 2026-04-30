@@ -15,6 +15,7 @@ vi.mock("@/lib/api", () => ({
     getAutoStop: vi.fn(),
     setAutoStop: vi.fn(),
     updateApp: vi.fn(),
+    extractIcon: vi.fn().mockResolvedValue(null),
   },
 }));
 

@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import { Pencil, Play, Square, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
-import type { AppStatus, ManagedApp } from "@/lib/api";
+import { api, type AppStatus, type ManagedApp } from "@/lib/api";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Toggle } from "@/components/ui/Toggle";
@@ -28,6 +29,13 @@ export function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onTogg
   const running = status?.state.type === "running";
   const detail = pidDetail(status);
   const appDisabled = !app.enabled;
+  const [iconUrl, setIconUrl] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    api.extractIcon(app.exe_path).then((b64) => {
+      setIconUrl(b64 ? `data:image/png;base64,${b64}` : undefined);
+    });
+  }, [app.exe_path]);
 
   const statusLabel = !app.enabled
     ? t("apps.status.disabled")
@@ -44,7 +52,7 @@ export function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onTogg
       {/* Row 1: avatar / name / status / actions */}
       <div className="flex items-center gap-3 px-3 py-2.5">
         <div className={cn(appDisabled && "opacity-55")}>
-          <AppAvatar name={app.name} />
+          <AppAvatar name={app.name} iconUrl={iconUrl} />
         </div>
 
         <div className="flex-1 min-w-0">

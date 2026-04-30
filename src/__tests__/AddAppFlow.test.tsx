@@ -56,6 +56,7 @@ beforeEach(() => {
   vi.mocked(api.getActiveProfileId).mockResolvedValue("profile-1");
   vi.mocked(api.addApp).mockResolvedValue(newApp);
   vi.mocked(api.getAppStatuses).mockResolvedValue([]);
+  vi.mocked(api.extractIcon).mockResolvedValue(null);
 });
 
 describe("Add app flow", () => {
