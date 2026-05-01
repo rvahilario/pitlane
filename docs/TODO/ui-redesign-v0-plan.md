@@ -94,6 +94,8 @@ Avoid duplicating API calls inside both shell and screen when the same data can 
 
 Use `Pitlane Aurora` as the primary theme. Before implementation, compare `docs/TODO/pitlane-aurora-palette-reference.png` with `src/index.css` and only adjust tokens when there is an actual mismatch.
 
+UI-00 result: the Aurora ramp and semantic tokens in `src/index.css` already match the palette reference. No token patch is required before component work starts.
+
 Required visual rules:
 
 - Main surfaces remain dark purple with aqua used for primary action and focus.

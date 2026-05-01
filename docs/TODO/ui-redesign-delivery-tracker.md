@@ -47,7 +47,7 @@ Fora de escopo:
 
 | Status | ID | Sub-issue | Entrega esperada | Arquivos/áreas principais | Verificação mínima | Entregue em |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | UI-00 | Preparar base visual e inventário | Confirmar tokens Aurora, mapear diferenças da referência visual e registrar decisões que não exigem código | `src/index.css`, `docs/TODO/ui-redesign-v0-plan.md` | `npm run format:check` se houver mudança em código | |
+| [x] | UI-00 | Preparar base visual e inventário | Confirmar tokens Aurora, mapear diferenças da referência visual e registrar decisões que não exigem código | `src/index.css`, `docs/TODO/ui-redesign-v0-plan.md` | `npm run format:check` se houver mudança em código | 2026-05-01 |
 | [ ] | UI-01 | Componentes base do redesign | Criar/evoluir `IconButton`, `StatusPill`, `Panel`, `MetricTile`, `Toolbar`, `ActivityRow` sem trocar telas ainda | `src/components/ui`, `src/components/layout` | Testes unitários dos componentes novos; `npm run test` | |
 | [ ] | UI-02 | Novo modelo de navegação | Atualizar o tipo de tabs, i18n de navegação e sidebar para `command`, `apps`, `profiles`, `automation`, `logs`, `settings`, sem renderizar telas futuras como funcionais | `Sidebar`, `App.tsx`, i18n | Teste de tabs; confirmar que `Integrations` não aparece | |
 | [ ] | UI-03 | App shell V0 | Introduzir `AppShell`, `TopBar` e `BottomStatusBar`, preservando telas existentes dentro do novo layout | `App.tsx`, componentes de shell | Build e screenshot manual/Playwright do shell | |
@@ -98,3 +98,4 @@ Motivo da ordem: primeiro estabilizar tokens, componentes e shell; depois entreg
 | 2026-05-01 | `Integrations` fora de escopo | A tab foi marcada como `not intended` e removida do plano. |
 | 2026-05-01 | `Profiles` como `Future-0` | Alta prioridade futura, mas sem CRUD/API suficiente para V0. |
 | 2026-05-01 | `Automation` como `Future-1` | Deve existir depois de Profiles, usando regras globais sem duplicar Settings. |
+| 2026-05-01 | Aurora tokens já batem com a referência | `src/index.css` já contém as rampas e tokens semânticos da paleta `pitlane-aurora-palette-reference.png`; UI-00 não exige alteração de CSS. |
