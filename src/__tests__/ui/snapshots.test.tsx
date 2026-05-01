@@ -61,7 +61,7 @@ describe('Badge snapshots', () => {
     it('StatusBadge running', () => {
         const { container } = render(
             <StatusBadge
-                status={{ app_id: '1', state: { type: 'running', pid: 1234 } }}
+                status={{ app_id: '1', name: 'SimHub', state: { type: 'running', pid: 1234, restart_count: 0 } }}
                 enabled
                 label="Running"
             />,
@@ -72,7 +72,7 @@ describe('Badge snapshots', () => {
     it('StatusBadge crashed', () => {
         const { container } = render(
             <StatusBadge
-                status={{ app_id: '1', state: { type: 'crashed' } }}
+                status={{ app_id: '1', name: 'SimHub', state: { type: 'crashed' } }}
                 enabled
                 label="Crashed"
             />,

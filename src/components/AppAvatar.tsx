@@ -9,9 +9,20 @@ const AVATAR_COLORS = [
 
 interface AppAvatarProps {
     name: string
+    iconUrl?: string
 }
 
-export function AppAvatar({ name }: AppAvatarProps) {
+export function AppAvatar({ name, iconUrl }: AppAvatarProps) {
+    if (iconUrl) {
+        return (
+            <img
+                src={iconUrl}
+                alt={name}
+                className="w-8 h-8 rounded-lg shrink-0 select-none object-contain"
+            />
+        )
+    }
+
     const idx = (name.charCodeAt(0) ?? 0) % AVATAR_COLORS.length
     return (
         <div

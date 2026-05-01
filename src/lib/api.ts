@@ -108,4 +108,5 @@ export const api = {
     setTrayLabels: (showLabel: string, quitLabel: string) =>
         invoke<void>('set_tray_labels', { showLabel, quitLabel }),
     getAutostartEnabled: () => invoke<boolean>('get_autostart_enabled'),
+    extractIcon: (exePath: string) => invoke<string | null>('extract_icon', { exePath }),
 }

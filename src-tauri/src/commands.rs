@@ -137,6 +137,7 @@ fn non_empty(s: String) -> Option<String> {
 
 pub struct ConfigState(pub Arc<Mutex<AppConfig>>);
 pub struct ControllerState(pub Arc<Controller>);
+pub struct IconCacheState(pub crate::icon_extractor::IconCache);
 
 pub fn autostart_changed(old: &Settings, new: &Settings) -> Option<bool> {
     if old.autostart != new.autostart {
@@ -274,6 +275,11 @@ pub fn update_app(
     let updated = app.clone();
     save_config(&config)?;
     Ok(updated)
+}
+
+#[tauri::command]
+pub fn extract_icon(state: State<IconCacheState>, exe_path: String) -> Option<String> {
+    crate::icon_extractor::extract(&exe_path, &state.0)
 }
 
 #[tauri::command]
