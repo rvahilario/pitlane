@@ -49,8 +49,7 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            // Second instance tried to open — bring existing window to front
-            if let Some(window) = app.get_webview_window("main") {
+            if let Some(window) = app.get_webview_window(WINDOW_MAIN) {
                 let _ = window.show();
                 let _ = window.set_focus();
             }
