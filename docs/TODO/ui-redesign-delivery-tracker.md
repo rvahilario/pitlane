@@ -7,6 +7,7 @@ Este arquivo guia a implementação incremental do redesign da interface. Ele de
 Referências:
 
 - Plano técnico: `docs/TODO/ui-redesign-v0-plan.md`
+- Estratégia de styling: `docs/TODO/ui-redesign-styling-strategy.md`
 - Escopo das tabs: `docs/TODO/ui-redesign-tab-scope.md`
 - Referência visual: `docs/TODO/ui-redesign-command-center-reference.png`
 - Paleta: `docs/TODO/pitlane-aurora-palette-reference.png`
@@ -48,7 +49,7 @@ Fora de escopo:
 | Status | ID | Sub-issue | Entrega esperada | Arquivos/áreas principais | Verificação mínima | Entregue em |
 | --- | --- | --- | --- | --- | --- | --- |
 | [x] | UI-00 | Preparar base visual e inventário | Confirmar tokens Aurora, mapear diferenças da referência visual e registrar decisões que não exigem código | `src/index.css`, `docs/TODO/ui-redesign-v0-plan.md` | `npm run format:check` se houver mudança em código | 2026-05-01 |
-| [ ] | UI-00B | Definir estratégia de styling do redesign | Reduzir verbosidade do Tailwind com regras de encapsulamento, `cva` e classes semânticas pontuais antes dos componentes base | `src/components/ui`, `src/components/layout`, `src/index.css`, docs do redesign | Revisão do padrão documentado; `npm run format:check` se houver mudança em código | |
+| [x] | UI-00B | Definir estratégia de styling do redesign | Reduzir verbosidade do Tailwind com regras de encapsulamento, `cva` e classes semânticas pontuais antes dos componentes base | `src/components/ui`, `src/components/layout`, `src/index.css`, docs do redesign | Revisão do padrão documentado; `npm run format:check` se houver mudança em código | 2026-05-01 |
 | [ ] | UI-01 | Componentes base do redesign | Criar/evoluir `IconButton`, `StatusPill`, `Panel`, `MetricTile`, `Toolbar`, `ActivityRow` sem trocar telas ainda | `src/components/ui`, `src/components/layout` | Testes unitários dos componentes novos; `npm run test` | |
 | [ ] | UI-02 | Novo modelo de navegação | Atualizar o tipo de tabs, i18n de navegação e sidebar para `command`, `apps`, `profiles`, `automation`, `logs`, `settings`, sem renderizar telas futuras como funcionais | `Sidebar`, `App.tsx`, i18n | Teste de tabs; confirmar que `Integrations` não aparece | |
 | [ ] | UI-03 | App shell V0 | Introduzir `AppShell`, `TopBar` e `BottomStatusBar`, preservando telas existentes dentro do novo layout | `App.tsx`, componentes de shell | Build e screenshot manual/Playwright do shell | |

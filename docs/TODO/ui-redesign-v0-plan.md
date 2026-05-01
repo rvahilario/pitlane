@@ -116,6 +116,8 @@ Consolidate these components before screen work:
 
 The redesign should keep Tailwind CSS v4, but avoid spreading long utility strings through screen files.
 
+Detailed guide: `docs/TODO/ui-redesign-styling-strategy.md`.
+
 Rules for V0:
 
 - Screen components should prefer semantic components (`Panel`, `Toolbar`, `AppCommandRow`, `ActivityRow`, `MetricTile`) over repeated `className` blocks.
