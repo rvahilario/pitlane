@@ -1,8 +1,6 @@
-import { Bot, Gauge, LayoutList, ScrollText, Settings, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
-
-export type Tab = 'command' | 'apps' | 'profiles' | 'automation' | 'logs' | 'settings'
+import { NAV_ITEMS, type Tab } from './navigation'
 
 interface SidebarProps {
     active: Tab
@@ -12,18 +10,9 @@ interface SidebarProps {
 export function Sidebar({ active, onChange }: SidebarProps) {
     const { t } = useTranslation()
 
-    const items: { id: Tab; label: string; icon: React.ElementType }[] = [
-        { id: 'command', label: t('nav.command'), icon: Gauge },
-        { id: 'apps', label: t('nav.apps'), icon: LayoutList },
-        { id: 'profiles', label: t('nav.profiles'), icon: Users },
-        { id: 'automation', label: t('nav.automation'), icon: Bot },
-        { id: 'logs', label: t('nav.logs'), icon: ScrollText },
-        { id: 'settings', label: t('nav.settings'), icon: Settings },
-    ]
-
     return (
         <nav className="flex flex-col gap-1 w-44 shrink-0 bg-base border-r border-border p-2">
-            {items.map(({ id, label, icon: Icon }) => (
+            {NAV_ITEMS.map(({ id, labelKey, icon: Icon }) => (
                 <button
                     key={id}
                     data-testid={`nav-${id}`}
@@ -42,7 +31,7 @@ export function Sidebar({ active, onChange }: SidebarProps) {
                             active === id ? 'text-accent' : '',
                         )}
                     />
-                    {label}
+                    {t(labelKey)}
                 </button>
             ))}
         </nav>

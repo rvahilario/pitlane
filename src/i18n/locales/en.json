@@ -10,8 +10,6 @@
   "nav": {
     "command": "Command Center",
     "apps": "Apps",
-    "profiles": "Profiles",
-    "automation": "Automation",
     "logs": "Logs",
     "settings": "Settings"
   },

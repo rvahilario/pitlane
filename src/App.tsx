@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StatusBar, Sidebar, type Tab } from '@/components'
+import { DEFAULT_TAB, StatusBar, Sidebar, type Tab } from '@/components'
 import { AppsScreen, LogScreen, SettingsScreen } from '@/components/screens'
 import { useIRacingStatus, useAppStatuses } from '@/hooks'
 import { api } from '@/lib/api'
 
 function App() {
-    const [tab, setTab] = useState<Tab>('apps')
+    const [tab, setTab] = useState<Tab>(DEFAULT_TAB)
     const iRacingRunning = useIRacingStatus()
     const statuses = useAppStatuses()
     const { t, i18n } = useTranslation()
@@ -32,8 +32,6 @@ function App() {
                 <main className="flex-1 min-w-0">
                     {tab === 'command' && <PlaceholderScreen title={t('nav.command')} />}
                     {tab === 'apps' && <AppsScreen />}
-                    {tab === 'profiles' && <PlaceholderScreen title={t('nav.profiles')} />}
-                    {tab === 'automation' && <PlaceholderScreen title={t('nav.automation')} />}
                     {tab === 'logs' && <LogScreen />}
                     {tab === 'settings' && <SettingsScreen />}
                 </main>
