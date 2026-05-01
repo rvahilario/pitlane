@@ -15,15 +15,15 @@ test.describe("UI smoke", () => {
   });
 
   test("all sidebar navigation items are present", async ({ page }) => {
+    await expect(page.getByTestId("nav-command")).toBeVisible();
     await expect(page.getByTestId("nav-apps")).toBeVisible();
-    await expect(page.getByTestId("nav-log")).toBeVisible();
-    await expect(page.getByTestId("nav-history")).toBeVisible();
+    await expect(page.getByTestId("nav-logs")).toBeVisible();
     await expect(page.getByTestId("nav-settings")).toBeVisible();
   });
 
   test("navigates to Log tab", async ({ page }) => {
-    await page.getByTestId("nav-log").click();
-    await expect(page.getByTestId("nav-log")).toHaveAttribute(
+    await page.getByTestId("nav-logs").click();
+    await expect(page.getByTestId("nav-logs")).toHaveAttribute(
       "class",
       /text-text\b/
     );

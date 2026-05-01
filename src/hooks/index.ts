@@ -1,3 +1,4 @@
+export { useActiveProfile } from './useActiveProfile'
 export { useApps } from './useApps'
 export { useAppStatuses } from './useAppStatuses'
 export { useCurrentTheme } from './useCurrentTheme'

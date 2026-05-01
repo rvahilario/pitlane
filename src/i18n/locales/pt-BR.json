@@ -3,9 +3,7 @@
     "paused": "PAUSADO",
     "racing": "Em corrida",
     "iracing_open": "iRacing aberto",
-    "iracing_offline": "iRacing offline",
-    "apps_running_one": "{{count}} app rodando",
-    "apps_running_other": "{{count}} apps rodando"
+    "iracing_offline": "iRacing offline"
   },
   "nav": {
     "command": "Command Center",
@@ -66,6 +64,12 @@
   },
   "common": {
     "cancel": "Cancelar"
+  },
+  "shell": {
+    "active_profile": "Perfil ativo",
+    "profile": "Perfil",
+    "managed_apps_one": "{{count}} app gerenciado",
+    "managed_apps_other": "{{count}} apps gerenciados"
   },
   "log": {
     "title": "Log de eventos",
