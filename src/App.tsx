@@ -1,42 +1,50 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DEFAULT_TAB, StatusBar, Sidebar, type Tab } from '@/components'
+import { DEFAULT_TAB, Sidebar, type Tab } from '@/components'
+import { AppShell, BottomStatusBar, TopBar } from '@/components/layout'
 import { AppsScreen, LogScreen, SettingsScreen } from '@/components/screens'
-import { useIRacingStatus, useAppStatuses } from '@/hooks'
+import { useActiveProfile, useIRacingStatus, useAppStatuses } from '@/hooks'
 import { api } from '@/lib/api'
 
 function App() {
     const [tab, setTab] = useState<Tab>(DEFAULT_TAB)
     const iRacingRunning = useIRacingStatus()
     const statuses = useAppStatuses()
+    const activeProfile = useActiveProfile()
     const { t, i18n } = useTranslation()
 
     useEffect(() => {
         api.setTrayLabels(t('tray.show'), t('tray.quit')).catch(() => {})
     }, [i18n.language])
 
-    const managedCount = statuses.filter((s) => s.state.type === 'running').length
+    const sessionLabel = iRacingRunning ? t('status.iracing_open') : t('status.iracing_offline')
 
     return (
-        <div className="flex flex-col h-screen bg-canvas">
-            <StatusBar
-                iRacingRunning={iRacingRunning}
-                sessionType={null}
-                managedCount={managedCount}
-                paused={false}
-            />
-
-            <div className="flex flex-1 min-h-0">
-                <Sidebar active={tab} onChange={setTab} />
-
-                <main className="flex-1 min-w-0">
-                    {tab === 'command' && <PlaceholderScreen title={t('nav.command')} />}
-                    {tab === 'apps' && <AppsScreen />}
-                    {tab === 'logs' && <LogScreen />}
-                    {tab === 'settings' && <SettingsScreen />}
-                </main>
-            </div>
-        </div>
+        <AppShell
+            topBar={
+                <TopBar
+                    activeProfileName={activeProfile?.name}
+                    profileLabel={t('shell.active_profile')}
+                />
+            }
+            sidebar={<Sidebar active={tab} onChange={setTab} />}
+            bottomBar={
+                <BottomStatusBar
+                    activeProfileName={activeProfile?.name}
+                    iRacingRunning={iRacingRunning}
+                    managedLabel={t('shell.managed_apps', { count: statuses.length })}
+                    paused={false}
+                    pausedLabel={t('status.paused')}
+                    profileLabel={t('shell.profile')}
+                    sessionLabel={sessionLabel}
+                />
+            }
+        >
+            {tab === 'command' && <PlaceholderScreen title={t('nav.command')} />}
+            {tab === 'apps' && <AppsScreen />}
+            {tab === 'logs' && <LogScreen />}
+            {tab === 'settings' && <SettingsScreen />}
+        </AppShell>
     )
 }
 
