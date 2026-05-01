@@ -25,6 +25,7 @@ describe('TopBar', () => {
     it('shows the brand and active profile area', () => {
         render(<TopBar activeProfileName="Road" profileLabel="Active profile" />)
 
+        expect(screen.getByTestId('pitlane-logo-icon')).toBeInTheDocument()
         expect(screen.getByText('Pitlane')).toBeInTheDocument()
         expect(screen.getByText('Active profile')).toBeInTheDocument()
         expect(screen.getByText('Road')).toBeInTheDocument()
