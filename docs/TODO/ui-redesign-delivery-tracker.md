@@ -47,7 +47,8 @@ Fora de escopo:
 
 | Status | ID | Sub-issue | Entrega esperada | Arquivos/áreas principais | Verificação mínima | Entregue em |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | UI-00 | Preparar base visual e inventário | Confirmar tokens Aurora, mapear diferenças da referência visual e registrar decisões que não exigem código | `src/index.css`, `docs/TODO/ui-redesign-v0-plan.md` | `npm run format:check` se houver mudança em código | |
+| [x] | UI-00 | Preparar base visual e inventário | Confirmar tokens Aurora, mapear diferenças da referência visual e registrar decisões que não exigem código | `src/index.css`, `docs/TODO/ui-redesign-v0-plan.md` | `npm run format:check` se houver mudança em código | 2026-05-01 |
+| [ ] | UI-00B | Definir estratégia de styling do redesign | Reduzir verbosidade do Tailwind com regras de encapsulamento, `cva` e classes semânticas pontuais antes dos componentes base | `src/components/ui`, `src/components/layout`, `src/index.css`, docs do redesign | Revisão do padrão documentado; `npm run format:check` se houver mudança em código | |
 | [ ] | UI-01 | Componentes base do redesign | Criar/evoluir `IconButton`, `StatusPill`, `Panel`, `MetricTile`, `Toolbar`, `ActivityRow` sem trocar telas ainda | `src/components/ui`, `src/components/layout` | Testes unitários dos componentes novos; `npm run test` | |
 | [ ] | UI-02 | Novo modelo de navegação | Atualizar o tipo de tabs, i18n de navegação e sidebar para `command`, `apps`, `profiles`, `automation`, `logs`, `settings`, sem renderizar telas futuras como funcionais | `Sidebar`, `App.tsx`, i18n | Teste de tabs; confirmar que `Integrations` não aparece | |
 | [ ] | UI-03 | App shell V0 | Introduzir `AppShell`, `TopBar` e `BottomStatusBar`, preservando telas existentes dentro do novo layout | `App.tsx`, componentes de shell | Build e screenshot manual/Playwright do shell | |
@@ -64,20 +65,21 @@ Fora de escopo:
 ## Ordem Recomendada
 
 1. UI-00
-2. UI-01
-3. UI-02
-4. UI-03
-5. UI-04
-6. UI-05
-7. UI-06
-8. UI-08
-9. UI-09
-10. UI-07
-11. UI-10
-12. UI-11
-13. UI-12
+2. UI-00B
+3. UI-01
+4. UI-02
+5. UI-03
+6. UI-04
+7. UI-05
+8. UI-06
+9. UI-08
+10. UI-09
+11. UI-07
+12. UI-10
+13. UI-11
+14. UI-12
 
-Motivo da ordem: primeiro estabilizar tokens, componentes e shell; depois entregar o Command Center; em seguida adaptar telas existentes; por fim refinar modal, placeholders e acessibilidade.
+Motivo da ordem: primeiro estabilizar tokens e padrão de styling, depois criar componentes e shell; em seguida entregar o Command Center; depois adaptar telas existentes; por fim refinar modal, placeholders e acessibilidade.
 
 ## Critérios De Aceite Da Issue Principal
 
@@ -98,3 +100,5 @@ Motivo da ordem: primeiro estabilizar tokens, componentes e shell; depois entreg
 | 2026-05-01 | `Integrations` fora de escopo | A tab foi marcada como `not intended` e removida do plano. |
 | 2026-05-01 | `Profiles` como `Future-0` | Alta prioridade futura, mas sem CRUD/API suficiente para V0. |
 | 2026-05-01 | `Automation` como `Future-1` | Deve existir depois de Profiles, usando regras globais sem duplicar Settings. |
+| 2026-05-01 | Aurora tokens já batem com a referência | `src/index.css` já contém as rampas e tokens semânticos da paleta `pitlane-aurora-palette-reference.png`; UI-00 não exige alteração de CSS. |
+| 2026-05-01 | Styling do redesign deve reduzir Tailwind verboso sem trocar stack | Manter Tailwind v4, mas concentrar classes longas em componentes base, usar `cva` para variantes e permitir classes semânticas pontuais apenas para padrões estruturais repetidos. |

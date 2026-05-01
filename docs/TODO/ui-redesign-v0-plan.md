@@ -94,6 +94,8 @@ Avoid duplicating API calls inside both shell and screen when the same data can 
 
 Use `Pitlane Aurora` as the primary theme. Before implementation, compare `docs/TODO/pitlane-aurora-palette-reference.png` with `src/index.css` and only adjust tokens when there is an actual mismatch.
 
+UI-00 result: the Aurora ramp and semantic tokens in `src/index.css` already match the palette reference. No token patch is required before component work starts.
+
 Required visual rules:
 
 - Main surfaces remain dark purple with aqua used for primary action and focus.
@@ -109,6 +111,20 @@ The screenshot uses a subtle cockpit-like background treatment in the hero/statu
 ## Base Components
 
 Consolidate these components before screen work:
+
+### Styling Strategy
+
+The redesign should keep Tailwind CSS v4, but avoid spreading long utility strings through screen files.
+
+Rules for V0:
+
+- Screen components should prefer semantic components (`Panel`, `Toolbar`, `AppCommandRow`, `ActivityRow`, `MetricTile`) over repeated `className` blocks.
+- Component variants should use `cva` when a component has meaningful variants, sizes, or state-driven styles.
+- `cn(...)` should stay for short conditional composition, not as a place to hide large one-off layouts.
+- Long Tailwind class strings are acceptable inside low-level reusable components, but should not dominate screen-level JSX.
+- `src/index.css` may define small semantic classes only for repeated structural patterns that are awkward as components; do not create a broad parallel CSS framework.
+- Do not migrate away from Tailwind, introduce CSS-in-JS, or add another styling dependency for V0.
+- When unsure, create a focused component before adding a page-local styling abstraction.
 
 ### Existing Components To Reuse
 
