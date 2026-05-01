@@ -85,11 +85,12 @@ icon_extractor.rs   # Extrai ícone de exe via PowerShell subprocess; cache in-m
 
 ```
 lib/api.ts                  # Wrappers tipados sobre invoke() — toda chamada Rust passa aqui
-hooks/useStatus.ts          # Escuta "status-updated" e expõe estado reativo
-hooks/useLog.ts             # Poll get_log_since(seq) e mantém buffer local
-components/ui/              # Primitivos reutilizáveis: Button, Toggle, Input, Checkbox,
-                            #   Badge, Modal, Dropdown, EmptyState, SectionDivider
+hooks/                      # Custom hooks: useApps, useSettings, useCurrentTheme, useLog, …
+hooks/index.ts              # Barrel re-export — importar sempre de '@/hooks'
+components/ui/              # Primitivos reutilizáveis: Button, Toggle, Input, Checkbox, …
+components/ui/index.ts      # Barrel re-export — importar sempre de '@/components/ui'
 components/layout/          # Helpers de layout: ScreenHeader, FormField
+components/layout/index.ts  # Barrel re-export — importar sempre de '@/components/layout'
 components/AppAvatar.tsx    # Avatar de app: ícone extraído ou letra inicial
 components/AppCard.tsx      # Card de app com status, toggles e ações
 components/screens/         # Telas: AppsScreen, SettingsScreen, LogScreen, HistoryScreen
@@ -112,22 +113,65 @@ O projeto `../iGnition` é uma **referência de funcionalidades**, não um alvo 
 ## Convenções
 
 ### Rust
+
+**Qualidade de código**
 - Sem `unwrap()` em código de produção — usar `?` ou `match` explícito
-- Cada módulo tem `#[cfg(test)]` com testes dos comportamentos de negócio
 - Thread-safety via `Arc<Mutex<>>` ou `Arc<RwLock<>>`; nunca compartilhar estado sem lock
 - Windows-only: não abstrair para cross-platform
+- Preferir `match` a cadeias `if/else if/else` quando há 3+ ramos — mais legível e exaustivo
+- Extrair lógica repetida em funções privadas; cada função tem uma responsabilidade clara
+- Sem strings mágicas: constantes públicas em `lib.rs` para valores usados em >1 lugar
 
-### Commits (Conventional Commits)
+**Testes em arquivo separado**
+- Testes ficam em `<módulo>_test.rs` ao lado do arquivo de produção, **não** inline
+- No arquivo de produção: `#[cfg(test)] #[path = "<módulo>_test.rs"] mod tests;`
+- Dentro do `*_test.rs`: `use super::*;` para acessar itens privados do módulo pai
+- Exemplos existentes: `config_test.rs`, `models_test.rs`, `commands_test.rs`, `controller_test.rs`, `icon_extractor_test.rs`
 
-Formato obrigatório: `<tipo>(<escopo>): <mensagem em inglês, imperativo>`
+### TypeScript / React
+
+**Imports — sempre via barrel**
+
+| De onde importa | O que usar |
+|---|---|
+| Fora de `components/` | `@/components` |
+| Fora de `components/screens/` | `@/components/screens` |
+| Fora de `components/ui/` | `@/components/ui` |
+| Fora de `components/layout/` | `@/components/layout` |
+| Fora de `hooks/` | `@/hooks` |
+| Dentro do mesmo diretório | import relativo `'./Sibling'` — evitar circular via barrel |
+
+- Importar diretamente do arquivo apenas em testes de unidade do componente específico
+- Ao adicionar novo hook ou componente, incluir no `index.ts` do diretório correspondente
+
+**Handlers nomeados**
+- Nunca passar callbacks opacos diretamente: `onClick={() => setState(s => !s)}`
+- Extrair para função nomeada: `const toggleX = () => setState(prev => !prev)` e passar `onClick={toggleX}`
+- Regra: se o leitor precisa decifrar o que o callback faz, ele merece um nome
+
+**Single Responsibility**
+- Componentes de tela (`screens/`) são quase só JSX: estado de dados fica em hooks, estado de UI (modal aberto, confirm dialog) pode ficar no componente
+- Cada hook tem uma responsabilidade de domínio clara; hooks de UI pura (2-3 linhas de `useState`) não precisam ser extraídos
+- Sem magic strings: eventos do Tauri e chaves de i18n são constantes tipadas (`lib/events.ts`, etc.)
+
+### Commits
+
+**Formato obrigatório — Conventional Commits:**
+```
+<tipo>(<escopo>): <mensagem em inglês, imperativo>
+
+[corpo opcional — o "porquê", não o "o quê"]
+```
 
 **Tipos:**
-- `feat` — nova funcionalidade
-- `fix` — correção de bug
-- `refactor` — mudança sem alterar comportamento
-- `test` — adição ou correção de testes
-- `chore` — tooling, deps, config, CI
-- `docs` — documentação
+| Tipo | Quando usar |
+|---|---|
+| `feat` | nova funcionalidade observável pelo usuário |
+| `fix` | correção de bug |
+| `refactor` | mudança sem alterar comportamento externo |
+| `test` | adição ou correção de testes |
+| `chore` | tooling, deps, config, CI |
+| `docs` | documentação |
 
 **Escopos por domínio:**
 
@@ -151,6 +195,19 @@ Formato obrigatório: `<tipo>(<escopo>): <mensagem em inglês, imperativo>`
 | `tray` | system tray e janela lazy |
 | `autostart` | inicialização com Windows |
 
+**Commits atômicos — obrigatório:**
+- Um commit = uma mudança lógica coesa. O diff deve ser inteiramente explicado pelo subject.
+- Não misturar domínios: `monitor` e `ui/apps` são commits separados.
+- Não agrupar tipo com refactor: uma feature nova e a limpeza que ela motivou são commits distintos.
+- Nunca commitar camada incompleta — o codebase deve estar compilando e testável após cada commit.
+- Se a mudança precisa de dois parágrafos para ser explicada, provavelmente são dois commits.
+
+**Regras gerais:**
+- **Só commitar quando o usuário pedir explicitamente**
+- Subject em inglês, verbo no imperativo ("add", "fix", "remove" — não "added", "fixes")
+- Subject ≤ 72 caracteres
+- Corpo apenas quando o "porquê" não é óbvio pelo diff
+
 **Exemplos:**
 ```
 feat(models): add ManagedApp and Profile structs with serde
@@ -158,15 +215,9 @@ feat(config): atomic save with temp-file rename
 feat(monitor): iRacing process detection thread
 fix(watchdog): respect max_restart_attempts on rapid crashes
 feat(ui/theme): dark purple palette with semantic color tokens
-feat(i18n): add pt-BR and en translations with i18next
+refactor(ui/screens): extract useApps hook from AppsScreen
 chore(tooling): configure Tailwind v4 and path aliases
 ```
-
-**Regras:**
-- **Só commitar quando o usuário pedir explicitamente**
-- Um commit por domínio — não misturar `monitor` com `ui/apps` no mesmo commit
-- Mensagem em inglês, verbo no imperativo ("add", "fix", "remove", não "added", "fixes")
-- Nunca commitar uma camada incompleta — deve ser testável antes do commit
 
 ### Pull Requests
 
