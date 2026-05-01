@@ -112,6 +112,20 @@ The screenshot uses a subtle cockpit-like background treatment in the hero/statu
 
 Consolidate these components before screen work:
 
+### Styling Strategy
+
+The redesign should keep Tailwind CSS v4, but avoid spreading long utility strings through screen files.
+
+Rules for V0:
+
+- Screen components should prefer semantic components (`Panel`, `Toolbar`, `AppCommandRow`, `ActivityRow`, `MetricTile`) over repeated `className` blocks.
+- Component variants should use `cva` when a component has meaningful variants, sizes, or state-driven styles.
+- `cn(...)` should stay for short conditional composition, not as a place to hide large one-off layouts.
+- Long Tailwind class strings are acceptable inside low-level reusable components, but should not dominate screen-level JSX.
+- `src/index.css` may define small semantic classes only for repeated structural patterns that are awkward as components; do not create a broad parallel CSS framework.
+- Do not migrate away from Tailwind, introduce CSS-in-JS, or add another styling dependency for V0.
+- When unsure, create a focused component before adding a page-local styling abstraction.
+
 ### Existing Components To Reuse
 
 - `Button`
