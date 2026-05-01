@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -46,7 +46,13 @@ impl LogSink {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64;
-        let entry = LogEntry { seq: s, timestamp_ms: ts, kind, app, msg };
+        let entry = LogEntry {
+            seq: s,
+            timestamp_ms: ts,
+            kind,
+            app,
+            msg,
+        };
         let mut log = self.log.lock().unwrap();
         log.push(entry.clone());
         if log.len() > MAX_LOG_ENTRIES {
@@ -89,11 +95,19 @@ pub struct ControllerLogic {
 
 impl ControllerLogic {
     pub fn new() -> Self {
-        Self { states: HashMap::new() }
+        Self {
+            states: HashMap::new(),
+        }
     }
 
     pub fn on_app_launched(&mut self, app_id: &str, pid: u32) {
-        self.states.insert(app_id.to_string(), AppState::Running { pid, restart_count: 0 });
+        self.states.insert(
+            app_id.to_string(),
+            AppState::Running {
+                pid,
+                restart_count: 0,
+            },
+        );
     }
 
     pub fn on_app_stopped(&mut self, app_id: &str) {
@@ -101,7 +115,13 @@ impl ControllerLogic {
     }
 
     pub fn on_app_restarted(&mut self, app_id: &str, new_pid: u32, attempt: u32) {
-        self.states.insert(app_id.to_string(), AppState::Running { pid: new_pid, restart_count: attempt });
+        self.states.insert(
+            app_id.to_string(),
+            AppState::Running {
+                pid: new_pid,
+                restart_count: attempt,
+            },
+        );
     }
 
     pub fn on_app_gave_up(&mut self, app_id: &str) {
@@ -131,7 +151,11 @@ impl ControllerLogic {
         self.states
             .iter()
             .filter_map(|(id, state)| {
-                if *state == AppState::Crashed { Some(id.clone()) } else { None }
+                if *state == AppState::Crashed {
+                    Some(id.clone())
+                } else {
+                    None
+                }
             })
             .collect()
     }
@@ -202,8 +226,16 @@ impl Controller {
         thread::spawn(move || {
             for event in watchdog_rx {
                 match event {
-                    WatchdogEvent::Restarted { app_id, new_pid, attempt } => {
-                        ctrl_wd.logic.lock().unwrap().on_app_restarted(&app_id, new_pid, attempt);
+                    WatchdogEvent::Restarted {
+                        app_id,
+                        new_pid,
+                        attempt,
+                    } => {
+                        ctrl_wd
+                            .logic
+                            .lock()
+                            .unwrap()
+                            .on_app_restarted(&app_id, new_pid, attempt);
                     }
                     WatchdogEvent::GaveUp { app_id } | WatchdogEvent::RestartFailed { app_id } => {
                         ctrl_wd.logic.lock().unwrap().on_app_gave_up(&app_id);
@@ -214,23 +246,23 @@ impl Controller {
 
         // Monitor callback — spawns threads so the monitor is never blocked
         let ctrl_mon = Arc::clone(&ctrl);
-        let monitor = Monitor::start(trigger, poll_interval, move |event| {
-            match event {
-                MonitorEvent::Started => {
-                    iracing_online.store(true, Ordering::Relaxed);
-                    on_status(true);
-                    let c = Arc::clone(&ctrl_mon);
-                    c.sink.push(LogKind::IracingStart, None, "iRacing detected".into());
-                    thread::spawn(move || c.launch_active_apps());
-                }
-                MonitorEvent::Stopped => {
-                    iracing_online.store(false, Ordering::Relaxed);
-                    on_status(false);
-                    let c = Arc::clone(&ctrl_mon);
-                    c.sink.push(LogKind::IracingStop, None, "iRacing closed".into());
-                    if auto_stop.load(Ordering::Relaxed) {
-                        thread::spawn(move || c.kill_all_running());
-                    }
+        let monitor = Monitor::start(trigger, poll_interval, move |event| match event {
+            MonitorEvent::Started => {
+                iracing_online.store(true, Ordering::Relaxed);
+                on_status(true);
+                let c = Arc::clone(&ctrl_mon);
+                c.sink
+                    .push(LogKind::IracingStart, None, "iRacing detected".into());
+                thread::spawn(move || c.launch_active_apps());
+            }
+            MonitorEvent::Stopped => {
+                iracing_online.store(false, Ordering::Relaxed);
+                on_status(false);
+                let c = Arc::clone(&ctrl_mon);
+                c.sink
+                    .push(LogKind::IracingStop, None, "iRacing closed".into());
+                if auto_stop.load(Ordering::Relaxed) {
+                    thread::spawn(move || c.kill_all_running());
                 }
             }
         });
@@ -257,7 +289,10 @@ impl Controller {
             let profile_id = &config.active_profile_id.clone();
             let all = apps_to_launch(&config.apps);
             #[cfg(debug_assertions)]
-            println!("[controller] iRacing started — profile={profile_id} apps={}", all.len());
+            println!(
+                "[controller] iRacing started — profile={profile_id} apps={}",
+                all.len()
+            );
             all.into_iter()
                 .filter(|a| &a.profile_id == profile_id)
                 .cloned()
@@ -291,7 +326,11 @@ impl Controller {
                         println!("[controller] '{}' pid={pid}", app.name);
                         watchdog.watch(app.clone(), pid);
                         logic.lock().unwrap().on_app_launched(&app.id, pid);
-                        sink.push(LogKind::Launch, Some(app.name.clone()), format!("pid {pid}"));
+                        sink.push(
+                            LogKind::Launch,
+                            Some(app.name.clone()),
+                            format!("pid {pid}"),
+                        );
                     }
                     Err(e) => {
                         #[cfg(debug_assertions)]
@@ -308,40 +347,65 @@ impl Controller {
             let logic = self.logic.lock().unwrap();
             let config = self.config.lock().unwrap();
             let should_stop = |id: &str| -> bool {
-                config.apps.iter().find(|a| a.id == id)
+                config
+                    .apps
+                    .iter()
+                    .find(|a| a.id == id)
                     .map(|a| a.stop_with_iracing)
                     .unwrap_or(true)
             };
-            let mut ids: Vec<String> = logic.running_apps().into_iter()
+            let mut ids: Vec<String> = logic
+                .running_apps()
+                .into_iter()
                 .map(|(id, _)| id)
                 .filter(|id| should_stop(id))
                 .collect();
             // Also kill Crashed apps — stub may have exited (Squirrel) while real process runs.
-            ids.extend(logic.crashed_app_ids().into_iter().filter(|id| should_stop(id)));
+            ids.extend(
+                logic
+                    .crashed_app_ids()
+                    .into_iter()
+                    .filter(|id| should_stop(id)),
+            );
             ids
         };
 
-        let handles: Vec<_> = ids_to_kill.iter().filter_map(|app_id| {
-            self.watchdog.unwatch(app_id);
+        let handles: Vec<_> = ids_to_kill
+            .iter()
+            .filter_map(|app_id| {
+                self.watchdog.unwatch(app_id);
 
-            let app = self.config.lock().unwrap()
-                .apps.iter().find(|a| a.id == *app_id).cloned()?;
-            let sink = Arc::clone(&self.sink);
+                let app = self
+                    .config
+                    .lock()
+                    .unwrap()
+                    .apps
+                    .iter()
+                    .find(|a| a.id == *app_id)
+                    .cloned()?;
+                let sink = Arc::clone(&self.sink);
 
-            Some(thread::spawn(move || {
-                let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
-                if let Some(ref name) = app.track_process_name {
-                    process_killer::kill_by_name(name, grace);
-                } else if app.kill_process_tree {
-                    process_killer::kill_tree_by_exe_path(&app.exe_path, grace);
-                } else {
-                    process_killer::kill_by_exe_path(&app.exe_path, grace);
-                }
-                sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
-            }))
-        }).collect();
+                Some(thread::spawn(move || {
+                    let grace = if app.force_kill_on_stop {
+                        0.0
+                    } else {
+                        DEFAULT_GRACE_SECS
+                    };
+                    if let Some(ref name) = app.track_process_name {
+                        process_killer::kill_by_name(name, grace);
+                    } else if app.kill_process_tree {
+                        process_killer::kill_tree_by_exe_path(&app.exe_path, grace);
+                    } else {
+                        process_killer::kill_by_exe_path(&app.exe_path, grace);
+                    }
+                    sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
+                }))
+            })
+            .collect();
 
-        for h in handles { let _ = h.join(); }
+        for h in handles {
+            let _ = h.join();
+        }
 
         for app_id in &ids_to_kill {
             self.logic.lock().unwrap().on_app_stopped(app_id);
@@ -374,7 +438,10 @@ impl Controller {
         };
         let app = app.ok_or_else(|| format!("App not found: {app_id}"))?;
 
-        if matches!(self.logic.lock().unwrap().app_state(app_id), AppState::Running { .. }) {
+        if matches!(
+            self.logic.lock().unwrap().app_state(app_id),
+            AppState::Running { .. }
+        ) {
             return Ok(());
         }
 
@@ -387,18 +454,30 @@ impl Controller {
 
     /// Manually kills an app and stops watching it.
     pub fn force_kill(&self, app_id: &str) {
-        if !matches!(self.logic.lock().unwrap().app_state(app_id), AppState::Running { .. }) {
+        if !matches!(
+            self.logic.lock().unwrap().app_state(app_id),
+            AppState::Running { .. }
+        ) {
             return;
         }
         self.watchdog.unwatch(app_id);
 
-        if let Some(app) = self.config.lock().unwrap().apps.iter().find(|a| a.id == app_id).cloned() {
+        if let Some(app) = self
+            .config
+            .lock()
+            .unwrap()
+            .apps
+            .iter()
+            .find(|a| a.id == app_id)
+            .cloned()
+        {
             if let Some(ref name) = app.track_process_name {
                 process_killer::kill_by_name(name, DEFAULT_GRACE_SECS);
             } else {
                 process_killer::kill_by_exe_path(&app.exe_path, DEFAULT_GRACE_SECS);
             }
-            self.sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
+            self.sink
+                .push(LogKind::Stop, Some(app.name.clone()), String::new());
         }
 
         self.logic.lock().unwrap().on_app_stopped(app_id);
@@ -420,18 +499,34 @@ mod tests {
     #[test]
     fn running_apps_returns_only_running() {
         let logic = make_logic_with(vec![
-            ("a", AppState::Running { pid: 1, restart_count: 0 }),
+            (
+                "a",
+                AppState::Running {
+                    pid: 1,
+                    restart_count: 0,
+                },
+            ),
             ("b", AppState::Idle),
             ("c", AppState::Crashed),
         ]);
-        let running: Vec<_> = logic.running_apps().iter().map(|(id, _)| id.clone()).collect();
+        let running: Vec<_> = logic
+            .running_apps()
+            .iter()
+            .map(|(id, _)| id.clone())
+            .collect();
         assert_eq!(running, vec!["a"]);
     }
 
     #[test]
     fn crashed_app_ids_returns_only_crashed() {
         let logic = make_logic_with(vec![
-            ("a", AppState::Running { pid: 1, restart_count: 0 }),
+            (
+                "a",
+                AppState::Running {
+                    pid: 1,
+                    restart_count: 0,
+                },
+            ),
             ("b", AppState::Crashed),
             ("c", AppState::Idle),
         ]);
@@ -448,7 +543,13 @@ mod tests {
     fn on_app_launched_sets_running_state() {
         let mut logic = ControllerLogic::new();
         logic.on_app_launched("a", 42);
-        assert_eq!(logic.app_state("a"), AppState::Running { pid: 42, restart_count: 0 });
+        assert_eq!(
+            logic.app_state("a"),
+            AppState::Running {
+                pid: 42,
+                restart_count: 0
+            }
+        );
     }
 
     #[test]
@@ -493,11 +594,16 @@ mod tests {
         logic.on_app_launched("app_keep", 2);
 
         let should_stop = |id: &str| -> bool {
-            config.apps.iter().find(|a| a.id == id)
+            config
+                .apps
+                .iter()
+                .find(|a| a.id == id)
                 .map(|a| a.stop_with_iracing)
                 .unwrap_or(true)
         };
-        let ids: Vec<String> = logic.running_apps().into_iter()
+        let ids: Vec<String> = logic
+            .running_apps()
+            .into_iter()
             .map(|(id, _)| id)
             .filter(|id| should_stop(id))
             .collect();
@@ -517,11 +623,16 @@ mod tests {
         logic.on_app_gave_up("app_keep");
 
         let should_stop = |id: &str| -> bool {
-            config.apps.iter().find(|a| a.id == id)
+            config
+                .apps
+                .iter()
+                .find(|a| a.id == id)
                 .map(|a| a.stop_with_iracing)
                 .unwrap_or(true)
         };
-        let ids: Vec<String> = logic.crashed_app_ids().into_iter()
+        let ids: Vec<String> = logic
+            .crashed_app_ids()
+            .into_iter()
             .filter(|id| should_stop(id))
             .collect();
 
@@ -536,11 +647,16 @@ mod tests {
         logic.on_app_launched("ghost_id", 99);
 
         let should_stop = |id: &str| -> bool {
-            config.apps.iter().find(|a| a.id == id)
+            config
+                .apps
+                .iter()
+                .find(|a| a.id == id)
                 .map(|a| a.stop_with_iracing)
                 .unwrap_or(true)
         };
-        let ids: Vec<String> = logic.running_apps().into_iter()
+        let ids: Vec<String> = logic
+            .running_apps()
+            .into_iter()
             .map(|(id, _)| id)
             .filter(|id| should_stop(id))
             .collect();
@@ -548,4 +664,3 @@ mod tests {
         assert!(ids.contains(&"ghost_id".to_string()));
     }
 }
-

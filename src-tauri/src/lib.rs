@@ -43,7 +43,10 @@ pub fn run() {
     let icon_cache = icon_extractor::new_cache();
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             // Second instance tried to open — bring existing window to front
@@ -98,7 +101,11 @@ pub fn run() {
                 trigger,
                 poll_interval,
                 move |online| {
-                    let status = if online { STATUS_ONLINE } else { STATUS_OFFLINE };
+                    let status = if online {
+                        STATUS_ONLINE
+                    } else {
+                        STATUS_OFFLINE
+                    };
                     let _ = handle.emit(EVENT_IRACING_STATUS, status);
                 },
                 move |entry| {

@@ -1,4 +1,7 @@
-use pitlane_lib::launcher::{build_command, launch, LaunchError, resolve_real_pid, resolve_working_dir, resolve_real_pid_impl};
+use pitlane_lib::launcher::{
+    build_command, launch, resolve_real_pid, resolve_real_pid_impl, resolve_working_dir,
+    LaunchError,
+};
 use pitlane_lib::models::ManagedApp;
 
 // ── resolve_working_dir ──────────────────────────────────────────────────────
@@ -59,7 +62,10 @@ fn should_preserve_quoted_args_as_single_token() {
 fn should_return_exe_not_found_when_path_does_not_exist() {
     let app = ManagedApp::new("p1", "Ghost App", "C:/nonexistent/ghost.exe");
     let result = launch(&app);
-    assert_eq!(result, Err(LaunchError::ExeNotFound("C:/nonexistent/ghost.exe".into())));
+    assert_eq!(
+        result,
+        Err(LaunchError::ExeNotFound("C:/nonexistent/ghost.exe".into()))
+    );
 }
 
 // ── resolve_real_pid_impl ────────────────────────────────────────────────────
@@ -70,7 +76,7 @@ fn should_return_stub_pid_when_process_is_still_alive() {
         1234,
         None,
         "C:/app/app.exe",
-        |_| true,   // stub is alive
+        |_| true, // stub is alive
         |_| vec![],
         |_| vec![],
     );
@@ -83,8 +89,8 @@ fn should_find_by_track_name_when_stub_dies() {
         1234,
         Some("RealApp.exe"),
         "C:/app/launcher.exe",
-        |_| false,          // stub died
-        |_| vec![5678],     // found by name
+        |_| false,      // stub died
+        |_| vec![5678], // found by name
         |_| vec![],
     );
     assert_eq!(pid, 5678);
@@ -97,8 +103,8 @@ fn should_prefer_track_name_over_exe_path_search() {
         Some("RealApp.exe"),
         "C:/app/launcher.exe",
         |_| false,
-        |_| vec![5678],  // track name result
-        |_| vec![9999],  // exe path result — should be ignored
+        |_| vec![5678], // track name result
+        |_| vec![9999], // exe path result — should be ignored
     );
     assert_eq!(pid, 5678);
 }
@@ -111,7 +117,7 @@ fn should_find_by_exe_path_when_stub_dies_and_no_track_name() {
         "C:/Kapps/Kapps.exe",
         |_| false,
         |_| vec![],
-        |_| vec![5678],  // found via Squirrel subdir matching
+        |_| vec![5678], // found via Squirrel subdir matching
     );
     assert_eq!(pid, 5678);
 }
@@ -123,8 +129,8 @@ fn should_return_stub_pid_as_fallback_when_nothing_found() {
         Some("Ghost.exe"),
         "C:/app/launcher.exe",
         |_| false,
-        |_| vec![],  // not found by name
-        |_| vec![],  // not found by path
+        |_| vec![], // not found by name
+        |_| vec![], // not found by path
     );
     assert_eq!(pid, 1234);
 }
@@ -155,6 +161,9 @@ fn manual_should_launch_winver_and_return_pid() {
     pitlane_lib::process_killer::force_kill(real_pid);
 
     std::thread::sleep(std::time::Duration::from_secs(1));
-    assert!(!pitlane_lib::process_killer::is_pid_alive(real_pid), "process should be dead");
+    assert!(
+        !pitlane_lib::process_killer::is_pid_alive(real_pid),
+        "process should be dead"
+    );
     println!("[launcher integration] ✓ process killed");
 }

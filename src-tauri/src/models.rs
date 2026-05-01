@@ -49,7 +49,11 @@ pub struct ManagedApp {
 }
 
 impl ManagedApp {
-    pub fn new(profile_id: impl Into<String>, name: impl Into<String>, exe_path: impl Into<String>) -> Self {
+    pub fn new(
+        profile_id: impl Into<String>,
+        name: impl Into<String>,
+        exe_path: impl Into<String>,
+    ) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             profile_id: profile_id.into(),
@@ -245,7 +249,10 @@ mod tests {
     #[test]
     fn should_serialize_trigger_mode_variants() {
         assert_eq!(serde_json::to_string(&TriggerMode::Ui).unwrap(), r#""ui""#);
-        assert_eq!(serde_json::to_string(&TriggerMode::Race).unwrap(), r#""race""#);
+        assert_eq!(
+            serde_json::to_string(&TriggerMode::Race).unwrap(),
+            r#""race""#
+        );
     }
 
     #[test]
