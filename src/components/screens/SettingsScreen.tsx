@@ -1,13 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { type TriggerMode } from '@/lib/api'
-import { useSettings } from '@/hooks/useSettings'
-import { Button } from '@/components/ui/Button'
-import { Toggle } from '@/components/ui/Toggle'
-import { NumberInput } from '@/components/ui/Input'
-import { SectionDivider } from '@/components/ui/SectionDivider'
-import { FormField } from '@/components/layout/FormField'
-import { LanguageSelector } from '@/components/LanguageSelector'
-import { ThemeSelector } from '@/components/ThemeSelector'
+import { useSettings } from '@/hooks'
+import { Button, Toggle, NumberInput, SectionDivider } from '@/components/ui'
+import { FormField } from '@/components/layout'
+import { LanguageSelector, ThemeSelector } from '@/components'
 
 export function SettingsScreen() {
     const { t } = useTranslation()

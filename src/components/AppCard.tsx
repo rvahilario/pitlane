@@ -3,9 +3,7 @@ import { Pencil, Play, Square, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { api, type AppStatus, type ManagedApp } from '@/lib/api'
-import { StatusBadge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/Button'
-import { Toggle } from '@/components/ui/Toggle'
+import { StatusBadge, Button, Toggle } from '@/components/ui'
 import { AppAvatar } from '@/components/AppAvatar'
 
 interface AppCardProps {

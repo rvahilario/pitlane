@@ -2,14 +2,9 @@ import { useState } from 'react'
 import { LayoutList, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { api, type ManagedApp, type NewApp } from '@/lib/api'
-import { useApps } from '@/hooks/useApps'
-import { useAppStatuses } from '@/hooks/useAppStatuses'
-import { Button } from '@/components/ui/Button'
-import { Toggle } from '@/components/ui/Toggle'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { AppCard } from '@/components/AppCard'
-import { AppFormModal } from '@/components/AppFormModal'
-import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useApps, useAppStatuses } from '@/hooks'
+import { Button, Toggle, EmptyState } from '@/components/ui'
+import { AppCard, AppFormModal, ConfirmDialog } from '@/components'
 
 type ModalState = { type: 'add' } | { type: 'edit'; app: ManagedApp } | null
 

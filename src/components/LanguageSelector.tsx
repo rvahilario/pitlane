@@ -2,7 +2,7 @@ import { Globe, Check, ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { LANGUAGES, setLanguage, type Language } from '@/i18n'
 import { cn } from '@/lib/cn'
-import { Dropdown } from '@/components/ui/Dropdown'
+import { Dropdown } from '@/components/ui'
 
 const LABELS: Record<Language, string> = {
     'pt-BR': 'Português (BR)',

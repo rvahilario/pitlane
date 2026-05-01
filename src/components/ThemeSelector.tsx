@@ -1,9 +1,9 @@
 import { Check, ChevronDown, Palette } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { THEMES, setTheme, type Theme } from '@/theme'
-import { useCurrentTheme } from '@/hooks/useCurrentTheme'
+import { useCurrentTheme } from '@/hooks'
 import { cn } from '@/lib/cn'
-import { Dropdown } from '@/components/ui/Dropdown'
+import { Dropdown } from '@/components/ui'
 
 interface ThemeSelectorProps {
     variant?: 'default' | 'compact'

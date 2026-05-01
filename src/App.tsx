@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StatusBar } from '@/components/StatusBar'
-import { Sidebar, type Tab } from '@/components/Sidebar'
-import { AppsScreen } from '@/components/screens/AppsScreen'
-import { LogScreen } from '@/components/screens/LogScreen'
-import { HistoryScreen } from '@/components/screens/HistoryScreen'
-import { SettingsScreen } from '@/components/screens/SettingsScreen'
-import { useIRacingStatus } from '@/hooks/useIRacingStatus'
-import { useAppStatuses } from '@/hooks/useAppStatuses'
+import { StatusBar, Sidebar, type Tab } from '@/components'
+import { AppsScreen, LogScreen, HistoryScreen, SettingsScreen } from '@/components/screens'
+import { useIRacingStatus, useAppStatuses } from '@/hooks'
 import { api } from '@/lib/api'
 
 function App() {

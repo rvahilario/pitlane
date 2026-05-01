@@ -18,9 +18,11 @@ export function Dropdown({ trigger, children }: DropdownProps) {
         return () => document.removeEventListener('mousedown', handler)
     }, [open])
 
+    const toggleOpen = () => setOpen((prev) => !prev)
+
     return (
         <div ref={ref} className="relative">
-            <div onClick={() => setOpen((o) => !o)}>{trigger(open)}</div>
+            <div onClick={toggleOpen}>{trigger(open)}</div>
             {open && (
                 <div
                     className="absolute right-0 top-full mt-1.5 z-50 bg-elevated border border-border-strong rounded-lg shadow-xl min-w-[152px] py-1 overflow-hidden"
