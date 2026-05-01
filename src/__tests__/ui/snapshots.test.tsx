@@ -61,7 +61,11 @@ describe('Badge snapshots', () => {
     it('StatusBadge running', () => {
         const { container } = render(
             <StatusBadge
-                status={{ app_id: '1', name: 'SimHub', state: { type: 'running', pid: 1234, restart_count: 0 } }}
+                status={{
+                    app_id: '1',
+                    name: 'SimHub',
+                    state: { type: 'running', pid: 1234, restart_count: 0 },
+                }}
                 enabled
                 label="Running"
             />,

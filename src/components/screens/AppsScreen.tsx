@@ -91,9 +91,7 @@ export function AppsScreen() {
                             onEdit={() => setModal({ type: 'edit', app })}
                             onDelete={() => setConfirmDelete(app)}
                             onToggleEnabled={(enabled) => toggleEnabled(app, enabled)}
-                            onToggleStopWithIracing={(stop) =>
-                                toggleStopWithIracing(app, stop)
-                            }
+                            onToggleStopWithIracing={(stop) => toggleStopWithIracing(app, stop)}
                         />
                     ))}
                 </ul>
