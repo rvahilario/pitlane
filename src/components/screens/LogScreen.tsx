@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react'
 import { ScrollText } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
-import { useLog } from '@/hooks/useLog'
+import { useLog } from '@/hooks'
 import type { LogKind } from '@/lib/api'
-import { ScreenHeader } from '@/components/layout/ScreenHeader'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { ScreenHeader } from '@/components/layout'
+import { EmptyState } from '@/components/ui'
 
 const kindStyle: Record<LogKind, string> = {
     launch: 'text-success',

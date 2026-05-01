@@ -3,12 +3,8 @@ import { Check, ChevronDown, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { type ManagedApp, type NewApp } from '@/lib/api'
-import { Button } from '@/components/ui/Button'
-import { Modal } from '@/components/ui/Modal'
-import { TextInput, NumberInput } from '@/components/ui/Input'
-import { Checkbox } from '@/components/ui/Checkbox'
-import { SectionDivider } from '@/components/ui/SectionDivider'
-import { FormField } from '@/components/layout/FormField'
+import { Button, Modal, TextInput, NumberInput, Checkbox, SectionDivider } from '@/components/ui'
+import { FormField } from '@/components/layout'
 
 interface AppFormModalProps {
     mode: 'add' | 'edit'
@@ -56,6 +52,8 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    const toggleAdvanced = () => setAdvancedOpen((prev) => !prev)
 
     function patch<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((f) => ({ ...f, [key]: value }))
@@ -178,7 +176,7 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                         {/* Advanced (collapsible) */}
                         <button
                             type="button"
-                            onClick={() => setAdvancedOpen((o) => !o)}
+                            onClick={toggleAdvanced}
                             className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors self-start"
                         >
                             <ChevronDown

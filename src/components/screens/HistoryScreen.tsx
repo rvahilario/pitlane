@@ -1,8 +1,7 @@
 import { Clock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { ScreenHeader } from '@/components/layout/ScreenHeader'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { Tag } from '@/components/ui/Badge'
+import { ScreenHeader } from '@/components/layout'
+import { EmptyState, Tag } from '@/components/ui'
 
 interface Session {
     id: string
