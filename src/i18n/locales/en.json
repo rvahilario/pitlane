@@ -8,9 +8,11 @@
     "apps_running_other": "{{count}} apps running"
   },
   "nav": {
+    "command": "Command Center",
     "apps": "Apps",
-    "log": "Log",
-    "history": "History",
+    "profiles": "Profiles",
+    "automation": "Automation",
+    "logs": "Logs",
     "settings": "Settings"
   },
   "apps": {

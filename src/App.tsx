@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StatusBar, Sidebar, type Tab } from '@/components'
-import { AppsScreen, LogScreen, HistoryScreen, SettingsScreen } from '@/components/screens'
+import { AppsScreen, LogScreen, SettingsScreen } from '@/components/screens'
 import { useIRacingStatus, useAppStatuses } from '@/hooks'
 import { api } from '@/lib/api'
 
@@ -30,11 +30,23 @@ function App() {
                 <Sidebar active={tab} onChange={setTab} />
 
                 <main className="flex-1 min-w-0">
+                    {tab === 'command' && <PlaceholderScreen title={t('nav.command')} />}
                     {tab === 'apps' && <AppsScreen />}
-                    {tab === 'log' && <LogScreen />}
-                    {tab === 'history' && <HistoryScreen />}
+                    {tab === 'profiles' && <PlaceholderScreen title={t('nav.profiles')} />}
+                    {tab === 'automation' && <PlaceholderScreen title={t('nav.automation')} />}
+                    {tab === 'logs' && <LogScreen />}
                     {tab === 'settings' && <SettingsScreen />}
                 </main>
+            </div>
+        </div>
+    )
+}
+
+function PlaceholderScreen({ title }: { title: string }) {
+    return (
+        <div className="flex h-full items-center justify-center p-6">
+            <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-muted">
+                {title}
             </div>
         </div>
     )

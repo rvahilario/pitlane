@@ -1,8 +1,8 @@
-import { LayoutList, ScrollText, History, Settings } from 'lucide-react'
+import { Bot, Gauge, LayoutList, ScrollText, Settings, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 
-export type Tab = 'apps' | 'log' | 'history' | 'settings'
+export type Tab = 'command' | 'apps' | 'profiles' | 'automation' | 'logs' | 'settings'
 
 interface SidebarProps {
     active: Tab
@@ -13,9 +13,11 @@ export function Sidebar({ active, onChange }: SidebarProps) {
     const { t } = useTranslation()
 
     const items: { id: Tab; label: string; icon: React.ElementType }[] = [
+        { id: 'command', label: t('nav.command'), icon: Gauge },
         { id: 'apps', label: t('nav.apps'), icon: LayoutList },
-        { id: 'log', label: t('nav.log'), icon: ScrollText },
-        { id: 'history', label: t('nav.history'), icon: History },
+        { id: 'profiles', label: t('nav.profiles'), icon: Users },
+        { id: 'automation', label: t('nav.automation'), icon: Bot },
+        { id: 'logs', label: t('nav.logs'), icon: ScrollText },
         { id: 'settings', label: t('nav.settings'), icon: Settings },
     ]
 
@@ -25,6 +27,7 @@ export function Sidebar({ active, onChange }: SidebarProps) {
                 <button
                     key={id}
                     data-testid={`nav-${id}`}
+                    aria-current={active === id ? 'page' : undefined}
                     onClick={() => onChange(id)}
                     className={cn(
                         'flex items-center gap-2.5 px-3 py-2 rounded text-sm font-medium transition-colors text-left w-full border',
