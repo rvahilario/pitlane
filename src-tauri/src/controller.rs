@@ -168,6 +168,17 @@ pub fn apps_to_launch(apps: &[ManagedApp]) -> Vec<&ManagedApp> {
     apps.iter().filter(|a| a.enabled).collect()
 }
 
+/// Dispatches to the right kill strategy based on the app's configuration.
+fn kill_app(app: &ManagedApp, grace_secs: f64) {
+    if let Some(ref name) = app.track_process_name {
+        process_killer::kill_by_name(name, grace_secs);
+    } else if app.kill_process_tree {
+        process_killer::kill_tree_by_exe_path(&app.exe_path, grace_secs);
+    } else {
+        process_killer::kill_by_exe_path(&app.exe_path, grace_secs);
+    }
+}
+
 // ── Controller ────────────────────────────────────────────────────────────────
 
 pub struct Controller {
@@ -386,18 +397,8 @@ impl Controller {
                 let sink = Arc::clone(&self.sink);
 
                 Some(thread::spawn(move || {
-                    let grace = if app.force_kill_on_stop {
-                        0.0
-                    } else {
-                        DEFAULT_GRACE_SECS
-                    };
-                    if let Some(ref name) = app.track_process_name {
-                        process_killer::kill_by_name(name, grace);
-                    } else if app.kill_process_tree {
-                        process_killer::kill_tree_by_exe_path(&app.exe_path, grace);
-                    } else {
-                        process_killer::kill_by_exe_path(&app.exe_path, grace);
-                    }
+                    let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
+                    kill_app(&app, grace);
                     sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
                 }))
             })
@@ -471,11 +472,7 @@ impl Controller {
             .find(|a| a.id == app_id)
             .cloned()
         {
-            if let Some(ref name) = app.track_process_name {
-                process_killer::kill_by_name(name, DEFAULT_GRACE_SECS);
-            } else {
-                process_killer::kill_by_exe_path(&app.exe_path, DEFAULT_GRACE_SECS);
-            }
+            kill_app(&app, DEFAULT_GRACE_SECS);
             self.sink
                 .push(LogKind::Stop, Some(app.name.clone()), String::new());
         }
