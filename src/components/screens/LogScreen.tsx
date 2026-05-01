@@ -1,8 +1,11 @@
 import { useEffect, useRef } from "react";
+import { ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { useLog } from "@/hooks/useLog";
 import type { LogKind } from "@/lib/api";
+import { ScreenHeader } from "@/components/layout/ScreenHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const kindStyle: Record<LogKind, string> = {
   launch:        "text-success",
@@ -20,10 +23,9 @@ const kindLabel: Record<LogKind, string> = {
 
 function formatTime(ms: number): string {
   const d = new Date(ms);
-  const h = d.getHours().toString().padStart(2, "0");
-  const m = d.getMinutes().toString().padStart(2, "0");
-  const s = d.getSeconds().toString().padStart(2, "0");
-  return `${h}:${m}:${s}`;
+  return [d.getHours(), d.getMinutes(), d.getSeconds()]
+    .map((n) => n.toString().padStart(2, "0"))
+    .join(":");
 }
 
 export function LogScreen() {
@@ -37,13 +39,11 @@ export function LogScreen() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-        <h2 className="text-sm font-semibold text-text">{t("log.title")}</h2>
-      </div>
+      <ScreenHeader title={t("log.title")} />
 
       <div className="flex-1 overflow-y-auto p-3 font-mono text-xs flex flex-col gap-0.5">
         {entries.length === 0 ? (
-          <p className="text-text-disabled text-center mt-8">{t("log.empty")}</p>
+          <EmptyState icon={ScrollText} message={t("log.empty")} />
         ) : (
           entries.map((entry) => (
             <div

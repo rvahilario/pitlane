@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/cn";
+import { api, type Settings, type TriggerMode } from "@/lib/api";
+import { Button } from "@/components/ui/Button";
+import { Toggle } from "@/components/ui/Toggle";
+import { NumberInput } from "@/components/ui/Input";
+import { SectionDivider } from "@/components/ui/SectionDivider";
+import { FormField } from "@/components/layout/FormField";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { ThemeSelector } from "@/components/ThemeSelector";
-import { api, type Settings, type TriggerMode } from "@/lib/api";
 
 const DEFAULT_SETTINGS: Settings = {
   poll_interval_secs: 1,
@@ -17,9 +21,7 @@ export function SettingsScreen() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    api.getSettings().then(setSettings);
-  }, []);
+  useEffect(() => { api.getSettings().then(setSettings); }, []);
 
   function patch<K extends keyof Settings>(key: K, value: Settings[K]) {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -27,11 +29,8 @@ export function SettingsScreen() {
 
   async function handleSave() {
     setSaving(true);
-    try {
-      await api.saveSettings(settings);
-    } finally {
-      setSaving(false);
-    }
+    try { await api.saveSettings(settings); }
+    finally { setSaving(false); }
   }
 
   return (
@@ -39,24 +38,17 @@ export function SettingsScreen() {
       <h2 className="text-sm font-semibold text-text">{t("settings.title")}</h2>
 
       <section className="flex flex-col gap-3">
-        <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-          {t("settings.sections.monitoring")}
-        </h3>
+        <SectionDivider title={t("settings.sections.monitoring")} />
 
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-text-secondary">
-            {t("settings.poll_interval_label")}
-          </label>
-          <input
-            type="number"
+        <FormField label={t("settings.poll_interval_label")}>
+          <NumberInput
             value={settings.poll_interval_secs}
-            onChange={(e) => patch("poll_interval_secs", parseFloat(e.target.value) || 1)}
+            onChange={(v) => patch("poll_interval_secs", v || 1)}
             min={0.25}
             step={0.25}
-            className="w-24 px-2 py-1.5 text-sm bg-surface border border-border-strong rounded text-text font-mono
-                       focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/20 transition-colors"
+            className="w-24"
           />
-        </div>
+        </FormField>
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-text-secondary">
@@ -82,9 +74,7 @@ export function SettingsScreen() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-          {t("settings.sections.system")}
-        </h3>
+        <SectionDivider title={t("settings.sections.system")} />
 
         <ToggleRow
           label={t("settings.autostart_label")}
@@ -98,31 +88,28 @@ export function SettingsScreen() {
           enabled={settings.notifications_enabled}
           onChange={(v) => patch("notifications_enabled", v)}
         />
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-text-secondary">{t("settings.language_label")}</p>
-          </div>
+        <SettingRow label={t("settings.language_label")}>
           <LanguageSelector variant="default" />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-text-secondary">{t("settings.theme_label")}</p>
-          </div>
+        </SettingRow>
+        <SettingRow label={t("settings.theme_label")}>
           <ThemeSelector variant="default" />
-        </div>
+        </SettingRow>
       </section>
 
       <div className="flex justify-end pt-2">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-4 py-1.5 text-sm font-semibold rounded bg-accent-solid hover:bg-accent-solid-hover text-on-accent border border-accent-solid transition-colors disabled:opacity-50"
-        >
+        <Button onClick={handleSave} disabled={saving}>
           {saving ? "…" : t("settings.save")}
-        </button>
+        </Button>
       </div>
+    </div>
+  );
+}
+
+function SettingRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between">
+      <p className="text-xs font-medium text-text-secondary">{label}</p>
+      {children}
     </div>
   );
 }
@@ -144,22 +131,7 @@ function ToggleRow({
         <p className="text-xs font-medium text-text-secondary">{label}</p>
         <p className="text-xs text-text-muted">{description}</p>
       </div>
-      <button
-        role="switch"
-        aria-checked={enabled}
-        onClick={() => onChange(!enabled)}
-        className={cn(
-          "flex h-5 w-10 items-center rounded-full p-0.5 transition-colors shrink-0",
-          enabled ? "bg-accent-solid hover:bg-accent-solid-hover" : "bg-elevated border border-accent-solid hover:bg-surface",
-        )}
-      >
-        <span
-          className={cn(
-            "h-4 w-4 rounded-full transition-transform",
-            enabled ? "translate-x-5 bg-on-accent" : "translate-x-0 bg-accent-solid",
-          )}
-        />
-      </button>
+      <Toggle checked={enabled} onChange={onChange} label={label} />
     </div>
   );
 }
