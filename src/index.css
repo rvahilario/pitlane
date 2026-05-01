@@ -1,30 +1,130 @@
 @import "tailwindcss";
 
 @theme {
-  /* --- Superfícies --- */
-  --color-canvas:   #0a0618; /* roxo quase preto — header, overlay */
-  --color-base:     #1a0f36; /* fundo principal — roxo escuro */
-  --color-surface:  #251848; /* cards, painéis */
-  --color-elevated: #352460; /* hover, itens elevados */
+  /* --- Primitive ramps: Pitlane Aurora --- */
+  --color-purple-100:  #f4f0ff;
+  --color-purple-200:  #d1c5f2;
+  --color-purple-300:  #a999d3;
+  --color-purple-400:  #7c6dab;
+  --color-purple-500:  #6f618f;
+  --color-purple-600:  #33264f;
+  --color-purple-700:  #251a43;
+  --color-purple-800:  #1b1233;
+  --color-purple-900:  #120b24;
+  --color-purple-1000: #090714;
 
-  /* --- Bordas --- */
-  --color-border:        #2a1850;
-  --color-border-strong: #3d2d6a;
+  --color-aqua-100:  #d8fffb;
+  --color-aqua-300:  #7ae7e0;
+  --color-aqua-400:  #4dd9d0;
+  --color-aqua-500:  #36beb7;
+  --color-aqua-600:  #208984;
+  --color-aqua-1000: #020707;
 
-  /* --- Texto (todos >= 4.5:1 sobre base e surface) --- */
-  --color-text:           #f0eeff; /* 15.8:1 on base */
-  --color-text-secondary: #c4b8e0; /* lavanda */
-  --color-text-muted:     #9d8cc0; /* 6.0:1 on base, 5.3:1 on surface */
-  --color-text-disabled:  #5a4880;
+  --color-green-300:  #7be9b4;
+  --color-green-400:  #47d18c;
+  --color-green-500:  #35b875;
+  --color-green-600:  #279b63;
+  --color-green-1000: #06130c;
 
-  /* --- Accent teal-aqua (usar texto escuro sobre ele) --- */
-  --color-accent:       #6ec4c0;
-  --color-accent-hover: #58b0ac;
+  --color-amber-300:  #ffe082;
+  --color-amber-400:  #f2c94c;
+  --color-amber-1000: #171104;
 
-  /* --- Status / Feedback --- */
-  --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-danger:  #f87171;
+  --color-red-300:  #ff9a9a;
+  --color-red-400:  #ff7373;
+  --color-red-500:  #e0646b;
+  --color-red-600:  #cf5259;
+  --color-red-1000: #180607;
+
+  /* --- Semantic tokens --- */
+  --color-canvas:   var(--color-purple-1000);
+  --color-base:     var(--color-purple-900);
+  --color-surface:  var(--color-purple-800);
+  --color-surface-disabled: var(--color-purple-900);
+  --color-elevated: var(--color-purple-700);
+
+  --color-border:        var(--color-purple-600);
+  --color-border-strong: var(--color-purple-400);
+
+  --color-text:           var(--color-purple-100);
+  --color-text-secondary: var(--color-purple-200);
+  --color-text-muted:     var(--color-purple-300);
+  --color-text-disabled:  var(--color-purple-500);
+
+  --color-accent:             var(--color-aqua-400);
+  --color-accent-hover:       var(--color-aqua-300);
+  --color-accent-solid:       var(--color-aqua-500);
+  --color-accent-solid-hover: var(--color-aqua-600);
+  --color-on-accent:          var(--color-aqua-1000);
+
+  --color-success:             var(--color-green-400);
+  --color-success-solid:       var(--color-green-500);
+  --color-success-solid-hover: var(--color-green-600);
+  --color-warning:             var(--color-amber-400);
+  --color-danger:              var(--color-red-400);
+  --color-danger-solid:        var(--color-red-500);
+  --color-danger-solid-hover:  var(--color-red-600);
+  --color-on-success:          var(--color-green-1000);
+  --color-on-warning:          var(--color-amber-1000);
+  --color-on-danger:           var(--color-red-1000);
+}
+
+html[data-theme="pitlane-nebula"] {
+  /* --- Primitive ramps: Pitlane Nebula --- */
+  --color-aqua-100:  #eefdfb;
+  --color-aqua-200:  #c4e7e3;
+  --color-aqua-300:  #93c7c1;
+  --color-aqua-400:  #6aa09b;
+  --color-aqua-500:  #4a7773;
+  --color-aqua-600:  #235c5a;
+  --color-aqua-700:  #174343;
+  --color-aqua-800:  #103030;
+  --color-aqua-900:  #0b2020;
+  --color-aqua-1000: #061313;
+
+  --color-purple-100:  #f1edff;
+  --color-purple-200:  #d8ccff;
+  --color-purple-300:  #b8a2ff;
+  --color-purple-400:  #9c82f2;
+  --color-purple-500:  #8168d8;
+  --color-purple-600:  #6b55bd;
+  --color-purple-700:  #45347f;
+  --color-purple-800:  #30245c;
+  --color-purple-900:  #1c1438;
+  --color-purple-1000: #0d0718;
+
+  --color-green-300:  #7be9b4;
+  --color-green-400:  #55d99a;
+  --color-green-500:  #35b875;
+  --color-green-600:  #279b63;
+
+  --color-amber-300:  #ffe082;
+  --color-amber-400:  #f2c94c;
+
+  --color-red-300:  #ff9a9a;
+  --color-red-400:  #ff8585;
+  --color-red-500:  #e0646b;
+  --color-red-600:  #cf5259;
+
+  --color-canvas:   var(--color-aqua-1000);
+  --color-base:     var(--color-aqua-900);
+  --color-surface:  var(--color-aqua-800);
+  --color-surface-disabled: var(--color-aqua-900);
+  --color-elevated: var(--color-aqua-700);
+
+  --color-border:        var(--color-aqua-600);
+  --color-border-strong: var(--color-aqua-400);
+
+  --color-text:           var(--color-aqua-100);
+  --color-text-secondary: var(--color-aqua-200);
+  --color-text-muted:     var(--color-aqua-300);
+  --color-text-disabled:  var(--color-aqua-500);
+
+  --color-accent:             var(--color-purple-300);
+  --color-accent-hover:       var(--color-purple-200);
+  --color-accent-solid:       var(--color-purple-400);
+  --color-accent-solid-hover: var(--color-purple-500);
+  --color-on-accent:          var(--color-purple-1000);
 }
 
 @layer base {

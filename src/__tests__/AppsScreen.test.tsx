@@ -87,11 +87,17 @@ describe("AppsScreen", () => {
     await waitFor(() => expect(screen.getByText(/Default/)).toBeInTheDocument());
   });
 
-  it("should dim disabled apps", async () => {
+  it("should keep manual controls available when app auto-start is disabled", async () => {
     vi.mocked(api.getApps).mockResolvedValue([makeApp({ enabled: false })]);
     render(<AppsScreen />);
     const item = await screen.findByText("SimHub");
-    expect(item.closest("li")).toHaveClass("opacity-50");
+    expect(item.closest("li")).not.toHaveClass("opacity-50");
+    expect(screen.getByText(/disabled/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/start/i)).not.toBeDisabled();
+    expect(screen.getByTitle(/edit/i)).not.toBeDisabled();
+    expect(screen.getByTitle(/delete/i)).not.toBeDisabled();
+    expect(screen.getByRole("switch", { name: /auto-start with iracing/i })).not.toBeDisabled();
+    expect(screen.getByRole("switch", { name: /stop with iracing/i })).toBeDisabled();
   });
 
   it("should show start button when app is idle", async () => {
@@ -153,6 +159,21 @@ describe("AppsScreen", () => {
     const toggle = screen.getByRole("switch", { name: /stop with iracing/i });
     await userEvent.click(toggle);
     expect(vi.mocked(api.updateApp)).toHaveBeenCalledWith("42", { stop_with_iracing: false });
+  });
+
+  it("should show global prevent-auto-stop as checked when backend auto-stop is disabled", async () => {
+    vi.mocked(api.getAutoStop).mockResolvedValue(false);
+    render(<AppsScreen />);
+    const toggle = await screen.findByRole("switch", { name: /do not stop apps/i });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("should invert global prevent-auto-stop before saving to backend", async () => {
+    vi.mocked(api.getAutoStop).mockResolvedValue(false);
+    render(<AppsScreen />);
+    const toggle = await screen.findByRole("switch", { name: /do not stop apps/i });
+    await userEvent.click(toggle);
+    expect(vi.mocked(api.setAutoStop)).toHaveBeenCalledWith(true);
   });
 
   it("should call forceKillApp when stop is clicked", async () => {

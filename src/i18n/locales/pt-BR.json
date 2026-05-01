@@ -28,12 +28,15 @@
     "delete_confirm": "Excluir",
     "auto_start": "Iniciar com iRacing",
     "auto_stop": "Parar com iRacing",
-    "auto_stop_label": "Parar ao fechar",
-    "auto_stop_hint": "Parar todos os apps quando o iRacing fechar",
+    "auto_stop_label": "Não parar apps ao fechar iRacing",
+    "auto_stop_label_emphasis": "NÃO",
+    "auto_stop_label_rest": "parar apps ao fechar iRacing",
+    "auto_stop_hint": "Desativa a parada automática global ao fechar o iRacing",
     "status": {
       "running": "Rodando",
       "idle": "Inativo",
-      "crashed": "Travado"
+      "crashed": "Travado",
+      "disabled": "Desabilitado"
     },
     "form": {
       "title_add": "Adicionar app",
@@ -103,9 +106,14 @@
     "notifications_label": "Notificações",
     "notifications_hint": "Toast ao iniciar sessão",
     "language_label": "Idioma",
+    "theme_label": "Tema",
     "languages": {
       "pt-BR": "Português (BR)",
       "en": "English"
+    },
+    "themes": {
+      "pitlane-aurora": "Pitlane Aurora",
+      "pitlane-nebula": "Pitlane Nebula"
     }
   }
 }

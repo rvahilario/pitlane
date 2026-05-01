@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PitlaneLogo } from "@/components/PitlaneLogo";
+import { ThemeSelector } from "@/components/ThemeSelector";
 
 interface StatusBarProps {
   iRacingRunning: boolean;
@@ -41,7 +42,7 @@ export function StatusBar({ iRacingRunning, sessionType, managedCount, paused }:
             "flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
             iRacingRunning
               ? "bg-accent/10 border border-accent/25 text-accent"
-              : "bg-surface border border-border text-text-muted",
+              : "bg-surface border border-border-strong text-text-muted",
           )}
         >
           <Circle className={cn(
@@ -53,6 +54,7 @@ export function StatusBar({ iRacingRunning, sessionType, managedCount, paused }:
 
         <div className="w-px h-4 bg-border" />
 
+        <ThemeSelector variant="compact" />
         <LanguageSelector variant="compact" />
       </div>
     </header>

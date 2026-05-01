@@ -16,6 +16,8 @@
         "title": "Pitlane",
         "width": 800,
         "height": 600,
+        "minWidth": 750,
+        "minHeight": 230,
         "visible": false
       }
     ],

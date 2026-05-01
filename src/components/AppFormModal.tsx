@@ -46,7 +46,7 @@ function initForm(initial?: ManagedApp): FormState {
 function SectionDivider({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-2 pt-1">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-text-disabled">
+      <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">
         {title}
       </span>
       <div className="flex-1 h-px bg-border" />
@@ -59,7 +59,7 @@ function Field({ label, hint, id, children }: { label: string; hint?: string; id
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className="text-xs text-text-muted">{label}</label>
       {children}
-      {hint && <p className="text-xs text-text-disabled">{hint}</p>}
+      {hint && <p className="text-xs text-text-muted">{hint}</p>}
     </div>
   );
 }
@@ -113,7 +113,7 @@ function CheckRow({
         className={cn(
           "mt-0.5 w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors",
           checked
-            ? "bg-accent/20 border-accent"
+            ? "bg-accent-solid border-accent-solid"
             : "bg-elevated border-border-strong group-hover:border-accent/50",
         )}
       >
@@ -124,14 +124,14 @@ function CheckRow({
           className="sr-only"
         />
         {checked && (
-          <svg className="w-3 h-3 text-accent" viewBox="0 0 12 12" fill="none">
+          <svg className="w-3 h-3 text-on-accent" viewBox="0 0 12 12" fill="none">
             <path d="M2 6l2.5 2.5L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </div>
       <div>
         <p className="text-sm text-text leading-tight">{label}</p>
-        {hint && <p className="text-xs text-text-disabled mt-0.5">{hint}</p>}
+        {hint && <p className="text-xs text-text-muted mt-0.5">{hint}</p>}
       </div>
     </label>
   );
@@ -264,7 +264,7 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
             <button
               type="button"
               onClick={() => setAdvancedOpen((o) => !o)}
-              className="flex items-center gap-1.5 text-xs text-text-disabled hover:text-text-muted transition-colors self-start"
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors self-start"
             >
               <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", advancedOpen && "rotate-180")} />
               {t("apps.form.section_advanced")}
@@ -303,7 +303,7 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                 type="button"
                 onClick={onClose}
                 disabled={saving || saved}
-                className="text-xs px-3 py-1.5 rounded-md border border-border-strong text-text-muted hover:text-text transition-colors disabled:opacity-50"
+                className="text-sm px-3 py-1.5 rounded-md border border-border-strong text-text-muted hover:text-text transition-colors disabled:opacity-50"
               >
                 {t("apps.form.cancel")}
               </button>
@@ -311,10 +311,10 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                 type="submit"
                 disabled={saving || saved || !form.name.trim() || !form.exe_path.trim()}
                 className={cn(
-                  "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md border transition-colors disabled:opacity-50",
+                  "flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-md border transition-colors disabled:opacity-50",
                   saved
-                    ? "bg-success/15 text-success border-success/30"
-                    : "bg-accent/15 hover:bg-accent/25 text-accent border-accent/30",
+                    ? "bg-success-solid text-on-success border-success-solid"
+                    : "bg-accent-solid hover:bg-accent-solid-hover text-on-accent border-accent-solid",
                 )}
               >
                 {saved ? (

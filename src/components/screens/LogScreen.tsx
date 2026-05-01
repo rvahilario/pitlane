@@ -8,14 +8,14 @@ const kindStyle: Record<LogKind, string> = {
   launch:        "text-success",
   stop:          "text-warning",
   iracing_start: "text-accent",
-  iracing_stop:  "text-accent/60",
+  iracing_stop:  "text-accent/75",
 };
 
 const kindLabel: Record<LogKind, string> = {
   launch:        "LAUNCH",
   stop:          "STOP",
-  iracing_start: "IRACING",
-  iracing_stop:  "IRACING",
+  iracing_start: "iRACING ▶",
+  iracing_stop:  "iRACING ■",
 };
 
 function formatTime(ms: number): string {
@@ -53,7 +53,7 @@ export function LogScreen() {
                 (entry.kind === "iracing_start" || entry.kind === "iracing_stop") && "bg-accent/5",
               )}
             >
-              <span className="text-text-disabled shrink-0 w-16">{formatTime(entry.timestamp_ms)}</span>
+              <span className="text-text-muted shrink-0 w-16">{formatTime(entry.timestamp_ms)}</span>
               <span className={cn("shrink-0 w-14 font-semibold", kindStyle[entry.kind])}>
                 {kindLabel[entry.kind]}
               </span>

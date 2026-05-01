@@ -4,6 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Acessibilidade
+
+Todo trabalho de UI neste projeto **MUST** seguir as diretrizes definidas em [`A11Y.md`](./A11Y.md).
+
+Problemas de contraste são classificados como 🟠 **HIGH** (Must Fix). Requisitos mínimos:
+- Texto: **4.5:1** contraste
+- Elementos de UI: **3:1** contraste
+- Texto mínimo: **12px** (10px apenas em metadados com contraste 7:1)
+- Targets interativos: **44×44 CSS px**
+
+---
+
 ## O que é este projeto
 
 **Pitlane** é um rewrite do [iGnition](../iGnition) em Tauri v2 (Rust backend + React frontend).

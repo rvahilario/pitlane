@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Circle, LayoutList, Pencil, Plus, Square, Play, Trash2 } from "lucide-react";
+import { Activity, AlertTriangle, Ban, Clock3, LayoutList, Pencil, Plus, Square, Play, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { cn } from "@/lib/cn";
@@ -10,32 +10,46 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 
-function StatusIndicator({ status }: { status: AppStatus | undefined }) {
+function StatusBadge({ status, enabled, t }: { status: AppStatus | undefined; enabled: boolean; t: TFunction }) {
   const type = status?.state.type ?? "idle";
+
+  if (!enabled) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded border border-border-strong bg-elevated px-1.5 py-0.5 text-[11px] font-medium text-text-muted">
+        <Ban className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
+        {t("apps.status.disabled")}
+      </span>
+    );
+  }
 
   if (type === "running") {
     return (
-      <Circle className="w-2 h-2 fill-success text-success shrink-0" aria-label="Running" />
+      <span className="inline-flex items-center gap-1.5 rounded border border-success bg-elevated px-1.5 py-0.5 text-[11px] font-medium text-success">
+        <Activity className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
+        {t("apps.status.running")}
+      </span>
     );
   }
   if (type === "crashed") {
     return (
-      <AlertTriangle className="w-3 h-3 text-warning shrink-0" aria-label="Crashed" />
+      <span className="inline-flex items-center gap-1 rounded border border-warning bg-elevated px-1.5 py-0.5 text-[11px] font-medium text-warning">
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
+        {t("apps.status.crashed")}
+      </span>
     );
   }
   return (
-    <Circle className="w-2 h-2 text-text-disabled shrink-0" aria-label="Idle" />
+    <span className="inline-flex items-center gap-1.5 rounded border border-border-strong bg-elevated px-1.5 py-0.5 text-[11px] font-medium text-text-secondary">
+      <Clock3 className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
+      {t("apps.status.idle")}
+    </span>
   );
 }
 
-function statusLabel(status: AppStatus | undefined, t: TFunction): string {
-  const type = status?.state.type ?? "idle";
-  if (type === "running") {
-    const pid = (status!.state as { pid: number }).pid;
-    return `${t("apps.status.running")} · PID ${pid}`;
-  }
-  if (type === "crashed") return t("apps.status.crashed");
-  return t("apps.status.idle");
+function statusDetail(status: AppStatus | undefined): string | null {
+  if (status?.state.type !== "running") return null;
+  const pid = (status.state as { pid: number }).pid;
+  return `PID ${pid}`;
 }
 
 // ── App letter-avatar ─────────────────────────────────────────────────────────
@@ -58,22 +72,43 @@ function AppAvatar({ name }: { name: string }) {
 
 // ── Toggle switch ─────────────────────────────────────────────────────────────
 
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+function Toggle({
+  checked,
+  disabled = false,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       aria-label={label}
-      onClick={() => onChange(!checked)}
+      disabled={disabled}
+      onClick={() => {
+        if (!disabled) onChange(!checked);
+      }}
       className={cn(
-        "relative w-8 h-4 rounded-full transition-colors shrink-0",
-        checked ? "bg-accent/40" : "bg-elevated border border-border-strong",
+        "flex h-5 w-9 items-center rounded-full p-0.5 transition-colors shrink-0 disabled:cursor-not-allowed",
+        disabled
+          ? "bg-elevated border border-border"
+          : checked
+            ? "bg-accent-solid hover:bg-accent-solid-hover"
+            : "bg-elevated border border-accent-solid hover:bg-surface",
       )}
     >
       <span className={cn(
-        "absolute top-0.5 w-3 h-3 rounded-full transition-all",
-        checked ? "left-[18px] bg-accent" : "left-0.5 bg-text-disabled",
+        "h-4 w-4 rounded-full transition-transform",
+        disabled
+          ? "translate-x-0 bg-text-disabled"
+          : checked
+            ? "translate-x-4 bg-on-accent"
+            : "translate-x-0 bg-accent-solid",
       )} />
     </button>
   );
@@ -95,27 +130,37 @@ interface AppCardProps {
 function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabled, onToggleStopWithIracing }: AppCardProps) {
   const { t } = useTranslation();
   const running = status?.state.type === "running";
+  const detail = statusDetail(status);
+  const appDisabled = !app.enabled;
 
   return (
     <li
       data-testid="app-card"
       className={cn(
-        "flex flex-col rounded-lg border bg-surface border-border-strong transition-opacity",
-        !app.enabled && "opacity-50",
+        "flex flex-col rounded-lg border bg-surface border-border-strong transition-colors",
+        !app.enabled && "bg-surface-disabled border-border",
       )}
     >
       {/* Row 1: icon / name / status / actions */}
       <div className="flex items-center gap-3 px-3 py-2.5">
-        <AppAvatar name={app.name} />
+        <div className={cn(appDisabled && "opacity-55")}>
+          <AppAvatar name={app.name} />
+        </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <StatusIndicator status={status} />
-            <span className="text-sm font-medium text-text truncate">{app.name}</span>
+          <div className="flex flex-col gap-1">
+            <span className={cn("text-sm font-medium text-text truncate", appDisabled && "opacity-60")}>
+              {app.name}
+            </span>
+            <div className="flex items-center gap-2 min-h-5">
+              <StatusBadge status={status} enabled={app.enabled} t={t} />
+              {detail && (
+                <span className="text-xs text-text-muted truncate font-mono" title={detail}>
+                  {detail}
+                </span>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-text-disabled truncate font-mono mt-0.5" title={statusLabel(status, t)}>
-            {statusLabel(status, t)}
-          </p>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
@@ -123,18 +168,18 @@ function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabl
             <button
               title={t("apps.stop")}
               onClick={onStop}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded text-warning/80 hover:text-warning hover:bg-warning/10 transition-colors border border-transparent hover:border-warning/20"
+              className="flex items-center gap-1 text-sm font-semibold px-2.5 py-1.5 rounded-md bg-danger-solid text-on-danger border border-danger-solid hover:bg-danger-solid-hover transition-colors"
             >
-              <Square className="w-3 h-3" />
+              <Square className="w-3.5 h-3.5 fill-current stroke-[2.5]" />
               {t("apps.stop")}
             </button>
           ) : (
             <button
               title={t("apps.start")}
               onClick={onStart}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded text-text-muted hover:text-text hover:bg-elevated transition-colors border border-transparent hover:border-border-strong"
+              className="flex items-center gap-1 text-sm font-semibold px-2.5 py-1.5 rounded-md bg-success-solid text-on-success border border-success-solid hover:bg-success-solid-hover transition-colors"
             >
-              <Play className="w-3 h-3" />
+              <Play className="w-3.5 h-3.5 fill-current stroke-[2.5]" />
               {t("apps.start")}
             </button>
           )}
@@ -142,17 +187,17 @@ function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabl
           <button
             title={t("apps.edit")}
             onClick={onEdit}
-            className="p-1.5 rounded text-text-muted hover:text-text hover:bg-elevated transition-colors"
+            className="p-1.5 rounded text-text-secondary hover:text-text hover:bg-elevated transition-colors"
           >
-            <Pencil className="w-3.5 h-3.5" />
+            <Pencil className="w-4 h-4 stroke-[2.5]" />
           </button>
 
           <button
             title={t("apps.delete")}
             onClick={onDelete}
-            className="p-1.5 rounded text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+            className="p-1.5 rounded text-danger hover:bg-danger/10 transition-colors"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
       </div>
@@ -160,17 +205,18 @@ function AppCard({ app, status, onStart, onStop, onEdit, onDelete, onToggleEnabl
       {/* Row 2: auto-start / auto-stop toggles */}
       <div className="flex items-center justify-between px-3 pb-2.5 -mt-0.5 gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-text-muted">{t("apps.auto_start")}</span>
+          <span className="text-xs text-text-secondary">{t("apps.auto_start")}</span>
           <Toggle
             checked={app.enabled}
             onChange={onToggleEnabled}
             label={t("apps.auto_start")}
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className={cn("flex items-center gap-2", appDisabled && "opacity-60")}>
           <span className="text-xs text-text-muted">{t("apps.auto_stop")}</span>
           <Toggle
             checked={app.stop_with_iracing}
+            disabled={appDisabled}
             onChange={onToggleStopWithIracing}
             label={t("apps.auto_stop")}
           />
@@ -193,7 +239,7 @@ export function AppsScreen() {
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
   const [confirmDelete, setConfirmDelete] = useState<ManagedApp | null>(null);
-  const [autoStop, setAutoStop] = useState(true);
+  const [preventAutoStop, setPreventAutoStop] = useState(false);
   const statuses = useAppStatuses();
 
   async function loadApps() {
@@ -205,15 +251,15 @@ export function AppsScreen() {
     ]);
     setApps(loadedApps);
     setActiveProfile(profiles.find((p) => p.id === activeId) ?? null);
-    setAutoStop(autoStopVal);
+    setPreventAutoStop(!autoStopVal);
   }
 
   useEffect(() => { loadApps(); }, []);
 
-  async function handleAutoStopToggle() {
-    const next = !autoStop;
-    setAutoStop(next);
-    await api.setAutoStop(next);
+  async function handlePreventAutoStopToggle() {
+    const next = !preventAutoStop;
+    setPreventAutoStop(next);
+    await api.setAutoStop(!next);
   }
 
   async function handleFormSubmit(data: NewApp) {
@@ -253,28 +299,24 @@ export function AppsScreen() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleAutoStopToggle}
-            title={t("apps.auto_stop_hint")}
-            className={cn(
-              "flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border transition-colors",
-              autoStop
-                ? "bg-accent/10 text-accent border-accent/30 hover:bg-accent/20"
-                : "bg-elevated text-text-muted border-border-strong hover:text-text",
-            )}
+          <div
+            className="flex items-center gap-2 rounded-md border border-border-strong bg-surface px-2.5 py-1.5"
           >
-            <div className={cn(
-              "w-1.5 h-1.5 rounded-full shrink-0",
-              autoStop ? "bg-accent" : "bg-text-disabled",
-            )} />
-            {t("apps.auto_stop_label")}
-          </button>
+            <span className="text-xs text-text-secondary">
+              <span className="font-bold text-accent">{t("apps.auto_stop_label_emphasis")}</span>{" "}
+              {t("apps.auto_stop_label_rest")}
+            </span>
+            <Toggle
+              checked={preventAutoStop}
+              onChange={handlePreventAutoStopToggle}
+              label={t("apps.auto_stop_label")}
+            />
+          </div>
           <button
             onClick={() => setModal({ type: "add" })}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 transition-colors"
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-md bg-accent-solid text-on-accent border border-accent-solid hover:bg-accent-solid-hover transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4 stroke-[2.5]" />
             {t("apps.add")}
           </button>
         </div>
@@ -282,13 +324,13 @@ export function AppsScreen() {
 
       {/* App list */}
       {apps.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-text-disabled gap-3">
+        <div className="flex-1 flex flex-col items-center justify-center text-text-muted gap-3">
           <LayoutList className="w-8 h-8" />
           <div className="flex flex-col items-center gap-2">
             <p className="text-sm">{t("apps.empty")}</p>
             <button
               onClick={() => setModal({ type: "add" })}
-              className="text-xs font-semibold px-3 py-1.5 rounded-md bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 transition-colors"
+              className="text-sm font-semibold px-3 py-1.5 rounded-md bg-accent-solid text-on-accent border border-accent-solid hover:bg-accent-solid-hover transition-colors"
             >
               {t("apps.add_first")}
             </button>
