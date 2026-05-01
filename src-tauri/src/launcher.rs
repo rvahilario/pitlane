@@ -158,4 +158,3 @@ pub fn resolve_real_pid(stub_pid: u32, app: &ManagedApp) -> u32 {
         |path| crate::process_killer::find_pids_by_exe_path(path),
     )
 }
-

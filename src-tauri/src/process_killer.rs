@@ -131,10 +131,11 @@ pub fn is_pid_alive(pid: u32) -> bool {
 
     use windows::Win32::System::Threading::GetExitCodeProcess;
     let mut exit_code: u32 = 0;
-    let still_active = unsafe {
-        GetExitCodeProcess(handle, &mut exit_code).is_ok() && exit_code == STILL_ACTIVE
-    };
-    unsafe { let _ = CloseHandle(handle); }
+    let still_active =
+        unsafe { GetExitCodeProcess(handle, &mut exit_code).is_ok() && exit_code == STILL_ACTIVE };
+    unsafe {
+        let _ = CloseHandle(handle);
+    }
     still_active
 }
 
@@ -149,7 +150,7 @@ pub fn needs_graceful_close(grace_secs: f64) -> bool {
 /// Uses PostMessageW (async) so each app processes the close in its own event loop,
 /// avoiding race conditions when multiple windows receive WM_CLOSE simultaneously.
 pub fn send_wm_close(pid: u32) {
-    use windows::Win32::Foundation::{HWND, LPARAM, BOOL};
+    use windows::Win32::Foundation::{BOOL, HWND, LPARAM};
     use windows::Win32::UI::WindowsAndMessaging::{
         EnumWindows, GetWindowThreadProcessId, PostMessageW, WM_CLOSE,
     };
@@ -174,7 +175,9 @@ pub fn send_wm_close(pid: u32) {
 /// Waits up to `grace` for the process to exit on its own. Returns true if it exited.
 pub fn wait_for_exit(pid: u32, grace: Duration) -> bool {
     use windows::Win32::Foundation::{CloseHandle, WAIT_OBJECT_0};
-    use windows::Win32::System::Threading::{OpenProcess, WaitForSingleObject, PROCESS_SYNCHRONIZE};
+    use windows::Win32::System::Threading::{
+        OpenProcess, WaitForSingleObject, PROCESS_SYNCHRONIZE,
+    };
 
     let handle = unsafe {
         match OpenProcess(PROCESS_SYNCHRONIZE, false, pid) {
@@ -185,7 +188,9 @@ pub fn wait_for_exit(pid: u32, grace: Duration) -> bool {
 
     let ms = grace.as_millis().min(u32::MAX as u128) as u32;
     let result = unsafe { WaitForSingleObject(handle, ms) };
-    unsafe { let _ = CloseHandle(handle); }
+    unsafe {
+        let _ = CloseHandle(handle);
+    }
 
     result == WAIT_OBJECT_0
 }
@@ -225,4 +230,3 @@ pub fn graceful_kill(pid: u32, grace_secs: f64) {
         force_kill(pid);
     }
 }
-

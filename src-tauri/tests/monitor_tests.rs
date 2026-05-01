@@ -1,9 +1,9 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
-use pitlane_lib::monitor::{Monitor, MonitorEvent, MonitorLogic, process_name_for};
 use pitlane_lib::models::TriggerMode;
+use pitlane_lib::monitor::{process_name_for, Monitor, MonitorEvent, MonitorLogic};
 
 // ── MonitorLogic: initial state ──────────────────────────────────────────────
 
@@ -68,21 +68,21 @@ fn should_emit_no_event_while_staying_online() {
 #[test]
 fn should_emit_started_and_stopped_on_rapid_transitions() {
     let mut logic = MonitorLogic::new(TriggerMode::Race);
-    assert_eq!(logic.tick(true),  Some(MonitorEvent::Started));
+    assert_eq!(logic.tick(true), Some(MonitorEvent::Started));
     assert_eq!(logic.tick(false), Some(MonitorEvent::Stopped));
-    assert_eq!(logic.tick(true),  Some(MonitorEvent::Started));
+    assert_eq!(logic.tick(true), Some(MonitorEvent::Started));
     assert_eq!(logic.tick(false), Some(MonitorEvent::Stopped));
 }
 
 #[test]
 fn should_not_emit_duplicate_started_on_consecutive_running_ticks() {
     let mut logic = MonitorLogic::new(TriggerMode::Ui);
-    let first  = logic.tick(true);
+    let first = logic.tick(true);
     let second = logic.tick(true);
-    let third  = logic.tick(true);
-    assert_eq!(first,  Some(MonitorEvent::Started));
+    let third = logic.tick(true);
+    assert_eq!(first, Some(MonitorEvent::Started));
     assert_eq!(second, None);
-    assert_eq!(third,  None);
+    assert_eq!(third, None);
 }
 
 // ── process_name_for (free function) ─────────────────────────────────────────
@@ -104,13 +104,9 @@ fn should_start_and_stop_monitor_thread_without_panicking() {
     let counter = Arc::new(AtomicUsize::new(0));
     let counter_clone = Arc::clone(&counter);
 
-    let mut monitor = Monitor::start(
-        TriggerMode::Ui,
-        0.05,
-        move |_event| {
-            counter_clone.fetch_add(1, Ordering::SeqCst);
-        },
-    );
+    let mut monitor = Monitor::start(TriggerMode::Ui, 0.05, move |_event| {
+        counter_clone.fetch_add(1, Ordering::SeqCst);
+    });
 
     std::thread::sleep(Duration::from_millis(150));
     monitor.stop();
@@ -154,7 +150,10 @@ fn manual_should_detect_real_iracing_process() {
         match rx.recv_timeout(Duration::from_secs(20)) {
             Ok(MonitorEvent::Stopped) => break,
             Ok(MonitorEvent::Started) => continue,
-            Err(_) => { println!("[monitor integration] Timeout — no events in 20s."); break; }
+            Err(_) => {
+                println!("[monitor integration] Timeout — no events in 20s.");
+                break;
+            }
         }
     }
 

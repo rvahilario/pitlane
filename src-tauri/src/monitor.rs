@@ -20,7 +20,7 @@ pub const PROCESS_IRACING_SIM: &str = "iRacingSim64DX11.exe";
 
 pub fn process_name_for(trigger: &TriggerMode) -> &'static str {
     match trigger {
-        TriggerMode::Ui   => PROCESS_IRACING_UI,
+        TriggerMode::Ui => PROCESS_IRACING_UI,
         TriggerMode::Race => PROCESS_IRACING_SIM,
     }
 }
@@ -42,15 +42,24 @@ pub struct MonitorLogic {
 
 impl MonitorLogic {
     pub fn new(trigger: TriggerMode) -> Self {
-        Self { online: false, trigger }
+        Self {
+            online: false,
+            trigger,
+        }
     }
 
     /// Feed the current observation; returns an event only on state transitions.
     pub fn tick(&mut self, is_running: bool) -> Option<MonitorEvent> {
         match (self.online, is_running) {
-            (false, true)  => { self.online = true;  Some(MonitorEvent::Started) }
-            (true,  false) => { self.online = false; Some(MonitorEvent::Stopped) }
-            _              => None,
+            (false, true) => {
+                self.online = true;
+                Some(MonitorEvent::Started)
+            }
+            (true, false) => {
+                self.online = false;
+                Some(MonitorEvent::Stopped)
+            }
+            _ => None,
         }
     }
 
@@ -129,7 +138,10 @@ impl Monitor {
             })
             .expect("failed to spawn monitor thread");
 
-        Self { handle: Some(handle), stop_flag }
+        Self {
+            handle: Some(handle),
+            stop_flag,
+        }
     }
 
     /// Signals the thread to stop and waits for it to finish (max 3 s).
@@ -146,4 +158,3 @@ impl Drop for Monitor {
         self.stop();
     }
 }
-

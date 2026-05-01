@@ -1,7 +1,7 @@
-use std::sync::{Arc, Mutex};
 use serde::Deserialize;
-use tauri::{AppHandle, State};
+use std::sync::{Arc, Mutex};
 use tauri::menu::{Menu, MenuItem};
+use tauri::{AppHandle, State};
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::config::save_config;
@@ -29,17 +29,39 @@ pub struct NewApp {
 impl NewApp {
     pub fn into_managed(self, profile_id: &str) -> ManagedApp {
         let mut managed = ManagedApp::new(profile_id, self.name, self.exe_path);
-        if let Some(v) = self.args                 { managed.args = non_empty(v); }
-        if let Some(v) = self.working_dir          { managed.working_dir = non_empty(v); }
-        if let Some(v) = self.enabled              { managed.enabled = v; }
-        if let Some(v) = self.start_minimized      { managed.start_minimized = v; }
-        if let Some(v) = self.restart_on_crash     { managed.restart_on_crash = v; }
-        if let Some(v) = self.max_restart_attempts { managed.max_restart_attempts = v; }
-        if let Some(v) = self.startup_delay_secs   { managed.startup_delay_secs = v; }
-        if let Some(v) = self.track_process_name   { managed.track_process_name = non_empty(v); }
-        if let Some(v) = self.force_kill_on_stop   { managed.force_kill_on_stop = v; }
-        if let Some(v) = self.kill_process_tree    { managed.kill_process_tree = v; }
-        if let Some(v) = self.stop_with_iracing    { managed.stop_with_iracing = v; }
+        if let Some(v) = self.args {
+            managed.args = non_empty(v);
+        }
+        if let Some(v) = self.working_dir {
+            managed.working_dir = non_empty(v);
+        }
+        if let Some(v) = self.enabled {
+            managed.enabled = v;
+        }
+        if let Some(v) = self.start_minimized {
+            managed.start_minimized = v;
+        }
+        if let Some(v) = self.restart_on_crash {
+            managed.restart_on_crash = v;
+        }
+        if let Some(v) = self.max_restart_attempts {
+            managed.max_restart_attempts = v;
+        }
+        if let Some(v) = self.startup_delay_secs {
+            managed.startup_delay_secs = v;
+        }
+        if let Some(v) = self.track_process_name {
+            managed.track_process_name = non_empty(v);
+        }
+        if let Some(v) = self.force_kill_on_stop {
+            managed.force_kill_on_stop = v;
+        }
+        if let Some(v) = self.kill_process_tree {
+            managed.kill_process_tree = v;
+        }
+        if let Some(v) = self.stop_with_iracing {
+            managed.stop_with_iracing = v;
+        }
         managed
     }
 }
@@ -63,24 +85,54 @@ pub struct UpdateApp {
 
 impl UpdateApp {
     pub fn apply_to(self, app: &mut ManagedApp) {
-        if let Some(v) = self.name                 { app.name = v; }
-        if let Some(v) = self.exe_path             { app.exe_path = v; }
-        if let Some(v) = self.args                 { app.args = non_empty(v); }
-        if let Some(v) = self.working_dir          { app.working_dir = non_empty(v); }
-        if let Some(v) = self.enabled              { app.enabled = v; }
-        if let Some(v) = self.start_minimized      { app.start_minimized = v; }
-        if let Some(v) = self.restart_on_crash     { app.restart_on_crash = v; }
-        if let Some(v) = self.max_restart_attempts { app.max_restart_attempts = v; }
-        if let Some(v) = self.startup_delay_secs   { app.startup_delay_secs = v; }
-        if let Some(v) = self.track_process_name   { app.track_process_name = non_empty(v); }
-        if let Some(v) = self.force_kill_on_stop   { app.force_kill_on_stop = v; }
-        if let Some(v) = self.kill_process_tree    { app.kill_process_tree = v; }
-        if let Some(v) = self.stop_with_iracing    { app.stop_with_iracing = v; }
+        if let Some(v) = self.name {
+            app.name = v;
+        }
+        if let Some(v) = self.exe_path {
+            app.exe_path = v;
+        }
+        if let Some(v) = self.args {
+            app.args = non_empty(v);
+        }
+        if let Some(v) = self.working_dir {
+            app.working_dir = non_empty(v);
+        }
+        if let Some(v) = self.enabled {
+            app.enabled = v;
+        }
+        if let Some(v) = self.start_minimized {
+            app.start_minimized = v;
+        }
+        if let Some(v) = self.restart_on_crash {
+            app.restart_on_crash = v;
+        }
+        if let Some(v) = self.max_restart_attempts {
+            app.max_restart_attempts = v;
+        }
+        if let Some(v) = self.startup_delay_secs {
+            app.startup_delay_secs = v;
+        }
+        if let Some(v) = self.track_process_name {
+            app.track_process_name = non_empty(v);
+        }
+        if let Some(v) = self.force_kill_on_stop {
+            app.force_kill_on_stop = v;
+        }
+        if let Some(v) = self.kill_process_tree {
+            app.kill_process_tree = v;
+        }
+        if let Some(v) = self.stop_with_iracing {
+            app.stop_with_iracing = v;
+        }
     }
 }
 
 fn non_empty(s: String) -> Option<String> {
-    if s.trim().is_empty() { None } else { Some(s) }
+    if s.trim().is_empty() {
+        None
+    } else {
+        Some(s)
+    }
 }
 
 pub struct ConfigState(pub Arc<Mutex<AppConfig>>);
@@ -124,7 +176,11 @@ pub fn get_active_profile_id(state: State<ConfigState>) -> String {
 }
 
 #[tauri::command]
-pub fn save_settings(app: AppHandle, state: State<ConfigState>, settings: Settings) -> Result<(), String> {
+pub fn save_settings(
+    app: AppHandle,
+    state: State<ConfigState>,
+    settings: Settings,
+) -> Result<(), String> {
     let mut config = state.0.lock().unwrap();
     if let Some(enabled) = autostart_changed(&config.settings, &settings) {
         if enabled {
@@ -143,14 +199,17 @@ pub fn get_autostart_enabled(app: AppHandle) -> Result<bool, String> {
 }
 
 #[tauri::command]
-pub fn set_tray_labels(app: AppHandle, show_label: String, quit_label: String) -> Result<(), String> {
+pub fn set_tray_labels(
+    app: AppHandle,
+    show_label: String,
+    quit_label: String,
+) -> Result<(), String> {
     let tray = app.tray_by_id(TRAY_ID).ok_or("tray not found")?;
     let show = MenuItem::with_id(&app, MENU_ITEM_SHOW, show_label, true, None::<&str>)
         .map_err(|e| e.to_string())?;
     let quit = MenuItem::with_id(&app, MENU_ITEM_QUIT, quit_label, true, None::<&str>)
         .map_err(|e| e.to_string())?;
-    let menu = Menu::with_items(&app, &[&show, &quit])
-        .map_err(|e| e.to_string())?;
+    let menu = Menu::with_items(&app, &[&show, &quit]).map_err(|e| e.to_string())?;
     tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -200,9 +259,15 @@ pub fn add_app(state: State<ConfigState>, app: NewApp) -> Result<ManagedApp, Str
 }
 
 #[tauri::command]
-pub fn update_app(state: State<ConfigState>, app_id: String, update: UpdateApp) -> Result<ManagedApp, String> {
+pub fn update_app(
+    state: State<ConfigState>,
+    app_id: String,
+    update: UpdateApp,
+) -> Result<ManagedApp, String> {
     let mut config = state.0.lock().unwrap();
-    let app = config.apps.iter_mut()
+    let app = config
+        .apps
+        .iter_mut()
         .find(|a| a.id == app_id)
         .ok_or_else(|| format!("App not found: {app_id}"))?;
     update.apply_to(app);
@@ -237,21 +302,36 @@ mod tests {
 
     #[test]
     fn autostart_changed_returns_none_when_both_true() {
-        let s = Settings { autostart: true, ..Settings::default() };
+        let s = Settings {
+            autostart: true,
+            ..Settings::default()
+        };
         assert_eq!(autostart_changed(&s, &s.clone()), None);
     }
 
     #[test]
     fn autostart_changed_returns_some_true_when_enabled() {
-        let old = Settings { autostart: false, ..Settings::default() };
-        let new = Settings { autostart: true, ..Settings::default() };
+        let old = Settings {
+            autostart: false,
+            ..Settings::default()
+        };
+        let new = Settings {
+            autostart: true,
+            ..Settings::default()
+        };
         assert_eq!(autostart_changed(&old, &new), Some(true));
     }
 
     #[test]
     fn autostart_changed_returns_some_false_when_disabled() {
-        let old = Settings { autostart: true, ..Settings::default() };
-        let new = Settings { autostart: false, ..Settings::default() };
+        let old = Settings {
+            autostart: true,
+            ..Settings::default()
+        };
+        let new = Settings {
+            autostart: false,
+            ..Settings::default()
+        };
         assert_eq!(autostart_changed(&old, &new), Some(false));
     }
 
@@ -277,9 +357,17 @@ mod tests {
         let profile_b_id = profile_b.id.clone();
         config.profiles.push(profile_b);
 
-        config.apps.push(ManagedApp::new(&profile_a_id, "SimHub", "SimHub.exe"));
-        config.apps.push(ManagedApp::new(&profile_a_id, "CrewChief", "CrewChief.exe"));
-        config.apps.push(ManagedApp::new(&profile_b_id, "VoiceAttack", "VoiceAttack.exe"));
+        config
+            .apps
+            .push(ManagedApp::new(&profile_a_id, "SimHub", "SimHub.exe"));
+        config
+            .apps
+            .push(ManagedApp::new(&profile_a_id, "CrewChief", "CrewChief.exe"));
+        config.apps.push(ManagedApp::new(
+            &profile_b_id,
+            "VoiceAttack",
+            "VoiceAttack.exe",
+        ));
 
         config.active_profile_id = profile_a_id;
         config
@@ -290,7 +378,9 @@ mod tests {
         let config = config_with_two_profiles();
         let apps = apps_for_active_profile(&config);
         assert_eq!(apps.len(), 2);
-        assert!(apps.iter().all(|a| a.profile_id == config.active_profile_id));
+        assert!(apps
+            .iter()
+            .all(|a| a.profile_id == config.active_profile_id));
     }
 
     #[test]
@@ -399,8 +489,15 @@ mod tests {
         assert!(added.track_process_name.is_none());
     }
 
-    fn update_app_in(config: &mut AppConfig, app_id: &str, update: UpdateApp) -> Result<ManagedApp, String> {
-        let app = config.apps.iter_mut().find(|a| a.id == app_id)
+    fn update_app_in(
+        config: &mut AppConfig,
+        app_id: &str,
+        update: UpdateApp,
+    ) -> Result<ManagedApp, String> {
+        let app = config
+            .apps
+            .iter_mut()
+            .find(|a| a.id == app_id)
             .ok_or_else(|| format!("App not found: {app_id}"))?;
         update.apply_to(app);
         Ok(app.clone())
@@ -413,9 +510,16 @@ mod tests {
         let update = UpdateApp {
             name: Some("SimHub 2".into()),
             exe_path: Some("SimHub2.exe".into()),
-            args: None, working_dir: None, enabled: None, start_minimized: None,
-            restart_on_crash: None, max_restart_attempts: None, startup_delay_secs: None,
-            track_process_name: None, force_kill_on_stop: None, kill_process_tree: None,
+            args: None,
+            working_dir: None,
+            enabled: None,
+            start_minimized: None,
+            restart_on_crash: None,
+            max_restart_attempts: None,
+            startup_delay_secs: None,
+            track_process_name: None,
+            force_kill_on_stop: None,
+            kill_process_tree: None,
             stop_with_iracing: None,
         };
         let updated = update_app_in(&mut config, &added.id, update).unwrap();
@@ -432,10 +536,18 @@ mod tests {
         config.apps.push(app);
         let update = UpdateApp {
             args: Some("".into()),
-            name: None, exe_path: None, working_dir: None, enabled: None,
-            start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
-            startup_delay_secs: None, track_process_name: None,
-            force_kill_on_stop: None, kill_process_tree: None, stop_with_iracing: None,
+            name: None,
+            exe_path: None,
+            working_dir: None,
+            enabled: None,
+            start_minimized: None,
+            restart_on_crash: None,
+            max_restart_attempts: None,
+            startup_delay_secs: None,
+            track_process_name: None,
+            force_kill_on_stop: None,
+            kill_process_tree: None,
+            stop_with_iracing: None,
         };
         let updated = update_app_in(&mut config, &id, update).unwrap();
         assert!(updated.args.is_none());
@@ -457,10 +569,18 @@ mod tests {
         let mut config = AppConfig::default();
         let update = UpdateApp {
             name: Some("X".into()),
-            exe_path: None, args: None, working_dir: None, enabled: None,
-            start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
-            startup_delay_secs: None, track_process_name: None,
-            force_kill_on_stop: None, kill_process_tree: None, stop_with_iracing: None,
+            exe_path: None,
+            args: None,
+            working_dir: None,
+            enabled: None,
+            start_minimized: None,
+            restart_on_crash: None,
+            max_restart_attempts: None,
+            startup_delay_secs: None,
+            track_process_name: None,
+            force_kill_on_stop: None,
+            kill_process_tree: None,
+            stop_with_iracing: None,
         };
         let result = update_app_in(&mut config, "nonexistent-id", update);
         assert!(result.is_err());
@@ -476,7 +596,10 @@ mod tests {
     #[test]
     fn new_app_respects_stop_with_iracing_false() {
         let mut config = AppConfig::default();
-        let input = NewApp { stop_with_iracing: Some(false), ..new_app("SimHub", "SimHub.exe") };
+        let input = NewApp {
+            stop_with_iracing: Some(false),
+            ..new_app("SimHub", "SimHub.exe")
+        };
         let added = add_app_to(&mut config, input);
         assert!(!added.stop_with_iracing);
     }
@@ -488,10 +611,18 @@ mod tests {
         assert!(added.stop_with_iracing);
         let update = UpdateApp {
             stop_with_iracing: Some(false),
-            name: None, exe_path: None, args: None, working_dir: None, enabled: None,
-            start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
-            startup_delay_secs: None, track_process_name: None,
-            force_kill_on_stop: None, kill_process_tree: None,
+            name: None,
+            exe_path: None,
+            args: None,
+            working_dir: None,
+            enabled: None,
+            start_minimized: None,
+            restart_on_crash: None,
+            max_restart_attempts: None,
+            startup_delay_secs: None,
+            track_process_name: None,
+            force_kill_on_stop: None,
+            kill_process_tree: None,
         };
         let updated = update_app_in(&mut config, &added.id, update).unwrap();
         assert!(!updated.stop_with_iracing);
@@ -500,15 +631,26 @@ mod tests {
     #[test]
     fn update_app_re_enables_stop_with_iracing() {
         let mut config = AppConfig::default();
-        let input = NewApp { stop_with_iracing: Some(false), ..new_app("SimHub", "SimHub.exe") };
+        let input = NewApp {
+            stop_with_iracing: Some(false),
+            ..new_app("SimHub", "SimHub.exe")
+        };
         let added = add_app_to(&mut config, input);
         assert!(!added.stop_with_iracing);
         let update = UpdateApp {
             stop_with_iracing: Some(true),
-            name: None, exe_path: None, args: None, working_dir: None, enabled: None,
-            start_minimized: None, restart_on_crash: None, max_restart_attempts: None,
-            startup_delay_secs: None, track_process_name: None,
-            force_kill_on_stop: None, kill_process_tree: None,
+            name: None,
+            exe_path: None,
+            args: None,
+            working_dir: None,
+            enabled: None,
+            start_minimized: None,
+            restart_on_crash: None,
+            max_restart_attempts: None,
+            startup_delay_secs: None,
+            track_process_name: None,
+            force_kill_on_stop: None,
+            kill_process_tree: None,
         };
         let updated = update_app_in(&mut config, &added.id, update).unwrap();
         assert!(updated.stop_with_iracing);
