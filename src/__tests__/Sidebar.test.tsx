@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { DEFAULT_TAB, NAV_ITEMS, Sidebar, TAB_IDS, type Tab } from '@/components'
 
 describe('Sidebar', () => {
-    it('renders V0 navigation tabs without future or out-of-scope tabs', () => {
+    it('renders only V0 navigation tabs without out-of-scope tabs', () => {
         render(<Sidebar active={DEFAULT_TAB} onChange={vi.fn()} />)
 
         expect(screen.getByRole('button', { name: 'Command Center' })).toBeInTheDocument()
@@ -12,8 +12,6 @@ describe('Sidebar', () => {
         expect(screen.getByRole('button', { name: 'Logs' })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument()
         expect(screen.getAllByRole('button')).toHaveLength(TAB_IDS.length)
-        expect(screen.queryByRole('button', { name: 'Profiles' })).not.toBeInTheDocument()
-        expect(screen.queryByRole('button', { name: 'Automation' })).not.toBeInTheDocument()
         expect(screen.queryByRole('button', { name: 'Integrations' })).not.toBeInTheDocument()
     })
 
