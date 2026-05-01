@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api, type Settings, type TriggerMode } from '@/lib/api'
+import { type TriggerMode } from '@/lib/api'
+import { useSettings } from '@/hooks/useSettings'
 import { Button } from '@/components/ui/Button'
 import { Toggle } from '@/components/ui/Toggle'
 import { NumberInput } from '@/components/ui/Input'
@@ -9,34 +9,9 @@ import { FormField } from '@/components/layout/FormField'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { ThemeSelector } from '@/components/ThemeSelector'
 
-const DEFAULT_SETTINGS: Settings = {
-    poll_interval_secs: 1,
-    default_trigger: 'ui',
-    notifications_enabled: true,
-    autostart: false,
-}
-
 export function SettingsScreen() {
     const { t } = useTranslation()
-    const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
-    const [saving, setSaving] = useState(false)
-
-    useEffect(() => {
-        api.getSettings().then(setSettings)
-    }, [])
-
-    function patch<K extends keyof Settings>(key: K, value: Settings[K]) {
-        setSettings((prev) => ({ ...prev, [key]: value }))
-    }
-
-    async function handleSave() {
-        setSaving(true)
-        try {
-            await api.saveSettings(settings)
-        } finally {
-            setSaving(false)
-        }
-    }
+    const { settings, patch, saving, handleSave } = useSettings()
 
     return (
         <div className="flex flex-col gap-6 p-4 h-full overflow-y-auto">

@@ -1,7 +1,7 @@
 import { Check, ChevronDown, Palette } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { THEMES, getTheme, setTheme, type Theme } from '@/theme'
+import { THEMES, setTheme, type Theme } from '@/theme'
+import { useCurrentTheme } from '@/hooks/useCurrentTheme'
 import { cn } from '@/lib/cn'
 import { Dropdown } from '@/components/ui/Dropdown'
 
@@ -16,15 +16,7 @@ const SHORT: Record<Theme, string> = {
 
 export function ThemeSelector({ variant = 'default' }: ThemeSelectorProps) {
     const { t } = useTranslation()
-    const [current, setCurrent] = useState<Theme>(() => getTheme())
-
-    useEffect(() => {
-        function handleThemeChange(e: Event) {
-            setCurrent((e as CustomEvent<Theme>).detail)
-        }
-        window.addEventListener('pitlane:theme-change', handleThemeChange)
-        return () => window.removeEventListener('pitlane:theme-change', handleThemeChange)
-    }, [])
+    const current = useCurrentTheme()
 
     return (
         <Dropdown
