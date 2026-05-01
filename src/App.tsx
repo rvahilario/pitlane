@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StatusBar, Sidebar, type Tab } from '@/components'
-import { AppsScreen, LogScreen, HistoryScreen, SettingsScreen } from '@/components/screens'
+import { DEFAULT_TAB, StatusBar, Sidebar, type Tab } from '@/components'
+import { AppsScreen, LogScreen, SettingsScreen } from '@/components/screens'
 import { useIRacingStatus, useAppStatuses } from '@/hooks'
 import { api } from '@/lib/api'
 
 function App() {
-    const [tab, setTab] = useState<Tab>('apps')
+    const [tab, setTab] = useState<Tab>(DEFAULT_TAB)
     const iRacingRunning = useIRacingStatus()
     const statuses = useAppStatuses()
     const { t, i18n } = useTranslation()
@@ -30,11 +30,21 @@ function App() {
                 <Sidebar active={tab} onChange={setTab} />
 
                 <main className="flex-1 min-w-0">
+                    {tab === 'command' && <PlaceholderScreen title={t('nav.command')} />}
                     {tab === 'apps' && <AppsScreen />}
-                    {tab === 'log' && <LogScreen />}
-                    {tab === 'history' && <HistoryScreen />}
+                    {tab === 'logs' && <LogScreen />}
                     {tab === 'settings' && <SettingsScreen />}
                 </main>
+            </div>
+        </div>
+    )
+}
+
+function PlaceholderScreen({ title }: { title: string }) {
+    return (
+        <div className="flex h-full items-center justify-center p-6">
+            <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-muted">
+                {title}
             </div>
         </div>
     )
