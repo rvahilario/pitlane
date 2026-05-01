@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { LayoutList, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { api, type ManagedApp, type NewApp, type Profile } from '@/lib/api'
+import { api, type ManagedApp, type NewApp } from '@/lib/api'
+import { useApps } from '@/hooks/useApps'
 import { useAppStatuses } from '@/hooks/useAppStatuses'
 import { Button } from '@/components/ui/Button'
 import { Toggle } from '@/components/ui/Toggle'
@@ -14,55 +15,29 @@ type ModalState = { type: 'add' } | { type: 'edit'; app: ManagedApp } | null
 
 export function AppsScreen() {
     const { t } = useTranslation()
-    const [apps, setApps] = useState<ManagedApp[]>([])
-    const [activeProfile, setActiveProfile] = useState<Profile | null>(null)
+    const {
+        apps,
+        activeProfile,
+        preventAutoStop,
+        refresh,
+        toggleEnabled,
+        toggleStopWithIracing,
+        togglePreventAutoStop,
+        deleteApp,
+    } = useApps()
     const [modal, setModal] = useState<ModalState>(null)
     const [confirmDelete, setConfirmDelete] = useState<ManagedApp | null>(null)
-    const [preventAutoStop, setPreventAutoStop] = useState(false)
     const statuses = useAppStatuses()
-
-    async function loadApps() {
-        const [loadedApps, profiles, activeId, autoStopVal] = await Promise.all([
-            api.getApps(),
-            api.getProfiles(),
-            api.getActiveProfileId(),
-            api.getAutoStop(),
-        ])
-        setApps(loadedApps)
-        setActiveProfile(profiles.find((p) => p.id === activeId) ?? null)
-        setPreventAutoStop(!autoStopVal)
-    }
-
-    useEffect(() => {
-        loadApps()
-    }, [])
-
-    async function handlePreventAutoStopToggle() {
-        const next = !preventAutoStop
-        setPreventAutoStop(next)
-        await api.setAutoStop(!next)
-    }
 
     async function handleFormSubmit(data: NewApp) {
         if (modal?.type === 'add') await api.addApp(data)
         else if (modal?.type === 'edit') await api.updateApp(modal.app.id, data)
-        await loadApps()
+        await refresh()
     }
 
     async function handleDelete(app: ManagedApp) {
-        await api.deleteApp(app.id)
         setConfirmDelete(null)
-        loadApps()
-    }
-
-    async function handleToggleEnabled(app: ManagedApp, enabled: boolean) {
-        await api.updateApp(app.id, { enabled })
-        setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, enabled } : a)))
-    }
-
-    async function handleToggleStopWithIracing(app: ManagedApp, stop_with_iracing: boolean) {
-        await api.updateApp(app.id, { stop_with_iracing })
-        setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, stop_with_iracing } : a)))
+        await deleteApp(app)
     }
 
     return (
@@ -87,7 +62,7 @@ export function AppsScreen() {
                         </span>
                         <Toggle
                             checked={preventAutoStop}
-                            onChange={handlePreventAutoStopToggle}
+                            onChange={togglePreventAutoStop}
                             label={t('apps.auto_stop_label')}
                         />
                     </div>
@@ -120,9 +95,9 @@ export function AppsScreen() {
                             onStop={() => api.forceKillApp(app.id)}
                             onEdit={() => setModal({ type: 'edit', app })}
                             onDelete={() => setConfirmDelete(app)}
-                            onToggleEnabled={(enabled) => handleToggleEnabled(app, enabled)}
+                            onToggleEnabled={(enabled) => toggleEnabled(app, enabled)}
                             onToggleStopWithIracing={(stop) =>
-                                handleToggleStopWithIracing(app, stop)
+                                toggleStopWithIracing(app, stop)
                             }
                         />
                     ))}
