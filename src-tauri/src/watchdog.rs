@@ -12,7 +12,11 @@ const POLL_INTERVAL_MS: u64 = 2000;
 #[derive(Debug, Clone, PartialEq)]
 pub enum WatchdogEvent {
     /// Process crashed and was successfully restarted.
-    Restarted { app_id: String, new_pid: u32, attempt: u32 },
+    Restarted {
+        app_id: String,
+        new_pid: u32,
+        attempt: u32,
+    },
     /// Process crashed and all restart attempts were exhausted (or restart disabled).
     GaveUp { app_id: String },
     /// Relaunch after crash failed (exe not found, spawn error, etc.).
@@ -80,65 +84,55 @@ impl Watchdog {
         let entries: EntryMap = Arc::new(Mutex::new(HashMap::new()));
         let entries_bg = Arc::clone(&entries);
 
-        thread::spawn(move || {
-            loop {
-                thread::sleep(Duration::from_millis(POLL_INTERVAL_MS));
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_millis(POLL_INTERVAL_MS));
 
-                let ids: Vec<String> = entries_bg
-                    .lock()
-                    .unwrap()
-                    .keys()
-                    .cloned()
-                    .collect();
+            let ids: Vec<String> = entries_bg.lock().unwrap().keys().cloned().collect();
 
-                for id in ids {
-                    let entry = match entries_bg.lock().unwrap().get(&id).cloned() {
-                        Some(e) => e,
-                        None => continue,
-                    };
+            for id in ids {
+                let entry = match entries_bg.lock().unwrap().get(&id).cloned() {
+                    Some(e) => e,
+                    None => continue,
+                };
 
-                    let action = tick(
-                        entry.pid,
-                        entry.app.restart_on_crash,
-                        entry.app.max_restart_attempts,
-                        entry.restart_count,
-                        entry.stopping,
-                        crate::process_killer::is_pid_alive,
-                    );
+                let action = tick(
+                    entry.pid,
+                    entry.app.restart_on_crash,
+                    entry.app.max_restart_attempts,
+                    entry.restart_count,
+                    entry.stopping,
+                    crate::process_killer::is_pid_alive,
+                );
 
-                    match action {
-                        TickAction::Continue => {}
-                        TickAction::Stopped => {
-                            entries_bg.lock().unwrap().remove(&id);
-                        }
-                        TickAction::GiveUp => {
-                            entries_bg.lock().unwrap().remove(&id);
-                            let _ = tx.send(WatchdogEvent::GaveUp { app_id: id });
-                        }
-                        TickAction::Restart => {
-                            match crate::launcher::launch(&entry.app) {
-                                Ok(stub_pid) => {
-                                    let real_pid =
-                                        crate::launcher::resolve_real_pid(stub_pid, &entry.app);
-                                    let attempt = entry.restart_count + 1;
-                                    let mut map = entries_bg.lock().unwrap();
-                                    if let Some(e) = map.get_mut(&id) {
-                                        e.pid = real_pid;
-                                        e.restart_count = attempt;
-                                    }
-                                    let _ = tx.send(WatchdogEvent::Restarted {
-                                        app_id: id,
-                                        new_pid: real_pid,
-                                        attempt,
-                                    });
-                                }
-                                Err(_) => {
-                                    entries_bg.lock().unwrap().remove(&id);
-                                    let _ = tx.send(WatchdogEvent::RestartFailed { app_id: id });
-                                }
-                            }
-                        }
+                match action {
+                    TickAction::Continue => {}
+                    TickAction::Stopped => {
+                        entries_bg.lock().unwrap().remove(&id);
                     }
+                    TickAction::GiveUp => {
+                        entries_bg.lock().unwrap().remove(&id);
+                        let _ = tx.send(WatchdogEvent::GaveUp { app_id: id });
+                    }
+                    TickAction::Restart => match crate::launcher::launch(&entry.app) {
+                        Ok(stub_pid) => {
+                            let real_pid = crate::launcher::resolve_real_pid(stub_pid, &entry.app);
+                            let attempt = entry.restart_count + 1;
+                            let mut map = entries_bg.lock().unwrap();
+                            if let Some(e) = map.get_mut(&id) {
+                                e.pid = real_pid;
+                                e.restart_count = attempt;
+                            }
+                            let _ = tx.send(WatchdogEvent::Restarted {
+                                app_id: id,
+                                new_pid: real_pid,
+                                attempt,
+                            });
+                        }
+                        Err(_) => {
+                            entries_bg.lock().unwrap().remove(&id);
+                            let _ = tx.send(WatchdogEvent::RestartFailed { app_id: id });
+                        }
+                    },
                 }
             }
         });
@@ -150,7 +144,12 @@ impl Watchdog {
     pub fn watch(&self, app: ManagedApp, pid: u32) {
         self.entries.lock().unwrap().insert(
             app.id.clone(),
-            Entry { app, pid, restart_count: 0, stopping: false },
+            Entry {
+                app,
+                pid,
+                restart_count: 0,
+                stopping: false,
+            },
         );
     }
 
@@ -170,7 +169,11 @@ impl Watchdog {
 
     /// Returns the current restart count for an app.
     pub fn restart_count(&self, app_id: &str) -> Option<u32> {
-        self.entries.lock().unwrap().get(app_id).map(|e| e.restart_count)
+        self.entries
+            .lock()
+            .unwrap()
+            .get(app_id)
+            .map(|e| e.restart_count)
     }
 
     /// Returns true if the app is currently being watched.
@@ -181,7 +184,10 @@ impl Watchdog {
     /// Returns true if an intentional stop was requested but the watchdog
     /// thread hasn't processed it yet.
     pub fn is_stopping(&self, app_id: &str) -> bool {
-        self.entries.lock().unwrap().get(app_id).map_or(false, |e| e.stopping)
+        self.entries
+            .lock()
+            .unwrap()
+            .get(app_id)
+            .map_or(false, |e| e.stopping)
     }
 }
-

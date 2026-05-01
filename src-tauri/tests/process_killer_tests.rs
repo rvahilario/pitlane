@@ -1,5 +1,7 @@
+use pitlane_lib::process_killer::{
+    exe_path_matches, force_kill, graceful_kill, is_pid_alive, needs_graceful_close,
+};
 use std::time::Duration;
-use pitlane_lib::process_killer::{exe_path_matches, force_kill, graceful_kill, is_pid_alive, needs_graceful_close};
 
 // ── exe_path_matches (Squirrel support) ─────────────────────────────────────
 
@@ -113,7 +115,10 @@ fn manual_should_gracefully_kill_winver() {
     graceful_kill(pid, 3.0);
     std::thread::sleep(Duration::from_millis(500));
 
-    assert!(!is_pid_alive(pid), "winver should be dead after graceful_kill");
+    assert!(
+        !is_pid_alive(pid),
+        "winver should be dead after graceful_kill"
+    );
     println!("[killer integration] ✓ process killed");
 }
 

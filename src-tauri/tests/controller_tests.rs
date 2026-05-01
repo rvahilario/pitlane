@@ -56,14 +56,26 @@ fn should_default_to_idle_for_unknown_app() {
 fn should_transition_to_running_on_launch() {
     let mut logic = ControllerLogic::new();
     logic.on_app_launched("app1", 1234);
-    assert_eq!(logic.app_state("app1"), AppState::Running { pid: 1234, restart_count: 0 });
+    assert_eq!(
+        logic.app_state("app1"),
+        AppState::Running {
+            pid: 1234,
+            restart_count: 0
+        }
+    );
 }
 
 #[test]
 fn should_have_zero_restart_count_after_initial_launch() {
     let mut logic = ControllerLogic::new();
     logic.on_app_launched("app1", 1234);
-    assert_eq!(logic.app_state("app1"), AppState::Running { pid: 1234, restart_count: 0 });
+    assert_eq!(
+        logic.app_state("app1"),
+        AppState::Running {
+            pid: 1234,
+            restart_count: 0
+        }
+    );
 }
 
 // ── ControllerLogic: stop ─────────────────────────────────────────────────────
@@ -90,7 +102,13 @@ fn should_update_pid_and_count_on_restart() {
     let mut logic = ControllerLogic::new();
     logic.on_app_launched("app1", 1000);
     logic.on_app_restarted("app1", 2000, 1);
-    assert_eq!(logic.app_state("app1"), AppState::Running { pid: 2000, restart_count: 1 });
+    assert_eq!(
+        logic.app_state("app1"),
+        AppState::Running {
+            pid: 2000,
+            restart_count: 1
+        }
+    );
 }
 
 #[test]
@@ -99,7 +117,13 @@ fn should_accumulate_restart_count_across_multiple_restarts() {
     logic.on_app_launched("app1", 1000);
     logic.on_app_restarted("app1", 2000, 1);
     logic.on_app_restarted("app1", 3000, 2);
-    assert_eq!(logic.app_state("app1"), AppState::Running { pid: 3000, restart_count: 2 });
+    assert_eq!(
+        logic.app_state("app1"),
+        AppState::Running {
+            pid: 3000,
+            restart_count: 2
+        }
+    );
 }
 
 // ── ControllerLogic: gave up ──────────────────────────────────────────────────
@@ -117,7 +141,13 @@ fn should_recover_from_crashed_to_running_on_relaunch() {
     let mut logic = ControllerLogic::new();
     logic.on_app_gave_up("app1");
     logic.on_app_launched("app1", 5678);
-    assert_eq!(logic.app_state("app1"), AppState::Running { pid: 5678, restart_count: 0 });
+    assert_eq!(
+        logic.app_state("app1"),
+        AppState::Running {
+            pid: 5678,
+            restart_count: 0
+        }
+    );
 }
 
 // ── ControllerLogic: running_apps ─────────────────────────────────────────────
@@ -150,7 +180,13 @@ fn should_track_multiple_apps_independently() {
     logic.on_app_stopped("simhub");
 
     assert_eq!(logic.app_state("simhub"), AppState::Idle);
-    assert_eq!(logic.app_state("crewchief"), AppState::Running { pid: 200, restart_count: 0 });
+    assert_eq!(
+        logic.app_state("crewchief"),
+        AppState::Running {
+            pid: 200,
+            restart_count: 0
+        }
+    );
 }
 
 // ── E2E integration tests ─────────────────────────────────────────────────────
@@ -172,7 +208,13 @@ fn make_controller(app: ManagedApp) -> Arc<Controller> {
     let mut app = app;
     app.profile_id = profile_id;
     config.apps.push(app);
-    Controller::start(Arc::new(Mutex::new(config)), TriggerMode::Ui, 1.0, |_| {}, |_| {})
+    Controller::start(
+        Arc::new(Mutex::new(config)),
+        TriggerMode::Ui,
+        1.0,
+        |_| {},
+        |_| {},
+    )
 }
 
 #[test]
@@ -188,7 +230,10 @@ fn manual_e2e_should_launch_and_kill_dummy_app() {
 
     let state = ctrl.app_state(&app_id);
     let pid = match state {
-        AppState::Running { pid, .. } => { println!("[e2e] launched pid={pid}"); pid }
+        AppState::Running { pid, .. } => {
+            println!("[e2e] launched pid={pid}");
+            pid
+        }
         other => panic!("[e2e] expected Running, got {other:?}"),
     };
 
@@ -197,7 +242,10 @@ fn manual_e2e_should_launch_and_kill_dummy_app() {
     ctrl.kill_all_running();
     std::thread::sleep(std::time::Duration::from_millis(500));
 
-    assert!(!process_killer::is_pid_alive(pid), "dummy should be dead after kill");
+    assert!(
+        !process_killer::is_pid_alive(pid),
+        "dummy should be dead after kill"
+    );
     assert_eq!(ctrl.app_state(&app_id), AppState::Idle);
     println!("[e2e] ✓ launch and kill");
 }
@@ -214,7 +262,10 @@ fn manual_e2e_should_skip_already_running_app_on_iracing_start() {
     std::thread::sleep(std::time::Duration::from_millis(800));
 
     let pid_before = match ctrl.app_state(&app_id) {
-        AppState::Running { pid, .. } => { println!("[e2e] manual launch pid={pid}"); pid }
+        AppState::Running { pid, .. } => {
+            println!("[e2e] manual launch pid={pid}");
+            pid
+        }
         other => panic!("[e2e] expected Running after force_launch, got {other:?}"),
     };
 
@@ -227,12 +278,18 @@ fn manual_e2e_should_skip_already_running_app_on_iracing_start() {
         other => panic!("[e2e] expected still Running after launch_active_apps, got {other:?}"),
     };
 
-    assert_eq!(pid_before, pid_after, "PID must not change — app was already running");
+    assert_eq!(
+        pid_before, pid_after,
+        "PID must not change — app was already running"
+    );
     println!("[e2e] ✓ already-running app not re-launched (pid unchanged: {pid_before})");
 
     ctrl.kill_all_running();
     std::thread::sleep(std::time::Duration::from_millis(500));
-    assert!(!process_killer::is_pid_alive(pid_before), "dummy should be dead");
+    assert!(
+        !process_killer::is_pid_alive(pid_before),
+        "dummy should be dead"
+    );
     println!("[e2e] ✓ killed");
 }
 
@@ -253,9 +310,15 @@ fn manual_e2e_should_restart_crashing_app_then_give_up() {
     std::thread::sleep(wait);
 
     let state = ctrl.app_state(&app_id);
-    assert_eq!(state, AppState::Crashed, "app should be Crashed after max attempts");
-    println!("[e2e] ✓ app reached Crashed state after {attempts} failed restarts",
-        attempts = 2);
+    assert_eq!(
+        state,
+        AppState::Crashed,
+        "app should be Crashed after max attempts"
+    );
+    println!(
+        "[e2e] ✓ app reached Crashed state after {attempts} failed restarts",
+        attempts = 2
+    );
 }
 
 #[test]
@@ -273,17 +336,28 @@ fn manual_e2e_should_resolve_real_pid_from_stub_launcher() {
     std::thread::sleep(std::time::Duration::from_millis(1500));
 
     let pid = match ctrl.app_state(&app_id) {
-        AppState::Running { pid, .. } => { println!("[e2e] resolved child pid={pid}"); pid }
+        AppState::Running { pid, .. } => {
+            println!("[e2e] resolved child pid={pid}");
+            pid
+        }
         other => panic!("[e2e] expected Running with child pid, got {other:?}"),
     };
 
     // The tracked PID must be fixture-dummy (alive), not fixture-stub (dead)
-    assert!(process_killer::is_pid_alive(pid), "resolved pid should be alive (fixture-dummy)");
-    assert!(!process_killer::find_pids_by_name("fixture-stub").contains(&pid),
-        "tracked pid must not be the stub");
+    assert!(
+        process_killer::is_pid_alive(pid),
+        "resolved pid should be alive (fixture-dummy)"
+    );
+    assert!(
+        !process_killer::find_pids_by_name("fixture-stub").contains(&pid),
+        "tracked pid must not be the stub"
+    );
 
     ctrl.kill_all_running();
     std::thread::sleep(std::time::Duration::from_millis(500));
-    assert!(!process_killer::is_pid_alive(pid), "fixture-dummy should be dead after kill");
+    assert!(
+        !process_killer::is_pid_alive(pid),
+        "fixture-dummy should be dead after kill"
+    );
     println!("[e2e] ✓ stub pid resolved to child, child killed");
 }
