@@ -174,7 +174,12 @@ function ReadinessInfoTile({
     children: React.ReactNode
 }) {
     return (
-        <div className={cn('relative flex h-full min-w-0 items-center justify-center gap-4 px-4 py-1', className)}>
+        <div
+            className={cn(
+                'relative flex h-full min-w-0 items-center justify-center gap-4 px-4 py-1',
+                className,
+            )}
+        >
             {iconUrl ? (
                 <AppAvatar name={title} iconUrl={iconUrl} className="h-9 w-9" />
             ) : (
@@ -299,7 +304,12 @@ export function ReadinessHero({
                             pillClass,
                         )}
                     >
-                        <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-3', iconBorderClass)}>
+                        <div
+                            className={cn(
+                                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-3',
+                                iconBorderClass,
+                            )}
+                        >
                             <ReadinessIcon className="h-5.5 w-5.5 stroke-3" aria-hidden="true" />
                         </div>
                         <span className="truncate text-lg font-bold">
@@ -312,11 +322,20 @@ export function ReadinessHero({
                     />
                 </div>
 
-                <ReadinessInfoTile icon={CircleUser} title={t('shell.active_profile')} className="flex-auto" separator>
+                <ReadinessInfoTile
+                    icon={CircleUser}
+                    title={t('shell.active_profile')}
+                    className="flex-auto"
+                    separator
+                >
                     <p className="truncate text-sm  text-accent">{activeProfileName ?? '-'}</p>
                 </ReadinessInfoTile>
 
-                <ReadinessInfoTile icon={Settings} title={t('command.automation')} className="flex-auto">
+                <ReadinessInfoTile
+                    icon={Settings}
+                    title={t('command.automation')}
+                    className="flex-auto"
+                >
                     <p className="flex text-xs text-text-secondary gap-1">
                         {t('command.auto_launch')}{' '}
                         <span

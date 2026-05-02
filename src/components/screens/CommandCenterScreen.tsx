@@ -27,8 +27,7 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
     const readiness = computeReadiness(iRacingRunning, summary.crashed)
 
     const enabledTotal = summary.total - summary.disabled
-    const readyDisplay =
-        enabledTotal > 0 ? `${summary.running} / ${enabledTotal}` : '-/-'
+    const readyDisplay = enabledTotal > 0 ? `${summary.running} / ${enabledTotal}` : '-/-'
 
     const recentActivity = [...log].reverse().slice(0, RECENT_COUNT)
 
