@@ -69,15 +69,9 @@
     --color-on-danger: var(--color-red-1000);
 
     /* --- Layout scale: 8px grid, measured from the Command Center reference --- */
-    /* rem baseline kept for comparison:
-     shell-topbar 6rem; shell-bottombar 5rem; shell-sidebar 16.5rem;
-     content-pad 1rem; panel-gap 1rem; hero 14rem; hero-main 8rem; hero-info 6rem;
-     status-orb 5rem; status-icon 3rem; panel-header 3.5rem; app-row 5.5rem;
-     app-avatar 3.5rem; app-action 9rem; app-menu 3rem; activity-panel 13.5rem;
-     display-status 2.25rem; panel-title 1.125rem; row-title 1.25rem; body-ui 1rem. */
     --spacing-shell-topbar: 72px;
     --spacing-shell-bottombar: 80px;
-    --spacing-shell-sidebar: 264px;
+    --spacing-shell-sidebar: 248px;
     --spacing-content-pad: 16px;
     --spacing-panel-gap: 16px;
 

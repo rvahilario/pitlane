@@ -10,7 +10,7 @@ interface TopBarProps {
 
 export function TopBar({ activeProfileName, profileLabel }: TopBarProps) {
     return (
-        <header className="flex h-shell-topbar shrink-0 items-center justify-between border-b border-border bg-canvas py-1 px-8">
+        <header className="flex h-shell-topbar shrink-0 items-center justify-between bg-canvas py-1 px-8">
             <PitlaneLogo />
 
             <div className="flex min-w-0 items-center gap-4">
