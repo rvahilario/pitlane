@@ -13,11 +13,18 @@ export type { AppSummary, Readiness } from '@/lib/command-center'
 const RECENT_COUNT = 6
 
 interface CommandCenterScreenProps {
-    onNavigateToApps?: () => void
+    onAddApp?: () => void
 }
 
-export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenProps) {
-    const { apps, activeProfile, preventAutoStop, toggleEnabled, toggleStopWithIracing } = useApps()
+export function CommandCenterScreen({ onAddApp }: CommandCenterScreenProps) {
+    const {
+        apps,
+        activeProfile,
+        preventAutoStop,
+        toggleEnabled,
+        togglePreventAutoStop,
+        toggleStopWithIracing,
+    } = useApps()
     const statuses = useAppStatuses()
     const iRacingRunning = useIRacingStatus()
     const log = useLog()
@@ -42,6 +49,13 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
         api.forceKillApp(app.id).catch(() => {})
     }
 
+    function handleStopAll() {
+        const runningIds = statuses
+            .filter((status) => status.state.type === 'running')
+            .map((status) => status.app_id)
+        Promise.all(runningIds.map((appId) => api.forceKillApp(appId))).catch(() => {})
+    }
+
     return (
         <div className="flex h-full min-h-0 flex-col gap-panel-gap overflow-hidden p-content-pad pb-4">
             <ReadinessHero
@@ -57,11 +71,14 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
             <ApplicationsPanel
                 apps={apps}
                 iconUrls={iconUrls}
-                onNavigateToApps={onNavigateToApps}
+                onAddApp={onAddApp}
                 onStartApp={handleStart}
+                onStopAll={handleStopAll}
                 onStopApp={handleStop}
+                onTogglePreventAutoStop={togglePreventAutoStop}
                 onToggleAutoLaunch={toggleEnabled}
                 onToggleAutoStop={toggleStopWithIracing}
+                preventAutoStop={preventAutoStop}
                 statuses={statuses}
                 summary={summary}
             />

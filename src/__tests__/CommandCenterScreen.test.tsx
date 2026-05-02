@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { CommandCenterScreen } from '@/components/screens/CommandCenterScreen'
 import { computeAppSummary, computeReadiness } from '@/lib/command-center'
 import type { AppStatus, ManagedApp } from '@/lib/api'
@@ -14,9 +15,14 @@ vi.mock('@/lib/api', () => ({
         getProfiles: vi.fn(),
         getActiveProfileId: vi.fn(),
         getAutoStop: vi.fn(),
+        setAutoStop: vi.fn(),
         getIRacingStatus: vi.fn(),
         getAppStatuses: vi.fn(),
         getLog: vi.fn(),
+        forceLaunchApp: vi.fn(),
+        forceKillApp: vi.fn(),
+        updateApp: vi.fn(),
+        extractIcon: vi.fn(),
     },
 }))
 
@@ -52,9 +58,14 @@ beforeEach(() => {
     vi.mocked(api.getProfiles).mockResolvedValue([])
     vi.mocked(api.getActiveProfileId).mockResolvedValue('p1')
     vi.mocked(api.getAutoStop).mockResolvedValue(true)
+    vi.mocked(api.setAutoStop).mockResolvedValue(undefined)
     vi.mocked(api.getIRacingStatus).mockResolvedValue(false)
     vi.mocked(api.getAppStatuses).mockResolvedValue([])
     vi.mocked(api.getLog).mockResolvedValue([])
+    vi.mocked(api.forceLaunchApp).mockResolvedValue(undefined)
+    vi.mocked(api.forceKillApp).mockResolvedValue(undefined)
+    vi.mocked(api.updateApp).mockResolvedValue(makeApp())
+    vi.mocked(api.extractIcon).mockResolvedValue(null)
 })
 
 // --- computeAppSummary ---
@@ -193,5 +204,129 @@ describe('CommandCenterScreen', () => {
         render(<CommandCenterScreen />)
         await waitFor(() => expect(screen.getByText('SimHub')).toBeInTheDocument())
         expect(screen.getByText('CrewChief')).toBeInTheDocument()
+    })
+
+    it('starts a single app from the command row', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
+        vi.mocked(api.getAppStatuses).mockResolvedValue([makeStatus('42', { type: 'idle' })])
+        render(<CommandCenterScreen />)
+
+        await screen.findByText('SimHub')
+        await userEvent.click(screen.getByRole('button', { name: 'Start' }))
+
+        expect(api.forceLaunchApp).toHaveBeenCalledWith('42')
+    })
+
+    it('stops a single app from the command row', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
+        vi.mocked(api.getAppStatuses).mockResolvedValue([
+            makeStatus('42', { type: 'running', pid: 99, restart_count: 0 }),
+        ])
+        render(<CommandCenterScreen />)
+
+        await screen.findByText('SimHub')
+        await userEvent.click(screen.getByRole('button', { name: 'Stop' }))
+
+        expect(api.forceKillApp).toHaveBeenCalledWith('42')
+    })
+
+    it('updates auto-launch through the command row toggle', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42', enabled: true })])
+        vi.mocked(api.updateApp).mockResolvedValue(makeApp({ id: '42', enabled: false }))
+        render(<CommandCenterScreen />)
+
+        await screen.findByText('SimHub')
+        await userEvent.click(screen.getByRole('switch', { name: 'SimHub auto-launch' }))
+
+        expect(api.updateApp).toHaveBeenCalledWith('42', { enabled: false })
+    })
+
+    it('updates auto-stop through the command row toggle', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42', stop_with_iracing: true })])
+        vi.mocked(api.updateApp).mockResolvedValue(makeApp({ id: '42', stop_with_iracing: false }))
+        render(<CommandCenterScreen />)
+
+        await screen.findByText('SimHub')
+        await userEvent.click(screen.getByRole('switch', { name: 'SimHub auto-stop' }))
+
+        expect(api.updateApp).toHaveBeenCalledWith('42', { stop_with_iracing: false })
+    })
+
+    it('toggles global prevent-auto-stop from the applications panel', async () => {
+        vi.mocked(api.getAutoStop).mockResolvedValue(true)
+        render(<CommandCenterScreen />)
+
+        const toggle = await screen.findByRole('switch', {
+            name: /do not stop apps when iracing closes/i,
+        })
+        expect(toggle).toHaveAttribute('aria-checked', 'false')
+
+        await userEvent.click(toggle)
+
+        expect(api.setAutoStop).toHaveBeenCalledWith(false)
+    })
+
+    it('does not render bulk start action', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([
+            makeApp({ id: 'idle', name: 'IdleApp' }),
+            makeApp({ id: 'running', name: 'RunningApp' }),
+        ])
+        render(<CommandCenterScreen />)
+
+        await screen.findByText('IdleApp')
+
+        expect(screen.queryByRole('button', { name: 'Start All' })).not.toBeInTheDocument()
+    })
+
+    it('stops all running apps', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([
+            makeApp({ id: 'running-1', name: 'RunningOne' }),
+            makeApp({ id: 'running-2', name: 'RunningTwo' }),
+            makeApp({ id: 'idle', name: 'IdleApp' }),
+        ])
+        vi.mocked(api.getAppStatuses).mockResolvedValue([
+            makeStatus('running-1', { type: 'running', pid: 99, restart_count: 0 }),
+            makeStatus('running-2', { type: 'running', pid: 100, restart_count: 0 }),
+            makeStatus('idle', { type: 'idle' }),
+        ])
+        render(<CommandCenterScreen />)
+
+        await screen.findByText('RunningOne')
+        await userEvent.click(screen.getByRole('button', { name: 'Stop All' }))
+
+        expect(api.forceKillApp).toHaveBeenCalledTimes(2)
+        expect(api.forceKillApp).toHaveBeenCalledWith('running-1')
+        expect(api.forceKillApp).toHaveBeenCalledWith('running-2')
+    })
+
+    it('opens the add app flow from the header action', async () => {
+        const onAddApp = vi.fn()
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
+        render(<CommandCenterScreen onAddApp={onAddApp} />)
+
+        await screen.findByText('SimHub')
+        await userEvent.click(screen.getByRole('button', { name: 'App' }))
+
+        expect(onAddApp).toHaveBeenCalledOnce()
+    })
+
+    it('does not render a row actions button without a concrete action', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
+        render(<CommandCenterScreen />)
+
+        await screen.findByText('SimHub')
+
+        expect(screen.queryByRole('button', { name: 'SimHub actions' })).not.toBeInTheDocument()
+    })
+
+    it('does not render restart as a functional action for crashed apps', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
+        vi.mocked(api.getAppStatuses).mockResolvedValue([makeStatus('42', { type: 'crashed' })])
+        render(<CommandCenterScreen />)
+
+        await screen.findByText('SimHub')
+
+        expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Restart' })).not.toBeInTheDocument()
     })
 })

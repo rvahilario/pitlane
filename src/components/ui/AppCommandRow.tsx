@@ -1,13 +1,4 @@
-import {
-    Activity,
-    AlertTriangle,
-    Ban,
-    Clock,
-    MoreHorizontal,
-    Play,
-    RotateCw,
-    Square,
-} from 'lucide-react'
+import { Activity, AlertTriangle, Ban, Clock, MoreHorizontal, Play, Square } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import type { AppStatus, ManagedApp } from '@/lib/api'
@@ -60,7 +51,6 @@ export function AppCommandRow({
 }: AppCommandRowProps) {
     const { t } = useTranslation()
     const running = status?.state.type === 'running'
-    const crashed = status?.state.type === 'crashed'
     const {
         icon: StatusIcon,
         label: statusLabel,
@@ -144,16 +134,6 @@ export function AppCommandRow({
                         <Square className="fill-current stroke-0" aria-hidden="true" />
                         {t('apps.stop')}
                     </Button>
-                ) : crashed ? (
-                    <Button
-                        variant="danger"
-                        size="md"
-                        onClick={onStart}
-                        className="h-11 min-w-30 gap-2"
-                    >
-                        <RotateCw className="stroke-[2.5]" aria-hidden="true" />
-                        {t('command.restart')}
-                    </Button>
                 ) : (
                     <Button
                         variant="success"
@@ -166,13 +146,15 @@ export function AppCommandRow({
                         {t('apps.start')}
                     </Button>
                 )}
-                <IconButton
-                    aria-label={`${app.name} actions`}
-                    variant="secondary"
-                    onClick={onOpenMenu}
-                >
-                    <MoreHorizontal className="stroke-2" />
-                </IconButton>
+                {onOpenMenu && (
+                    <IconButton
+                        aria-label={`${app.name} actions`}
+                        variant="secondary"
+                        onClick={onOpenMenu}
+                    >
+                        <MoreHorizontal className="stroke-2" />
+                    </IconButton>
+                )}
             </div>
         </div>
     )

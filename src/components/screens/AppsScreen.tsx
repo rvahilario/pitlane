@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LayoutList, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { api, type ManagedApp, type NewApp } from '@/lib/api'
@@ -8,7 +8,12 @@ import { AppCard, AppFormModal, ConfirmDialog } from '@/components'
 
 type ModalState = { type: 'add' } | { type: 'edit'; app: ManagedApp } | null
 
-export function AppsScreen() {
+interface AppsScreenProps {
+    openAddApp?: boolean
+    onOpenAddAppHandled?: () => void
+}
+
+export function AppsScreen({ openAddApp = false, onOpenAddAppHandled }: AppsScreenProps = {}) {
     const { t } = useTranslation()
     const {
         apps,
@@ -23,6 +28,12 @@ export function AppsScreen() {
     const [modal, setModal] = useState<ModalState>(null)
     const [confirmDelete, setConfirmDelete] = useState<ManagedApp | null>(null)
     const statuses = useAppStatuses()
+
+    useEffect(() => {
+        if (!openAddApp) return
+        setModal({ type: 'add' })
+        onOpenAddAppHandled?.()
+    }, [openAddApp, onOpenAddAppHandled])
 
     async function handleFormSubmit(data: NewApp) {
         if (modal?.type === 'add') await api.addApp(data)
