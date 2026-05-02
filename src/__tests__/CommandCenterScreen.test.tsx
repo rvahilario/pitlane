@@ -299,10 +299,20 @@ describe('CommandCenterScreen', () => {
         expect(api.forceKillApp).toHaveBeenCalledWith('running-2')
     })
 
-    it('does not render a row actions button without a concrete action', async () => {
-        const onNavigateToApps = vi.fn()
+    it('opens the add app flow from the header action', async () => {
+        const onAddApp = vi.fn()
         vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
-        render(<CommandCenterScreen onNavigateToApps={onNavigateToApps} />)
+        render(<CommandCenterScreen onAddApp={onAddApp} />)
+
+        await screen.findByText('SimHub')
+        await userEvent.click(screen.getByRole('button', { name: 'App' }))
+
+        expect(onAddApp).toHaveBeenCalledOnce()
+    })
+
+    it('does not render a row actions button without a concrete action', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
+        render(<CommandCenterScreen />)
 
         await screen.findByText('SimHub')
 

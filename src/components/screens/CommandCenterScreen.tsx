@@ -13,10 +13,10 @@ export type { AppSummary, Readiness } from '@/lib/command-center'
 const RECENT_COUNT = 6
 
 interface CommandCenterScreenProps {
-    onNavigateToApps?: () => void
+    onAddApp?: () => void
 }
 
-export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenProps) {
+export function CommandCenterScreen({ onAddApp }: CommandCenterScreenProps) {
     const {
         apps,
         activeProfile,
@@ -71,7 +71,7 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
             <ApplicationsPanel
                 apps={apps}
                 iconUrls={iconUrls}
-                onNavigateToApps={onNavigateToApps}
+                onAddApp={onAddApp}
                 onStartApp={handleStart}
                 onStopAll={handleStopAll}
                 onStopApp={handleStop}

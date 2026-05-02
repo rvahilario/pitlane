@@ -8,6 +8,7 @@ import { api } from '@/lib/api'
 
 function App() {
     const [tab, setTab] = useState<Tab>(DEFAULT_TAB)
+    const [openAddApp, setOpenAddApp] = useState(false)
     const activeProfile = useActiveProfile()
     const { t, i18n } = useTranslation()
 
@@ -18,15 +19,34 @@ function App() {
     function renderScreen() {
         switch (tab) {
             case TAB.COMMAND:
-                return <CommandCenterScreen onNavigateToApps={() => setTab(TAB.APPS)} />
+                return (
+                    <CommandCenterScreen
+                        onAddApp={() => {
+                            setOpenAddApp(true)
+                            setTab(TAB.APPS)
+                        }}
+                    />
+                )
             case TAB.APPS:
-                return <AppsScreen />
+                return (
+                    <AppsScreen
+                        openAddApp={openAddApp}
+                        onOpenAddAppHandled={() => setOpenAddApp(false)}
+                    />
+                )
             case TAB.LOGS:
                 return <LogScreen />
             case TAB.SETTINGS:
                 return <SettingsScreen />
             default:
-                return <CommandCenterScreen onNavigateToApps={() => setTab(TAB.APPS)} />
+                return (
+                    <CommandCenterScreen
+                        onAddApp={() => {
+                            setOpenAddApp(true)
+                            setTab(TAB.APPS)
+                        }}
+                    />
+                )
         }
     }
 

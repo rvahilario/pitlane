@@ -75,6 +75,14 @@ describe('Add app flow', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument()
     })
 
+    it('should open modal when requested by parent flow', async () => {
+        const onOpenAddAppHandled = vi.fn()
+        render(<AppsScreen openAddApp onOpenAddAppHandled={onOpenAddAppHandled} />)
+
+        expect(await screen.findByRole('dialog')).toBeInTheDocument()
+        expect(onOpenAddAppHandled).toHaveBeenCalledOnce()
+    })
+
     it('should render name and exe_path fields in modal', async () => {
         render(<AppsScreen />)
         await screen.findByText('SimHub')

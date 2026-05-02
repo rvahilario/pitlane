@@ -7,7 +7,7 @@ import type { AppSummary } from '@/lib/command-center'
 interface ApplicationsPanelProps {
     apps: ManagedApp[]
     iconUrls: Record<string, string | undefined>
-    onNavigateToApps?: () => void
+    onAddApp?: () => void
     onStartApp: (app: ManagedApp) => void
     onStopAll: () => void
     onStopApp: (app: ManagedApp) => void
@@ -22,7 +22,7 @@ interface ApplicationsPanelProps {
 export function ApplicationsPanel({
     apps,
     iconUrls,
-    onNavigateToApps,
+    onAddApp,
     onStartApp,
     onStopAll,
     onStopApp,
@@ -56,8 +56,8 @@ export function ApplicationsPanel({
                         />
                         {t('command.stop_all')}
                     </Button>
-                    {onNavigateToApps && (
-                        <Button variant="accent" size="md" onClick={onNavigateToApps}>
+                    {onAddApp && (
+                        <Button variant="accent" size="md" onClick={onAddApp}>
                             <Plus
                                 className="h-3.5 w-3.5 shrink-0 stroke-[2.5]"
                                 aria-hidden="true"
@@ -89,8 +89,8 @@ export function ApplicationsPanel({
                             icon={LayoutList}
                             message={t('command.no_apps')}
                             action={
-                                onNavigateToApps ? (
-                                    <Button onClick={onNavigateToApps}>
+                                onAddApp ? (
+                                    <Button onClick={onAddApp}>
                                         {t('command.no_apps_action')}
                                     </Button>
                                 ) : undefined
