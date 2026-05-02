@@ -72,13 +72,13 @@
     --spacing-shell-topbar: 72px;
     --spacing-shell-bottombar: 80px;
     --spacing-shell-sidebar: 248px;
-    --spacing-content-pad: 16px;
+    --spacing-content-pad: 0px 16px;
     --spacing-panel-gap: 16px;
 
-    --spacing-hero: 224px;
-    --spacing-hero-main: 128px;
+    --spacing-hero: 196px;
+    --spacing-hero-main: 112px;
     --spacing-hero-info: 96px;
-    --spacing-status-orb: 80px;
+    --spacing-status-orb: 72px;
     --spacing-status-icon: 48px;
 
     --spacing-panel-header: 56px;
@@ -88,7 +88,7 @@
     --spacing-app-menu: 48px;
     --spacing-activity-panel: 216px;
 
-    --text-display-status: 36px;
+    --text-display-status: 28px;
     --text-panel-title: 18px;
     --text-row-title: 20px;
     --text-body-ui: 16px;
