@@ -254,7 +254,6 @@ Apps is the administrative library, not the primary session dashboard.
 
 - Make the list more administrative:
     - name
-    - version if available in future
     - executable path
     - arguments
     - working directory
@@ -387,7 +386,7 @@ Keep:
 - language
 - theme
 - notifications
-- app version if available
+- Pitlane product version if available
 - export/import config if added later
 - reset/open data folder if added later
 

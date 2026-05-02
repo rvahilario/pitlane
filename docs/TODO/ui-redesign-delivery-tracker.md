@@ -54,6 +54,7 @@ Fora de escopo:
 | [x] | UI-02 | Novo modelo de navegação | Centralizar o modelo de tabs e deixar o runtime V0 apenas com `command`, `apps`, `logs`, `settings`; `profiles` e `automation` ficam somente no roadmap futuro | `Sidebar`, `App.tsx`, i18n | Teste de tabs; confirmar que tabs futuras e `Integrations` não aparecem | 2026-05-01 |
 | [x] | UI-03 | App shell V0 | Introduzir `AppShell`, `TopBar` e `BottomStatusBar`, preservando telas existentes dentro do novo layout | `App.tsx`, componentes de shell | Build e screenshot manual/Playwright do shell | 2026-05-01 |
 | [x] | UI-04 | Command Center estrutural | Criar `CommandCenterScreen` com hero/status, resumo de apps, lista compacta e recent activity usando dados reais | nova screen, hooks existentes, i18n | Teste dos cálculos running/idle/crashed/disabled/ready | 2026-05-01 |
+| [ ] | UI-04B | Remover versão de apps | Remover placeholder `v--` e manter a identidade do app baseada em nome e ícone, sem criar campo ou extração de versão no backend | `AppCommandRow`, testes de UI, docs do redesign | `npm run test -- AppCommandRow` | |
 | [ ] | UI-05 | Ações do Command Center | Conectar start/stop por app, bulk start/stop se implementado via APIs existentes, toggles de auto-launch e auto-stop | `CommandCenterScreen`, `api`, hooks | Mocks de API em testes; fluxo manual com app simples | |
 | [ ] | UI-06 | Apps administrativo | Reorganizar `AppsScreen` como biblioteca administrativa, mantendo add/edit/delete/start/stop e modal atual | `AppsScreen`, `AppCard`, `AppFormModal` | Testes existentes de apps continuam passando | |
 | [ ] | UI-07 | Modal de app por seções | Refatorar add/edit para Basic, Launch, Recovery e Advanced com colapsáveis, validação e acessibilidade | `AppFormModal`, inputs/layout | Teste add/edit; teclado; erro com `role=alert` | |
@@ -71,14 +72,15 @@ Fora de escopo:
 4. UI-02
 5. UI-03
 6. UI-04
-7. UI-05
-8. UI-06
-9. UI-08
-10. UI-09
-11. UI-07
-12. UI-10
-13. UI-11
-14. UI-12
+7. UI-04B
+8. UI-05
+9. UI-06
+10. UI-08
+11. UI-09
+12. UI-07
+13. UI-10
+14. UI-11
+15. UI-12
 
 Motivo da ordem: primeiro estabilizar tokens e padrão de styling, depois criar componentes e shell; em seguida entregar o Command Center; depois adaptar telas existentes; por fim refinar modal, placeholders e acessibilidade.
 
