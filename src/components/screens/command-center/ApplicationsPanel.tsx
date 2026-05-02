@@ -8,7 +8,9 @@ interface ApplicationsPanelProps {
     apps: ManagedApp[]
     iconUrls: Record<string, string | undefined>
     onNavigateToApps?: () => void
+    onStartAll: () => void
     onStartApp: (app: ManagedApp) => void
+    onStopAll: () => void
     onStopApp: (app: ManagedApp) => void
     onToggleAutoLaunch: (app: ManagedApp, enabled: boolean) => void
     onToggleAutoStop: (app: ManagedApp, stop: boolean) => void
@@ -20,7 +22,9 @@ export function ApplicationsPanel({
     apps,
     iconUrls,
     onNavigateToApps,
+    onStartAll,
     onStartApp,
+    onStopAll,
     onStopApp,
     onToggleAutoLaunch,
     onToggleAutoStop,
@@ -28,6 +32,11 @@ export function ApplicationsPanel({
     summary,
 }: ApplicationsPanelProps) {
     const { t } = useTranslation()
+    const statusByAppId = new Map(statuses.map((status) => [status.app_id, status]))
+    const canStartAny = apps.some(
+        (app) => app.enabled && statusByAppId.get(app.id)?.state.type !== 'running',
+    )
+    const canStopAny = statuses.some((status) => status.state.type === 'running')
 
     return (
         <Panel className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -41,14 +50,14 @@ export function ApplicationsPanel({
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="md" disabled>
+                    <Button variant="ghost" size="md" disabled={!canStartAny} onClick={onStartAll}>
                         <Play
                             className="h-3 w-3 shrink-0 fill-current stroke-0"
                             aria-hidden="true"
                         />
                         {t('command.start_all')}
                     </Button>
-                    <Button variant="ghost" size="md" disabled>
+                    <Button variant="ghost" size="md" disabled={!canStopAny} onClick={onStopAll}>
                         <Square
                             className="h-3 w-3 shrink-0 fill-current stroke-0"
                             aria-hidden="true"
@@ -88,7 +97,7 @@ export function ApplicationsPanel({
                             <AppCommandRow
                                 key={app.id}
                                 app={app}
-                                status={statuses.find((s) => s.app_id === app.id)}
+                                status={statusByAppId.get(app.id)}
                                 iconUrl={iconUrls[app.id]}
                                 onStart={() => onStartApp(app)}
                                 onStop={() => onStopApp(app)}

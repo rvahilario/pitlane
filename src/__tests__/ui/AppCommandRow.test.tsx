@@ -28,6 +28,12 @@ const runningStatus: AppStatus = {
     state: { type: 'running', pid: 1234, restart_count: 0 },
 }
 
+const crashedStatus: AppStatus = {
+    app_id: 'app-1',
+    name: 'SimHub',
+    state: { type: 'crashed' },
+}
+
 describe('AppCommandRow', () => {
     it('renders app identity and idle action', () => {
         render(
@@ -60,6 +66,37 @@ describe('AppCommandRow', () => {
 
         expect(screen.getByText('Running')).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument()
+    })
+
+    it('renders start action instead of restart when crashed', () => {
+        render(
+            <AppCommandRow
+                app={app}
+                status={crashedStatus}
+                onStart={vi.fn()}
+                onStop={vi.fn()}
+                onToggleAutoLaunch={vi.fn()}
+                onToggleAutoStop={vi.fn()}
+            />,
+        )
+
+        expect(screen.getByText('Crashed')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Restart' })).not.toBeInTheDocument()
+    })
+
+    it('does not render actions menu without a handler', () => {
+        render(
+            <AppCommandRow
+                app={app}
+                onStart={vi.fn()}
+                onStop={vi.fn()}
+                onToggleAutoLaunch={vi.fn()}
+                onToggleAutoStop={vi.fn()}
+            />,
+        )
+
+        expect(screen.queryByRole('button', { name: 'SimHub actions' })).not.toBeInTheDocument()
     })
 
     it('calls action handlers', async () => {
