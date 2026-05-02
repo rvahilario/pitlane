@@ -89,7 +89,6 @@ export function AppCommandRow({
                 />
                 <div className="min-w-0">
                     <p className="truncate text-row-title font-semibold text-text">{app.name}</p>
-                    <p className="mt-1 truncate text-body-ui text-text-muted">v--</p>
                 </div>
                 <span
                     className="pointer-events-none absolute right-0 top-1/2 h-1/2 w-px -translate-y-1/2 bg-border"
