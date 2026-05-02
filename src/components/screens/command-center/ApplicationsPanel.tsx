@@ -11,7 +11,6 @@ interface ApplicationsPanelProps {
     onStartApp: (app: ManagedApp) => void
     onStopAll: () => void
     onStopApp: (app: ManagedApp) => void
-    onOpenAppActions?: (app: ManagedApp) => void
     onTogglePreventAutoStop: () => void
     onToggleAutoLaunch: (app: ManagedApp, enabled: boolean) => void
     onToggleAutoStop: (app: ManagedApp, stop: boolean) => void
@@ -27,7 +26,6 @@ export function ApplicationsPanel({
     onStartApp,
     onStopAll,
     onStopApp,
-    onOpenAppActions,
     onTogglePreventAutoStop,
     onToggleAutoLaunch,
     onToggleAutoStop,
@@ -109,9 +107,6 @@ export function ApplicationsPanel({
                                 iconUrl={iconUrls[app.id]}
                                 onStart={() => onStartApp(app)}
                                 onStop={() => onStopApp(app)}
-                                onOpenMenu={
-                                    onOpenAppActions ? () => onOpenAppActions(app) : undefined
-                                }
                                 onToggleAutoLaunch={(enabled) => onToggleAutoLaunch(app, enabled)}
                                 onToggleAutoStop={(stop) => onToggleAutoStop(app, stop)}
                             />
