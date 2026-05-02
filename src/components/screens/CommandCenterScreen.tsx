@@ -53,16 +53,6 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
         onNavigateToApps?.()
     }
 
-    function handleStartAll() {
-        const runningIds = new Set(
-            statuses
-                .filter((status) => status.state.type === 'running')
-                .map((status) => status.app_id),
-        )
-        const launchableApps = apps.filter((app) => app.enabled && !runningIds.has(app.id))
-        Promise.all(launchableApps.map((app) => api.forceLaunchApp(app.id))).catch(() => {})
-    }
-
     function handleStopAll() {
         const runningIds = statuses
             .filter((status) => status.state.type === 'running')
@@ -86,7 +76,6 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                 apps={apps}
                 iconUrls={iconUrls}
                 onNavigateToApps={onNavigateToApps}
-                onStartAll={handleStartAll}
                 onStartApp={handleStart}
                 onStopAll={handleStopAll}
                 onStopApp={handleStop}

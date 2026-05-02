@@ -13,6 +13,7 @@
   },
   "apps": {
     "title": "Apps gerenciados",
+    "singular": "App",
     "profile_label": "Perfil: {{name}}",
     "add": "Adicionar",
     "add_first": "Adicionar primeiro app",

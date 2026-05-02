@@ -266,23 +266,16 @@ describe('CommandCenterScreen', () => {
         expect(api.setAutoStop).toHaveBeenCalledWith(false)
     })
 
-    it('starts all enabled apps that are not already running', async () => {
+    it('does not render bulk start action', async () => {
         vi.mocked(api.getApps).mockResolvedValue([
             makeApp({ id: 'idle', name: 'IdleApp' }),
             makeApp({ id: 'running', name: 'RunningApp' }),
-            makeApp({ id: 'disabled', name: 'DisabledApp', enabled: false }),
-        ])
-        vi.mocked(api.getAppStatuses).mockResolvedValue([
-            makeStatus('idle', { type: 'idle' }),
-            makeStatus('running', { type: 'running', pid: 99, restart_count: 0 }),
         ])
         render(<CommandCenterScreen />)
 
         await screen.findByText('IdleApp')
-        await userEvent.click(screen.getByRole('button', { name: 'Start All' }))
 
-        expect(api.forceLaunchApp).toHaveBeenCalledTimes(1)
-        expect(api.forceLaunchApp).toHaveBeenCalledWith('idle')
+        expect(screen.queryByRole('button', { name: 'Start All' })).not.toBeInTheDocument()
     })
 
     it('stops all running apps', async () => {

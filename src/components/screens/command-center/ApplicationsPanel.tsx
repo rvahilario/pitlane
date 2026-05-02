@@ -1,4 +1,4 @@
-import { LayoutList, Play, Plus, Square } from 'lucide-react'
+import { LayoutList, Plus, Square } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { AppCommandRow, Button, EmptyState, Panel, Toggle } from '@/components/ui'
 import type { AppStatus, ManagedApp } from '@/lib/api'
@@ -8,7 +8,6 @@ interface ApplicationsPanelProps {
     apps: ManagedApp[]
     iconUrls: Record<string, string | undefined>
     onNavigateToApps?: () => void
-    onStartAll: () => void
     onStartApp: (app: ManagedApp) => void
     onStopAll: () => void
     onStopApp: (app: ManagedApp) => void
@@ -25,7 +24,6 @@ export function ApplicationsPanel({
     apps,
     iconUrls,
     onNavigateToApps,
-    onStartAll,
     onStartApp,
     onStopAll,
     onStopApp,
@@ -39,9 +37,6 @@ export function ApplicationsPanel({
 }: ApplicationsPanelProps) {
     const { t } = useTranslation()
     const statusByAppId = new Map(statuses.map((status) => [status.app_id, status]))
-    const canStartAny = apps.some(
-        (app) => app.enabled && statusByAppId.get(app.id)?.state.type !== 'running',
-    )
     const canStopAny = statuses.some((status) => status.state.type === 'running')
 
     return (
@@ -56,26 +51,6 @@ export function ApplicationsPanel({
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 rounded-md border border-border-strong bg-surface px-2.5 py-1.5">
-                        <span className="text-xs text-text-secondary">
-                            <span className="font-bold text-accent">
-                                {t('apps.auto_stop_label_emphasis')}
-                            </span>{' '}
-                            {t('apps.auto_stop_label_rest')}
-                        </span>
-                        <Toggle
-                            checked={preventAutoStop}
-                            onChange={onTogglePreventAutoStop}
-                            label={t('apps.auto_stop_label')}
-                        />
-                    </div>
-                    <Button variant="ghost" size="md" disabled={!canStartAny} onClick={onStartAll}>
-                        <Play
-                            className="h-3 w-3 shrink-0 fill-current stroke-0"
-                            aria-hidden="true"
-                        />
-                        {t('command.start_all')}
-                    </Button>
                     <Button variant="ghost" size="md" disabled={!canStopAny} onClick={onStopAll}>
                         <Square
                             className="h-3 w-3 shrink-0 fill-current stroke-0"
@@ -89,10 +64,24 @@ export function ApplicationsPanel({
                                 className="h-3.5 w-3.5 shrink-0 stroke-[2.5]"
                                 aria-hidden="true"
                             />
-                            {t('command.add_app')}
+                            {t('apps.singular')}
                         </Button>
                     )}
                 </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-b border-border bg-base px-6 py-2">
+                <span className="text-xs text-text-secondary">
+                    <span className="font-bold text-accent">
+                        {t('apps.auto_stop_label_emphasis')}
+                    </span>{' '}
+                    {t('apps.auto_stop_label_rest')}
+                </span>
+                <Toggle
+                    checked={preventAutoStop}
+                    onChange={onTogglePreventAutoStop}
+                    label={t('apps.auto_stop_label')}
+                />
             </div>
 
             <div className="flex-1 overflow-y-auto bg-base">
