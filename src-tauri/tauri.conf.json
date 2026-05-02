@@ -14,10 +14,10 @@
       {
         "label": "main",
         "title": "Pitlane",
-        "width": 1100,
-        "height": 780,
-        "minWidth": 1001,
-        "minHeight": 640,
+        "width": 1280,
+        "height": 900,
+        "minWidth": 1180,
+        "minHeight": 925,
         "visible": false
       }
     ],

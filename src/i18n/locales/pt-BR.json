@@ -78,6 +78,7 @@
     "off": "OFF",
     "start_all": "Iniciar Todos",
     "stop_all": "Parar Todos",
+    "restart": "Reiniciar",
     "add_app": "Adicionar App",
     "filters": "Filtros",
     "clear_activity": "Limpar",

@@ -19,10 +19,7 @@ export function AppAvatar({ name, iconUrl, className }: AppAvatarProps) {
             <img
                 src={iconUrl}
                 alt={name}
-                className={cn(
-                    'w-8 h-8 rounded-lg shrink-0 select-none object-contain',
-                    className,
-                )}
+                className={cn('w-8 h-8 rounded-lg shrink-0 select-none object-contain', className)}
             />
         )
     }

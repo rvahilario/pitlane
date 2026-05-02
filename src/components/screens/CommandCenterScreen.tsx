@@ -1,15 +1,18 @@
 import {
     AlertTriangle,
     CheckCircle2,
+    CircleCheck,
     CircleUser,
+    Clock3,
+    Filter,
     Gauge,
     LayoutList,
     Play,
     Plus,
     Settings,
     Square,
-    WifiOff,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, type ManagedApp } from '@/lib/api'
 import {
@@ -46,7 +49,7 @@ const READINESS_CONFIG: Record<
         glowClass: 'from-warning/15',
     },
     no_iracing: {
-        icon: WifiOff,
+        icon: CircleCheck,
         headingClass: 'text-text-muted',
         pillClass: 'border-border text-text-muted',
         glowClass: null,
@@ -63,11 +66,11 @@ interface CommandCenterScreenProps {
 
 export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenProps) {
     const { t } = useTranslation()
-    const { apps, activeProfile, preventAutoStop, toggleEnabled, toggleStopWithIracing } =
-        useApps()
+    const { apps, activeProfile, preventAutoStop, toggleEnabled, toggleStopWithIracing } = useApps()
     const statuses = useAppStatuses()
     const iRacingRunning = useIRacingStatus()
     const log = useLog()
+    const [iconUrls, setIconUrls] = useState<Record<string, string | undefined>>({})
 
     const summary = computeAppSummary(apps, statuses)
     const readiness = computeReadiness(iRacingRunning, summary.crashed)
@@ -81,6 +84,28 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
     const autoLaunchOn = apps.some((a) => a.enabled)
     const autoStopOn = !preventAutoStop
 
+    useEffect(() => {
+        if (typeof api.extractIcon !== 'function') return
+
+        let cancelled = false
+
+        apps.forEach((app) => {
+            api.extractIcon(app.exe_path)
+                .then((b64) => {
+                    if (cancelled) return
+                    setIconUrls((prev) => ({
+                        ...prev,
+                        [app.id]: b64 ? `data:image/png;base64,${b64}` : undefined,
+                    }))
+                })
+                .catch(() => {})
+        })
+
+        return () => {
+            cancelled = true
+        }
+    }, [apps])
+
     function handleStart(app: ManagedApp) {
         api.forceLaunchApp(app.id).catch(() => {})
     }
@@ -90,9 +115,9 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
     }
 
     return (
-        <div className="flex h-full min-h-[36rem] flex-col gap-3 overflow-hidden p-4">
+        <div className="flex h-full min-h-0 flex-col gap-panel-gap overflow-hidden p-content-pad">
             {/* ── Hero ── */}
-            <Panel className="relative shrink-0 overflow-hidden">
+            <Panel className="relative h-hero shrink-0 overflow-hidden bg-gradient-to-br from-surface via-surface to-base shadow-[0_0_40px_rgba(77,217,208,0.05)]">
                 {/* Background glow */}
                 {glowClass && (
                     <div
@@ -104,10 +129,10 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                 )}
 
                 {/* Main status row */}
-                <div className="relative flex h-[7rem] items-center gap-5 px-6 py-5 overflow-hidden">
+                <div className="relative flex h-hero-main items-center gap-8 overflow-hidden px-10 py-6">
                     <div
                         className={cn(
-                            'flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2',
+                            'flex h-status-orb w-status-orb shrink-0 items-center justify-center rounded-full border-2 shadow-[0_0_34px_rgba(71,209,140,0.18)]',
                             readiness === 'ready'
                                 ? 'border-success bg-success/10'
                                 : readiness === 'needs_attention'
@@ -116,7 +141,7 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                         )}
                     >
                         <ReadinessIcon
-                            className={cn('h-8 w-8 stroke-[2]', headingClass)}
+                            className={cn('h-status-icon w-status-icon stroke-[2]', headingClass)}
                             aria-hidden="true"
                         />
                     </div>
@@ -124,13 +149,13 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                     <div className="min-w-0">
                         <h2
                             className={cn(
-                                'text-4xl font-bold uppercase leading-none tracking-wide',
+                                'text-display-status font-bold uppercase leading-none',
                                 headingClass,
                             )}
                         >
                             {t(`command.readiness.${readiness}`)}
                         </h2>
-                        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                        <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-body-ui">
                             <span className="text-text-secondary">
                                 {iRacingRunning
                                     ? t('command.iracing_detected')
@@ -138,17 +163,14 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                             </span>
                             {summary.total > 0 && (
                                 <>
-                                    <span className="text-text-muted">•</span>
                                     <span className="text-success">
                                         {summary.running}{' '}
                                         {t('command.metrics.running').toLowerCase()}
                                     </span>
-                                    <span className="text-text-muted">•</span>
                                     <span className="text-danger">
                                         {summary.crashed}{' '}
                                         {t('command.metrics.crashed').toLowerCase()}
                                     </span>
-                                    <span className="text-text-muted">•</span>
                                     <span className="text-text-muted">
                                         {summary.idle} {t('command.metrics.idle').toLowerCase()}
                                     </span>
@@ -159,18 +181,18 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                 </div>
 
                 {/* Info bar */}
-                <div className="relative flex h-[3.5rem] divide-x divide-border border-t border-border overflow-hidden">
+                <div className="relative grid h-hero-info grid-cols-[1.1fr_1.7fr_1.1fr_1.4fr] divide-x divide-border overflow-hidden border-t border-border">
                     {/* iRacing section */}
-                    <div className="flex min-w-40 items-center gap-3 px-5 py-3.5">
+                    <div className="flex min-w-0 items-center gap-4 px-8 py-4">
                         <Gauge
                             className="h-7 w-7 shrink-0 text-accent stroke-[1.5]"
                             aria-hidden="true"
                         />
                         <div>
-                            <p className="text-xs font-semibold text-text">iRacing</p>
+                            <p className="text-body-ui font-semibold text-text">iRacing</p>
                             <p
                                 className={cn(
-                                    'text-xs font-bold',
+                                    'mt-1 text-body-ui font-bold',
                                     iRacingRunning ? 'text-success' : 'text-text-muted',
                                 )}
                             >
@@ -182,46 +204,50 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                     </div>
 
                     {/* Ready pill */}
-                    <div className="flex flex-1 items-center justify-center px-6 py-3.5">
+                    <div className="flex min-w-0 items-center justify-center px-8 py-4">
                         <div
                             className={cn(
-                                'flex items-center gap-3 rounded-lg border px-5 py-2.5',
+                                'flex h-[4.5rem] min-w-72 items-center justify-center gap-4 rounded-lg border px-6',
                                 pillClass,
                             )}
                         >
                             <ReadinessIcon
-                                className="h-5 w-5 shrink-0 stroke-[2]"
+                                className="h-8 w-8 shrink-0 stroke-[2]"
                                 aria-hidden="true"
                             />
-                            <span className="text-xl font-bold">
+                            <span className="truncate text-3xl font-bold">
                                 {readyDisplay} {t('command.ready')}
                             </span>
                         </div>
                     </div>
 
                     {/* Active profile */}
-                    <div className="flex min-w-44 items-center gap-3 px-5 py-3.5">
+                    <div className="flex min-w-0 items-center gap-4 px-8 py-4">
                         <CircleUser
-                            className="h-5 w-5 shrink-0 text-text-muted stroke-[1.5]"
+                            className="h-9 w-9 shrink-0 text-text-secondary stroke-[1.5]"
                             aria-hidden="true"
                         />
                         <div>
-                            <p className="text-xs text-text-muted">{t('shell.active_profile')}</p>
-                            <p className="text-sm font-medium text-accent">
+                            <p className="text-body-ui text-text-muted">
+                                {t('shell.active_profile')}
+                            </p>
+                            <p className="mt-1 truncate text-body-ui font-medium text-accent">
                                 {activeProfile?.name ?? '—'}
                             </p>
                         </div>
                     </div>
 
                     {/* Automation */}
-                    <div className="flex min-w-52 items-center gap-3 px-5 py-3.5">
+                    <div className="flex min-w-0 items-center gap-4 px-8 py-4">
                         <Settings
-                            className="h-5 w-5 shrink-0 text-text-muted stroke-[1.5]"
+                            className="h-9 w-9 shrink-0 text-text-secondary stroke-[1.5]"
                             aria-hidden="true"
                         />
                         <div>
-                            <p className="text-xs text-text-muted">{t('command.automation')}</p>
-                            <p className="text-xs text-text-secondary">
+                            <p className="text-body-ui text-text-muted">
+                                {t('command.automation')}
+                            </p>
+                            <p className="mt-1 text-body-ui text-text-secondary">
                                 {t('command.auto_launch')}{' '}
                                 <span
                                     className={cn(
@@ -248,26 +274,26 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
             </Panel>
 
             {/* ── Applications ── */}
-            <Panel className="flex min-h-0 flex-1 flex-col">
+            <Panel className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 {/* Panel header */}
-                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <div className="flex h-panel-header items-center justify-between border-b border-border px-6">
                     <div className="flex items-center gap-2.5">
-                        <span className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                        <span className="text-panel-title font-medium uppercase text-text-secondary">
                             {t('command.apps_panel')}
                         </span>
                         <span className="rounded-full bg-elevated px-2 py-0.5 text-xs font-semibold text-text-secondary">
                             {summary.total}
                         </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                        <Button variant="ghost" size="sm" disabled>
+                    <div className="flex items-center gap-3">
+                        <Button variant="ghost" size="md" disabled>
                             <Play
                                 className="h-3 w-3 shrink-0 fill-current stroke-0"
                                 aria-hidden="true"
                             />
                             {t('command.start_all')}
                         </Button>
-                        <Button variant="ghost" size="sm" disabled>
+                        <Button variant="ghost" size="md" disabled>
                             <Square
                                 className="h-3 w-3 shrink-0 fill-current stroke-0"
                                 aria-hidden="true"
@@ -275,7 +301,7 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                             {t('command.stop_all')}
                         </Button>
                         {onNavigateToApps && (
-                            <Button variant="accent" size="sm" onClick={onNavigateToApps}>
+                            <Button variant="accent" size="md" onClick={onNavigateToApps}>
                                 <Plus
                                     className="h-3.5 w-3.5 shrink-0 stroke-[2.5]"
                                     aria-hidden="true"
@@ -308,6 +334,7 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                                 key={app.id}
                                 app={app}
                                 status={statuses.find((s) => s.app_id === app.id)}
+                                iconUrl={iconUrls[app.id]}
                                 onStart={() => handleStart(app)}
                                 onStop={() => handleStop(app)}
                                 onToggleAutoLaunch={(enabled) => toggleEnabled(app, enabled)}
@@ -319,14 +346,23 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
             </Panel>
 
             {/* ── Recent Activity ── */}
-            {recentActivity.length > 0 && (
-                <Panel className="shrink-0">
-                    <div className="flex items-center border-b border-border px-4 py-3">
-                        <span className="text-xs font-bold uppercase tracking-wider text-text-muted">
-                            {t('command.activity_panel')}
-                        </span>
+            <Panel className="h-activity-panel shrink-0 overflow-hidden">
+                <div className="flex h-panel-header items-center justify-between border-b border-border px-6">
+                    <span className="text-panel-title font-medium uppercase text-text-secondary">
+                        {t('command.activity_panel')}
+                    </span>
+                    <div className="flex items-center gap-3">
+                        <Button variant="ghost" size="md" disabled>
+                            <Filter className="h-4 w-4" aria-hidden="true" />
+                            {t('command.filters')}
+                        </Button>
+                        <Button variant="ghost" size="md" disabled>
+                            {t('command.clear_activity')}
+                        </Button>
                     </div>
-                    {recentActivity.map((entry) => (
+                </div>
+                {recentActivity.length > 0 ? (
+                    recentActivity.map((entry) => (
                         <ActivityRow
                             key={entry.seq}
                             time={formatTime(entry.timestamp_ms)}
@@ -335,9 +371,14 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                             source={entry.app ?? undefined}
                             message={entry.msg}
                         />
-                    ))}
-                </Panel>
-            )}
+                    ))
+                ) : (
+                    <div className="flex h-24 items-center gap-3 px-6 text-sm text-text-muted">
+                        <Clock3 className="h-5 w-5 shrink-0" aria-hidden="true" />
+                        {t('log.empty')}
+                    </div>
+                )}
+            </Panel>
         </div>
     )
 }

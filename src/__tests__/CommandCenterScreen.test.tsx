@@ -134,10 +134,7 @@ describe('computeAppSummary', () => {
     })
 
     it('includes running enabled apps in ready count', () => {
-        const apps = [
-            makeApp({ id: '1', enabled: true }),
-            makeApp({ id: '2', enabled: true }),
-        ]
+        const apps = [makeApp({ id: '1', enabled: true }), makeApp({ id: '2', enabled: true })]
         const statuses = [makeStatus('1', { type: 'running', pid: 100, restart_count: 0 })]
         // both enabled and neither is crashed → both ready
         expect(computeAppSummary(apps, statuses).ready).toBe(2)
@@ -175,23 +172,17 @@ describe('computeReadiness', () => {
 describe('CommandCenterScreen', () => {
     it('renders readiness status when iRacing is offline', async () => {
         render(<CommandCenterScreen />)
-        await waitFor(() =>
-            expect(screen.getByText('iRacing not detected')).toBeInTheDocument(),
-        )
+        await waitFor(() => expect(screen.getByText('iRacing not detected')).toBeInTheDocument())
     })
 
     it('renders empty apps state when no apps are configured', async () => {
         render(<CommandCenterScreen />)
-        await waitFor(() =>
-            expect(screen.getByText(/no apps configured/i)).toBeInTheDocument(),
-        )
+        await waitFor(() => expect(screen.getByText(/no apps configured/i)).toBeInTheDocument())
     })
 
     it('renders apps panel title', async () => {
         render(<CommandCenterScreen />)
-        await waitFor(() =>
-            expect(screen.getByText(/applications/i)).toBeInTheDocument(),
-        )
+        await waitFor(() => expect(screen.getByText(/applications/i)).toBeInTheDocument())
     })
 
     it('renders app names when apps exist', async () => {
