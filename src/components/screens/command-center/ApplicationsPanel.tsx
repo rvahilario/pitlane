@@ -1,6 +1,6 @@
 import { LayoutList, Play, Plus, Square } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { AppCommandRow, Button, EmptyState, Panel } from '@/components/ui'
+import { AppCommandRow, Button, EmptyState, Panel, Toggle } from '@/components/ui'
 import type { AppStatus, ManagedApp } from '@/lib/api'
 import type { AppSummary } from '@/lib/command-center'
 
@@ -13,8 +13,10 @@ interface ApplicationsPanelProps {
     onStopAll: () => void
     onStopApp: (app: ManagedApp) => void
     onOpenAppActions?: (app: ManagedApp) => void
+    onTogglePreventAutoStop: () => void
     onToggleAutoLaunch: (app: ManagedApp, enabled: boolean) => void
     onToggleAutoStop: (app: ManagedApp, stop: boolean) => void
+    preventAutoStop: boolean
     statuses: AppStatus[]
     summary: AppSummary
 }
@@ -28,8 +30,10 @@ export function ApplicationsPanel({
     onStopAll,
     onStopApp,
     onOpenAppActions,
+    onTogglePreventAutoStop,
     onToggleAutoLaunch,
     onToggleAutoStop,
+    preventAutoStop,
     statuses,
     summary,
 }: ApplicationsPanelProps) {
@@ -52,6 +56,19 @@ export function ApplicationsPanel({
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 rounded-md border border-border-strong bg-surface px-2.5 py-1.5">
+                        <span className="text-xs text-text-secondary">
+                            <span className="font-bold text-accent">
+                                {t('apps.auto_stop_label_emphasis')}
+                            </span>{' '}
+                            {t('apps.auto_stop_label_rest')}
+                        </span>
+                        <Toggle
+                            checked={preventAutoStop}
+                            onChange={onTogglePreventAutoStop}
+                            label={t('apps.auto_stop_label')}
+                        />
+                    </div>
                     <Button variant="ghost" size="md" disabled={!canStartAny} onClick={onStartAll}>
                         <Play
                             className="h-3 w-3 shrink-0 fill-current stroke-0"

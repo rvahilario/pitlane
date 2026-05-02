@@ -15,6 +15,7 @@ vi.mock('@/lib/api', () => ({
         getProfiles: vi.fn(),
         getActiveProfileId: vi.fn(),
         getAutoStop: vi.fn(),
+        setAutoStop: vi.fn(),
         getIRacingStatus: vi.fn(),
         getAppStatuses: vi.fn(),
         getLog: vi.fn(),
@@ -57,6 +58,7 @@ beforeEach(() => {
     vi.mocked(api.getProfiles).mockResolvedValue([])
     vi.mocked(api.getActiveProfileId).mockResolvedValue('p1')
     vi.mocked(api.getAutoStop).mockResolvedValue(true)
+    vi.mocked(api.setAutoStop).mockResolvedValue(undefined)
     vi.mocked(api.getIRacingStatus).mockResolvedValue(false)
     vi.mocked(api.getAppStatuses).mockResolvedValue([])
     vi.mocked(api.getLog).mockResolvedValue([])
@@ -248,6 +250,20 @@ describe('CommandCenterScreen', () => {
         await userEvent.click(screen.getByRole('switch', { name: 'SimHub auto-stop' }))
 
         expect(api.updateApp).toHaveBeenCalledWith('42', { stop_with_iracing: false })
+    })
+
+    it('toggles global prevent-auto-stop from the applications panel', async () => {
+        vi.mocked(api.getAutoStop).mockResolvedValue(true)
+        render(<CommandCenterScreen />)
+
+        const toggle = await screen.findByRole('switch', {
+            name: /do not stop apps when iracing closes/i,
+        })
+        expect(toggle).toHaveAttribute('aria-checked', 'false')
+
+        await userEvent.click(toggle)
+
+        expect(api.setAutoStop).toHaveBeenCalledWith(false)
     })
 
     it('starts all enabled apps that are not already running', async () => {

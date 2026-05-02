@@ -17,7 +17,14 @@ interface CommandCenterScreenProps {
 }
 
 export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenProps) {
-    const { apps, activeProfile, preventAutoStop, toggleEnabled, toggleStopWithIracing } = useApps()
+    const {
+        apps,
+        activeProfile,
+        preventAutoStop,
+        toggleEnabled,
+        togglePreventAutoStop,
+        toggleStopWithIracing,
+    } = useApps()
     const statuses = useAppStatuses()
     const iRacingRunning = useIRacingStatus()
     const log = useLog()
@@ -84,8 +91,10 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                 onStopAll={handleStopAll}
                 onStopApp={handleStop}
                 onOpenAppActions={onNavigateToApps ? handleOpenAppActions : undefined}
+                onTogglePreventAutoStop={togglePreventAutoStop}
                 onToggleAutoLaunch={toggleEnabled}
                 onToggleAutoStop={toggleStopWithIracing}
+                preventAutoStop={preventAutoStop}
                 statuses={statuses}
                 summary={summary}
             />
