@@ -48,19 +48,33 @@ function initForm(initial?: ManagedApp): FormState {
 export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalProps) {
     const { t } = useTranslation()
     const [form, setForm] = useState<FormState>(initForm(initial))
+    const [recoveryOpen, setRecoveryOpen] = useState(false)
     const [advancedOpen, setAdvancedOpen] = useState(false)
+    const [touched, setTouched] = useState<Set<'name' | 'exe_path'>>(new Set())
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
+    const toggleRecovery = () => setRecoveryOpen((prev) => !prev)
     const toggleAdvanced = () => setAdvancedOpen((prev) => !prev)
+
+    function markTouched(field: 'name' | 'exe_path') {
+        setTouched((prev) => new Set(prev).add(field))
+    }
 
     function patch<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((f) => ({ ...f, [key]: value }))
     }
 
+    const nameInvalid = touched.has('name') && !form.name.trim()
+    const exePathInvalid = touched.has('exe_path') && !form.exe_path.trim()
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+        if (!form.name.trim() || !form.exe_path.trim()) {
+            setTouched(new Set(['name', 'exe_path']))
+            return
+        }
         setSaving(true)
         setError(null)
         try {
@@ -103,22 +117,35 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                 {/* Scrollable body */}
                 <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
                     <div className="flex flex-col gap-4 p-5 overflow-y-auto">
+                        {/* Basic */}
                         <SectionDivider title={t('apps.form.section_basic')} />
 
-                        <FormField label={t('apps.form.name')} id="app-form-name">
+                        <FormField
+                            label={t('apps.form.name')}
+                            id="app-form-name"
+                            error={nameInvalid ? t('apps.form.name_required') : undefined}
+                        >
                             <TextInput
                                 id="app-form-name"
                                 value={form.name}
                                 onChange={(v) => patch('name', v)}
+                                aria-invalid={nameInvalid}
+                                onBlur={() => markTouched('name')}
                             />
                         </FormField>
 
-                        <FormField label={t('apps.form.exe_path')} id="app-form-exe">
+                        <FormField
+                            label={t('apps.form.exe_path')}
+                            id="app-form-exe"
+                            error={exePathInvalid ? t('apps.form.exe_path_required') : undefined}
+                        >
                             <TextInput
                                 id="app-form-exe"
                                 value={form.exe_path}
                                 onChange={(v) => patch('exe_path', v)}
                                 mono
+                                aria-invalid={exePathInvalid}
+                                onBlur={() => markTouched('exe_path')}
                             />
                         </FormField>
 
@@ -133,7 +160,8 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                             onChange={(v) => patch('stop_with_iracing', v)}
                         />
 
-                        <SectionDivider title={t('apps.form.section_startup')} />
+                        {/* Launch */}
+                        <SectionDivider title={t('apps.form.section_launch')} />
 
                         <FormField label={t('apps.form.startup_delay')}>
                             <NumberInput
@@ -155,27 +183,51 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                             />
                         </FormField>
 
-                        <SectionDivider title={t('apps.form.section_crash')} />
-
-                        <Checkbox
-                            label={t('apps.form.restart_on_crash')}
-                            checked={form.restart_on_crash}
-                            onChange={(v) => patch('restart_on_crash', v)}
-                        />
-
-                        {form.restart_on_crash && (
-                            <FormField label={t('apps.form.max_retries')}>
-                                <NumberInput
-                                    value={form.max_restart_attempts}
-                                    onChange={(v) => patch('max_restart_attempts', v)}
-                                    min={1}
-                                />
-                            </FormField>
-                        )}
-
-                        {/* Advanced (collapsible) */}
+                        {/* Recovery (collapsible, closed by default) */}
                         <button
                             type="button"
+                            aria-expanded={recoveryOpen}
+                            aria-controls="section-recovery"
+                            onClick={toggleRecovery}
+                            className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors self-start"
+                        >
+                            <ChevronDown
+                                className={cn(
+                                    'w-3.5 h-3.5 transition-transform',
+                                    recoveryOpen && 'rotate-180',
+                                )}
+                            />
+                            {t('apps.form.section_recovery')}
+                        </button>
+
+                        {recoveryOpen && (
+                            <div
+                                id="section-recovery"
+                                className="flex flex-col gap-4 pl-3 border-l border-border"
+                            >
+                                <Checkbox
+                                    label={t('apps.form.restart_on_crash')}
+                                    checked={form.restart_on_crash}
+                                    onChange={(v) => patch('restart_on_crash', v)}
+                                />
+
+                                {form.restart_on_crash && (
+                                    <FormField label={t('apps.form.max_retries')}>
+                                        <NumberInput
+                                            value={form.max_restart_attempts}
+                                            onChange={(v) => patch('max_restart_attempts', v)}
+                                            min={1}
+                                        />
+                                    </FormField>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Advanced (collapsible, closed by default) */}
+                        <button
+                            type="button"
+                            aria-expanded={advancedOpen}
+                            aria-controls="section-advanced"
                             onClick={toggleAdvanced}
                             className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors self-start"
                         >
@@ -189,7 +241,10 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                         </button>
 
                         {advancedOpen && (
-                            <div className="flex flex-col gap-4 pl-3 border-l border-border">
+                            <div
+                                id="section-advanced"
+                                className="flex flex-col gap-4 pl-3 border-l border-border"
+                            >
                                 <FormField
                                     label={t('apps.form.track_process_name')}
                                     hint={t('apps.form.track_process_name_hint')}
@@ -218,7 +273,11 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
 
                     {/* Footer */}
                     <div className="flex flex-col gap-2 px-5 py-4 border-t border-border shrink-0">
-                        {error && <p className="text-xs text-danger">{error}</p>}
+                        {error && (
+                            <p role="alert" className="text-xs text-danger">
+                                {error}
+                            </p>
+                        )}
                         <div className="flex justify-end gap-2">
                             <Button
                                 type="button"
@@ -231,9 +290,7 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                             <Button
                                 type="submit"
                                 variant={saved ? 'success' : 'accent'}
-                                disabled={
-                                    saving || saved || !form.name.trim() || !form.exe_path.trim()
-                                }
+                                disabled={saving || saved}
                             >
                                 {saved ? (
                                     <>

@@ -9,17 +9,29 @@ interface TextInputProps {
     onChange: (v: string) => void
     placeholder?: string
     mono?: boolean
+    'aria-invalid'?: boolean
+    onBlur?: () => void
 }
 
-export function TextInput({ id, value, onChange, placeholder, mono = false }: TextInputProps) {
+export function TextInput({
+    id,
+    value,
+    onChange,
+    placeholder,
+    mono = false,
+    'aria-invalid': ariaInvalid,
+    onBlur,
+}: TextInputProps) {
     return (
         <input
             id={id}
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onBlur={onBlur}
             placeholder={placeholder}
-            className={cn(inputBase, mono && 'font-mono text-xs')}
+            aria-invalid={ariaInvalid}
+            className={cn(inputBase, mono && 'font-mono text-xs', ariaInvalid && 'border-danger')}
         />
     )
 }
