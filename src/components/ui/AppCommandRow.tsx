@@ -75,13 +75,13 @@ export function AppCommandRow({
     return (
         <div
             className={cn(
-                'grid h-app-row grid-cols-[minmax(18rem,1fr)_18rem_12rem_var(--spacing-app-action)_var(--spacing-app-menu)] items-center gap-4 border-b border-border px-4 last:border-b-0',
+                'col-span-full grid grid-cols-subgrid h-app-row items-stretch border-b border-border last:border-b-0',
                 className,
             )}
             {...props}
         >
             {/* Identity */}
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="relative flex min-w-0 items-center gap-3 px-4">
                 <AppAvatar
                     name={app.name}
                     iconUrl={iconUrl}
@@ -91,66 +91,90 @@ export function AppCommandRow({
                     <p className="truncate text-row-title font-semibold text-text">{app.name}</p>
                     <p className="mt-1 truncate text-body-ui text-text-muted">v--</p>
                 </div>
+                <span
+                    className="pointer-events-none absolute right-0 top-1/2 h-1/2 w-px -translate-y-1/2 bg-border"
+                    aria-hidden="true"
+                />
             </div>
 
             {/* Status */}
-            <div className="flex items-center gap-2">
+            <div className="relative flex min-w-0 items-center gap-2 px-6">
                 <StatusIcon
                     className={cn('h-4 w-4 shrink-0 stroke-[2.5]', colorClass)}
                     aria-hidden="true"
                 />
-                <span className={cn('text-body-ui font-medium', colorClass)}>{statusLabel}</span>
+                <span className={cn('truncate text-body-ui font-medium', colorClass)}>
+                    {statusLabel}
+                </span>
+                <span
+                    className="pointer-events-none absolute right-0 top-1/2 h-1/2 w-px -translate-y-1/2 bg-border"
+                    aria-hidden="true"
+                />
             </div>
 
             {/* Toggles */}
-            <div className="flex flex-col gap-2 text-body-ui text-text-secondary">
-                <div className="flex items-center justify-between gap-3">
-                    <span>{t('command.auto_launch')}</span>
-                    <Toggle
-                        checked={app.enabled}
-                        onChange={onToggleAutoLaunch}
-                        label={`${app.name} auto-launch`}
-                    />
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                    <span>{t('command.auto_stop')}</span>
-                    <Toggle
-                        checked={app.stop_with_iracing}
-                        disabled={!app.enabled}
-                        onChange={onToggleAutoStop}
-                        label={`${app.name} auto-stop`}
-                    />
-                </div>
+            <div className="relative grid min-w-0 grid-cols-[auto_auto] content-center items-center gap-x-4 gap-y-1.5 px-6 text-body-ui text-text-secondary">
+                <span className="justify-self-end">{t('command.auto_launch')}</span>
+                <Toggle
+                    checked={app.enabled}
+                    onChange={onToggleAutoLaunch}
+                    label={`${app.name} auto-launch`}
+                />
+                <span className="justify-self-end">{t('command.auto_stop')}</span>
+                <Toggle
+                    checked={app.stop_with_iracing}
+                    disabled={!app.enabled}
+                    onChange={onToggleAutoStop}
+                    label={`${app.name} auto-stop`}
+                />
+                <span
+                    className="pointer-events-none absolute right-0 top-1/2 h-1/2 w-px -translate-y-1/2 bg-border"
+                    aria-hidden="true"
+                />
             </div>
 
-            {/* Action */}
-            {running ? (
-                <Button variant="ghost" size="md" onClick={onStop} className="w-full gap-2">
-                    <Square className="h-3 w-3 shrink-0 fill-current stroke-0" aria-hidden="true" />
-                    {t('apps.stop')}
-                </Button>
-            ) : crashed ? (
-                <Button variant="danger" size="md" onClick={onStart} className="w-full gap-2">
-                    <RotateCw className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" aria-hidden="true" />
-                    {t('command.restart')}
-                </Button>
-            ) : (
-                <Button
-                    variant="success"
-                    size="md"
-                    onClick={onStart}
-                    disabled={!app.enabled}
-                    className="w-full gap-2"
+            {/* Actions */}
+            <div className="flex items-center gap-6 px-6">
+                {running ? (
+                    <Button
+                        variant="ghost"
+                        size="md"
+                        onClick={onStop}
+                        className="h-11 min-w-30 gap-2"
+                    >
+                        <Square className="fill-current stroke-0" aria-hidden="true" />
+                        {t('apps.stop')}
+                    </Button>
+                ) : crashed ? (
+                    <Button
+                        variant="danger"
+                        size="md"
+                        onClick={onStart}
+                        className="h-11 min-w-30 gap-2"
+                    >
+                        <RotateCw className="stroke-[2.5]" aria-hidden="true" />
+                        {t('command.restart')}
+                    </Button>
+                ) : (
+                    <Button
+                        variant="success"
+                        size="md"
+                        onClick={onStart}
+                        disabled={!app.enabled}
+                        className="h-11 min-w-30 gap-2"
+                    >
+                        <Play className="fill-current stroke-0" aria-hidden="true" />
+                        {t('apps.start')}
+                    </Button>
+                )}
+                <IconButton
+                    aria-label={`${app.name} actions`}
+                    variant="secondary"
+                    onClick={onOpenMenu}
                 >
-                    <Play className="h-3 w-3 shrink-0 fill-current stroke-0" aria-hidden="true" />
-                    {t('apps.start')}
-                </Button>
-            )}
-
-            {/* Menu */}
-            <IconButton aria-label={`${app.name} actions`} variant="secondary" onClick={onOpenMenu}>
-                <MoreHorizontal className="h-4 w-4 stroke-[2.5]" />
-            </IconButton>
+                    <MoreHorizontal className="stroke-2" />
+                </IconButton>
+            </div>
         </div>
     )
 }

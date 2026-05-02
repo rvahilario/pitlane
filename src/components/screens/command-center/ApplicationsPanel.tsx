@@ -83,18 +83,20 @@ export function ApplicationsPanel({
                         />
                     </div>
                 ) : (
-                    apps.map((app) => (
-                        <AppCommandRow
-                            key={app.id}
-                            app={app}
-                            status={statuses.find((s) => s.app_id === app.id)}
-                            iconUrl={iconUrls[app.id]}
-                            onStart={() => onStartApp(app)}
-                            onStop={() => onStopApp(app)}
-                            onToggleAutoLaunch={(enabled) => onToggleAutoLaunch(app, enabled)}
-                            onToggleAutoStop={(stop) => onToggleAutoStop(app, stop)}
-                        />
-                    ))
+                    <div className="grid grid-cols-[auto_1fr_auto_auto]">
+                        {apps.map((app) => (
+                            <AppCommandRow
+                                key={app.id}
+                                app={app}
+                                status={statuses.find((s) => s.app_id === app.id)}
+                                iconUrl={iconUrls[app.id]}
+                                onStart={() => onStartApp(app)}
+                                onStop={() => onStopApp(app)}
+                                onToggleAutoLaunch={(enabled) => onToggleAutoLaunch(app, enabled)}
+                                onToggleAutoStop={(stop) => onToggleAutoStop(app, stop)}
+                            />
+                        ))}
+                    </div>
                 )}
             </div>
         </Panel>
