@@ -56,6 +56,7 @@
     --color-accent-solid: var(--color-aqua-500);
     --color-accent-solid-hover: var(--color-aqua-600);
     --color-on-accent: var(--color-aqua-1000);
+    --color-accent-tint: color-mix(in srgb, var(--color-accent) 10%, var(--color-base));
 
     --color-success: var(--color-green-400);
     --color-success-solid: var(--color-green-500);

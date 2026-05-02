@@ -75,7 +75,7 @@ export function AppCommandRow({
     return (
         <div
             className={cn(
-                'col-span-full grid grid-cols-subgrid h-app-row items-stretch border-b border-border last:border-b-0',
+                'col-span-full grid grid-cols-subgrid h-app-row items-stretch border-b border-border last:border-b-0 transition-colors hover:bg-accent-tint',
                 className,
             )}
             {...props}
