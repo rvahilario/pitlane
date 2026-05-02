@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DEFAULT_TAB, Sidebar, type Tab } from '@/components'
+import { DEFAULT_TAB, Sidebar, TAB, type Tab } from '@/components'
 import { AppShell, BottomStatusBar, TopBar } from '@/components/layout'
 import { AppsScreen, CommandCenterScreen, LogScreen, SettingsScreen } from '@/components/screens'
 import { useActiveProfile, useIRacingStatus, useAppStatuses } from '@/hooks'
@@ -18,6 +18,21 @@ function App() {
     }, [i18n.language])
 
     const sessionLabel = iRacingRunning ? t('status.iracing_open') : t('status.iracing_offline')
+
+    function renderScreen() {
+        switch (tab) {
+            case TAB.COMMAND:
+                return <CommandCenterScreen onNavigateToApps={() => setTab(TAB.APPS)} />
+            case TAB.APPS:
+                return <AppsScreen />
+            case TAB.LOGS:
+                return <LogScreen />
+            case TAB.SETTINGS:
+                return <SettingsScreen />
+            default:
+                return <CommandCenterScreen onNavigateToApps={() => setTab(TAB.APPS)} />
+        }
+    }
 
     return (
         <AppShell
@@ -40,12 +55,7 @@ function App() {
                 />
             }
         >
-            {tab === 'command' && (
-                <CommandCenterScreen onNavigateToApps={() => setTab('apps')} />
-            )}
-            {tab === 'apps' && <AppsScreen />}
-            {tab === 'logs' && <LogScreen />}
-            {tab === 'settings' && <SettingsScreen />}
+            {renderScreen()}
         </AppShell>
     )
 }
