@@ -42,6 +42,10 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
         api.forceKillApp(app.id).catch(() => {})
     }
 
+    function handleOpenAppActions(_app: ManagedApp) {
+        onNavigateToApps?.()
+    }
+
     function handleStartAll() {
         const runningIds = new Set(
             statuses
@@ -79,6 +83,7 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
                 onStartApp={handleStart}
                 onStopAll={handleStopAll}
                 onStopApp={handleStop}
+                onOpenAppActions={onNavigateToApps ? handleOpenAppActions : undefined}
                 onToggleAutoLaunch={toggleEnabled}
                 onToggleAutoStop={toggleStopWithIracing}
                 statuses={statuses}

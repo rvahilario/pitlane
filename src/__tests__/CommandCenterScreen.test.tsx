@@ -290,6 +290,17 @@ describe('CommandCenterScreen', () => {
         expect(api.forceKillApp).toHaveBeenCalledWith('running-2')
     })
 
+    it('opens app administration from the row actions button', async () => {
+        const onNavigateToApps = vi.fn()
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
+        render(<CommandCenterScreen onNavigateToApps={onNavigateToApps} />)
+
+        await screen.findByText('SimHub')
+        await userEvent.click(screen.getByRole('button', { name: 'SimHub actions' }))
+
+        expect(onNavigateToApps).toHaveBeenCalledOnce()
+    })
+
     it('does not render restart as a functional action for crashed apps', async () => {
         vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
         vi.mocked(api.getAppStatuses).mockResolvedValue([makeStatus('42', { type: 'crashed' })])
