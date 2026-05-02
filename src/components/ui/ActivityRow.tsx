@@ -1,28 +1,20 @@
-import { cva, type VariantProps } from 'class-variance-authority'
+import { AlertTriangle, CheckCircle2, Circle, MinusCircle } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
-const eventChip = cva(
-    'inline-flex min-w-20 justify-center rounded border px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-normal',
-    {
-        variants: {
-            variant: {
-                launch: 'border-success/40 bg-success/10 text-success',
-                stop: 'border-warning/45 bg-warning/10 text-warning',
-                iracing: 'border-accent/40 bg-accent/10 text-accent',
-                error: 'border-danger/45 bg-danger/10 text-danger',
-                info: 'border-border-strong bg-elevated text-text-secondary',
-            },
-        },
-        defaultVariants: {
-            variant: 'info',
-        },
-    },
-)
+const VARIANT_CONFIG = {
+    launch: { icon: CheckCircle2, className: 'text-success' },
+    stop: { icon: MinusCircle, className: 'text-text-muted' },
+    iracing: { icon: CheckCircle2, className: 'text-accent' },
+    error: { icon: AlertTriangle, className: 'text-danger' },
+    info: { icon: Circle, className: 'text-text-muted' },
+} as const
 
-export interface ActivityRowProps
-    extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof eventChip> {
+export type ActivityRowVariant = keyof typeof VARIANT_CONFIG
+
+export interface ActivityRowProps extends React.HTMLAttributes<HTMLDivElement> {
+    variant?: ActivityRowVariant
     time: React.ReactNode
-    event: React.ReactNode
+    event: string
     source?: React.ReactNode
     message?: React.ReactNode
 }
@@ -32,21 +24,27 @@ export function ActivityRow({
     event,
     source,
     message,
-    variant,
+    variant = 'info',
     className,
     ...props
 }: ActivityRowProps) {
+    const { icon: Icon, className: iconClass } = VARIANT_CONFIG[variant]
+
     return (
         <div
             className={cn(
-                'grid grid-cols-[5rem_5.5rem_minmax(6rem,10rem)_1fr] items-center gap-3 border-b border-border px-3 py-2 text-xs last:border-b-0',
+                'flex items-center gap-3 border-b border-border px-4 py-2.5 text-xs last:border-b-0',
                 className,
             )}
             {...props}
         >
-            <span className="font-mono text-text-muted">{time}</span>
-            <span className={eventChip({ variant })}>{event}</span>
-            <span className="min-w-0 truncate text-text-secondary">{source}</span>
+            <span className="w-20 shrink-0 font-mono text-text-muted">{time}</span>
+            <Icon
+                className={cn('h-3.5 w-3.5 shrink-0 stroke-[2.5]', iconClass)}
+                role="img"
+                aria-label={event}
+            />
+            <span className="w-24 shrink-0 font-medium text-text">{source}</span>
             <span className="min-w-0 truncate text-text-muted">{message}</span>
         </div>
     )

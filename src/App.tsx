@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DEFAULT_TAB, Sidebar, type Tab } from '@/components'
 import { AppShell, BottomStatusBar, TopBar } from '@/components/layout'
-import { AppsScreen, LogScreen, SettingsScreen } from '@/components/screens'
+import { AppsScreen, CommandCenterScreen, LogScreen, SettingsScreen } from '@/components/screens'
 import { useActiveProfile, useIRacingStatus, useAppStatuses } from '@/hooks'
 import { api } from '@/lib/api'
 
@@ -40,21 +40,13 @@ function App() {
                 />
             }
         >
-            {tab === 'command' && <PlaceholderScreen title={t('nav.command')} />}
+            {tab === 'command' && (
+                <CommandCenterScreen onNavigateToApps={() => setTab('apps')} />
+            )}
             {tab === 'apps' && <AppsScreen />}
             {tab === 'logs' && <LogScreen />}
             {tab === 'settings' && <SettingsScreen />}
         </AppShell>
-    )
-}
-
-function PlaceholderScreen({ title }: { title: string }) {
-    return (
-        <div className="flex h-full items-center justify-center p-6">
-            <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-muted">
-                {title}
-            </div>
-        </div>
     )
 }
 
