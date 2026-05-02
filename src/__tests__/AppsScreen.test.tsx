@@ -97,14 +97,13 @@ describe('AppsScreen', () => {
     it('should keep manual controls available when app auto-start is disabled', async () => {
         vi.mocked(api.getApps).mockResolvedValue([makeApp({ enabled: false })])
         render(<AppsScreen />)
-        const item = await screen.findByText('SimHub')
-        expect(item.closest('li')).not.toHaveClass('opacity-50')
+        await screen.findByText('SimHub')
         expect(screen.getByText(/disabled/i)).toBeInTheDocument()
-        expect(screen.getByTitle(/start/i)).not.toBeDisabled()
-        expect(screen.getByTitle(/edit/i)).not.toBeDisabled()
-        expect(screen.getByTitle(/delete/i)).not.toBeDisabled()
-        expect(screen.getByRole('switch', { name: /auto-start with iracing/i })).not.toBeDisabled()
-        expect(screen.getByRole('switch', { name: /stop with iracing/i })).toBeDisabled()
+        expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled()
+        expect(screen.getByRole('button', { name: 'SimHub edit' })).not.toBeDisabled()
+        expect(screen.getByRole('button', { name: 'SimHub delete' })).not.toBeDisabled()
+        expect(screen.getByRole('switch', { name: /SimHub auto-launch/i })).not.toBeDisabled()
+        expect(screen.getByRole('switch', { name: /SimHub auto-stop/i })).toBeDisabled()
     })
 
     it('should show start button when app is idle', async () => {
@@ -112,7 +111,7 @@ describe('AppsScreen', () => {
         vi.mocked(api.getAppStatuses).mockResolvedValue([makeStatus('1', { type: 'idle' })])
         render(<AppsScreen />)
         await screen.findByText('SimHub')
-        expect(screen.getByTitle(/start/i)).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
     })
 
     it('should show stop button when app is running', async () => {
@@ -122,7 +121,9 @@ describe('AppsScreen', () => {
         ])
         render(<AppsScreen />)
         await screen.findByText('SimHub')
-        await waitFor(() => expect(screen.getByTitle('Stop')).toBeInTheDocument())
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument(),
+        )
     })
 
     it('should show start button when app has crashed', async () => {
@@ -130,15 +131,19 @@ describe('AppsScreen', () => {
         vi.mocked(api.getAppStatuses).mockResolvedValue([makeStatus('1', { type: 'crashed' })])
         render(<AppsScreen />)
         await screen.findByText('SimHub')
-        await waitFor(() => expect(screen.getByTitle(/start/i)).toBeInTheDocument())
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument(),
+        )
     })
 
     it('should call forceLaunchApp when start is clicked', async () => {
         vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
         vi.mocked(api.getAppStatuses).mockResolvedValue([makeStatus('42', { type: 'idle' })])
         render(<AppsScreen />)
-        await waitFor(() => expect(screen.getByTitle(/start/i)).toBeInTheDocument())
-        await userEvent.click(screen.getByTitle(/start/i))
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument(),
+        )
+        await userEvent.click(screen.getByRole('button', { name: 'Start' }))
         expect(vi.mocked(api.forceLaunchApp)).toHaveBeenCalledWith('42')
     })
 
@@ -146,7 +151,7 @@ describe('AppsScreen', () => {
         vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '1', stop_with_iracing: true })])
         render(<AppsScreen />)
         await screen.findByText('SimHub')
-        const toggle = screen.getByRole('switch', { name: /stop with iracing/i })
+        const toggle = screen.getByRole('switch', { name: /SimHub auto-stop/i })
         expect(toggle).toHaveAttribute('aria-checked', 'true')
     })
 
@@ -154,7 +159,7 @@ describe('AppsScreen', () => {
         vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '1', stop_with_iracing: false })])
         render(<AppsScreen />)
         await screen.findByText('SimHub')
-        const toggle = screen.getByRole('switch', { name: /stop with iracing/i })
+        const toggle = screen.getByRole('switch', { name: /SimHub auto-stop/i })
         expect(toggle).toHaveAttribute('aria-checked', 'false')
     })
 
@@ -163,7 +168,7 @@ describe('AppsScreen', () => {
         vi.mocked(api.updateApp).mockResolvedValue(makeApp({ id: '42', stop_with_iracing: false }))
         render(<AppsScreen />)
         await screen.findByText('SimHub')
-        const toggle = screen.getByRole('switch', { name: /stop with iracing/i })
+        const toggle = screen.getByRole('switch', { name: /SimHub auto-stop/i })
         await userEvent.click(toggle)
         expect(vi.mocked(api.updateApp)).toHaveBeenCalledWith('42', { stop_with_iracing: false })
     })
@@ -189,8 +194,30 @@ describe('AppsScreen', () => {
             makeStatus('42', { type: 'running', pid: 99, restart_count: 0 }),
         ])
         render(<AppsScreen />)
-        await waitFor(() => expect(screen.getByTitle('Stop')).toBeInTheDocument())
-        await userEvent.click(screen.getByTitle('Stop'))
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument(),
+        )
+        await userEvent.click(screen.getByRole('button', { name: 'Stop' }))
         expect(vi.mocked(api.forceKillApp)).toHaveBeenCalledWith('42')
+    })
+
+    it('should open edit modal from row edit action', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
+        render(<AppsScreen />)
+
+        await screen.findByText('SimHub')
+        await userEvent.click(screen.getByRole('button', { name: 'SimHub edit' }))
+
+        expect(screen.getByRole('dialog')).toBeInTheDocument()
+    })
+
+    it('should open delete confirmation from row delete action', async () => {
+        vi.mocked(api.getApps).mockResolvedValue([makeApp({ id: '42' })])
+        render(<AppsScreen />)
+
+        await screen.findByText('SimHub')
+        await userEvent.click(screen.getByRole('button', { name: 'SimHub delete' }))
+
+        expect(screen.getByText(/Remove "SimHub"/)).toBeInTheDocument()
     })
 })

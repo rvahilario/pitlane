@@ -3,8 +3,9 @@ import { LayoutList, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { api, type ManagedApp, type NewApp } from '@/lib/api'
 import { useApps, useAppStatuses } from '@/hooks'
-import { Button, Toggle, EmptyState } from '@/components/ui'
-import { AppCard, AppFormModal, ConfirmDialog } from '@/components'
+import { AppCommandRow, Button, EmptyState, Panel, Toggle } from '@/components/ui'
+import { AppFormModal, ConfirmDialog } from '@/components'
+import { useAppIconUrls } from './command-center/useAppIconUrls'
 
 type ModalState = { type: 'add' } | { type: 'edit'; app: ManagedApp } | null
 
@@ -28,6 +29,7 @@ export function AppsScreen({ openAddApp = false, onOpenAddAppHandled }: AppsScre
     const [modal, setModal] = useState<ModalState>(null)
     const [confirmDelete, setConfirmDelete] = useState<ManagedApp | null>(null)
     const statuses = useAppStatuses()
+    const iconUrls = useAppIconUrls(apps)
 
     useEffect(() => {
         if (!openAddApp) return
@@ -91,21 +93,23 @@ export function AppsScreen({ openAddApp = false, onOpenAddAppHandled }: AppsScre
                     }
                 />
             ) : (
-                <ul className="flex flex-col gap-2">
+                <Panel className="grid grid-cols-[auto_1fr_auto_auto] overflow-hidden">
                     {apps.map((app) => (
-                        <AppCard
+                        <AppCommandRow
                             key={app.id}
                             app={app}
+                            iconUrl={iconUrls[app.id]}
                             status={statuses.find((s) => s.app_id === app.id)}
                             onStart={() => api.forceLaunchApp(app.id)}
                             onStop={() => api.forceKillApp(app.id)}
+                            allowStartWhenDisabled
+                            onToggleAutoLaunch={(enabled) => toggleEnabled(app, enabled)}
+                            onToggleAutoStop={(stop) => toggleStopWithIracing(app, stop)}
                             onEdit={() => setModal({ type: 'edit', app })}
                             onDelete={() => setConfirmDelete(app)}
-                            onToggleEnabled={(enabled) => toggleEnabled(app, enabled)}
-                            onToggleStopWithIracing={(stop) => toggleStopWithIracing(app, stop)}
                         />
                     ))}
-                </ul>
+                </Panel>
             )}
 
             {modal && (

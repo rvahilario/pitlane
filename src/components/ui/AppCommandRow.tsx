@@ -1,4 +1,14 @@
-import { Activity, AlertTriangle, Ban, Clock, MoreHorizontal, Play, Square } from 'lucide-react'
+import {
+    Activity,
+    AlertTriangle,
+    Ban,
+    Clock,
+    MoreHorizontal,
+    Pencil,
+    Play,
+    Square,
+    Trash2,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import type { AppStatus, ManagedApp } from '@/lib/api'
@@ -34,6 +44,9 @@ interface AppCommandRowProps extends React.HTMLAttributes<HTMLDivElement> {
     onStop: () => void
     onToggleAutoLaunch: (enabled: boolean) => void
     onToggleAutoStop: (enabled: boolean) => void
+    allowStartWhenDisabled?: boolean
+    onEdit?: () => void
+    onDelete?: () => void
     onOpenMenu?: () => void
 }
 
@@ -45,6 +58,9 @@ export function AppCommandRow({
     onStop,
     onToggleAutoLaunch,
     onToggleAutoStop,
+    allowStartWhenDisabled = false,
+    onEdit,
+    onDelete,
     onOpenMenu,
     className,
     ...props
@@ -139,14 +155,32 @@ export function AppCommandRow({
                         variant="success"
                         size="md"
                         onClick={onStart}
-                        disabled={!app.enabled}
+                        disabled={!app.enabled && !allowStartWhenDisabled}
                         className="h-11 min-w-30 gap-2"
                     >
                         <Play className="fill-current stroke-0" aria-hidden="true" />
                         {t('apps.start')}
                     </Button>
                 )}
-                {onOpenMenu && (
+                {onEdit && (
+                    <IconButton
+                        aria-label={`${app.name} edit`}
+                        variant="secondary"
+                        onClick={onEdit}
+                    >
+                        <Pencil className="stroke-2" />
+                    </IconButton>
+                )}
+                {onDelete && (
+                    <IconButton
+                        aria-label={`${app.name} delete`}
+                        variant="danger"
+                        onClick={onDelete}
+                    >
+                        <Trash2 className="stroke-2" />
+                    </IconButton>
+                )}
+                {!onEdit && !onDelete && onOpenMenu && (
                     <IconButton
                         aria-label={`${app.name} actions`}
                         variant="secondary"
