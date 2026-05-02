@@ -32,7 +32,7 @@ export function LanguageSelector({ variant = 'default' }: LanguageSelectorProps)
                             variant === 'compact' ? 'w-3 h-3' : 'w-3.5 h-3.5',
                         )}
                     />
-                    <span className="text-xs">
+                    <span className="text-md">
                         {variant === 'compact' ? SHORT[current] : LABELS[current]}
                     </span>
                     <ChevronDown

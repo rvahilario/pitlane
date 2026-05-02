@@ -31,7 +31,7 @@ export function ThemeSelector({ variant = 'default' }: ThemeSelectorProps) {
                             variant === 'compact' ? 'w-3 h-3' : 'w-3.5 h-3.5',
                         )}
                     />
-                    <span className="text-xs">
+                    <span className="text-md">
                         {variant === 'compact' ? SHORT[current] : t(`settings.themes.${current}`)}
                     </span>
                     <ChevronDown

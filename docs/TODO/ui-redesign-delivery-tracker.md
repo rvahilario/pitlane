@@ -53,7 +53,8 @@ Fora de escopo:
 | [x] | UI-01 | Componentes base do redesign | Criar/evoluir `IconButton`, `StatusPill`, `Panel`, `MetricTile`, `Toolbar`, `ActivityRow` sem trocar telas ainda | `src/components/ui`, `src/components/layout` | Testes unitários dos componentes novos; `npm run test` | 2026-05-01 |
 | [x] | UI-02 | Novo modelo de navegação | Centralizar o modelo de tabs e deixar o runtime V0 apenas com `command`, `apps`, `logs`, `settings`; `profiles` e `automation` ficam somente no roadmap futuro | `Sidebar`, `App.tsx`, i18n | Teste de tabs; confirmar que tabs futuras e `Integrations` não aparecem | 2026-05-01 |
 | [x] | UI-03 | App shell V0 | Introduzir `AppShell`, `TopBar` e `BottomStatusBar`, preservando telas existentes dentro do novo layout | `App.tsx`, componentes de shell | Build e screenshot manual/Playwright do shell | 2026-05-01 |
-| [ ] | UI-04 | Command Center estrutural | Criar `CommandCenterScreen` com hero/status, resumo de apps, lista compacta e recent activity usando dados reais | nova screen, hooks existentes, i18n | Teste dos cálculos running/idle/crashed/disabled/ready | |
+| [x] | UI-04 | Command Center estrutural | Criar `CommandCenterScreen` com hero/status, resumo de apps, lista compacta e recent activity usando dados reais | nova screen, hooks existentes, i18n | Teste dos cálculos running/idle/crashed/disabled/ready | 2026-05-01 |
+| [x] | UI-04B | Remover versão de apps | Remover placeholder `v--` e manter a identidade do app baseada em nome e ícone, sem criar campo ou extração de versão no backend | `AppCommandRow`, testes de UI, docs do redesign | `npm run test -- AppCommandRow` | 2026-05-02 |
 | [ ] | UI-05 | Ações do Command Center | Conectar start/stop por app, bulk start/stop se implementado via APIs existentes, toggles de auto-launch e auto-stop | `CommandCenterScreen`, `api`, hooks | Mocks de API em testes; fluxo manual com app simples | |
 | [ ] | UI-06 | Apps administrativo | Reorganizar `AppsScreen` como biblioteca administrativa, mantendo add/edit/delete/start/stop e modal atual | `AppsScreen`, `AppCard`, `AppFormModal` | Testes existentes de apps continuam passando | |
 | [ ] | UI-07 | Modal de app por seções | Refatorar add/edit para Basic, Launch, Recovery e Advanced com colapsáveis, validação e acessibilidade | `AppFormModal`, inputs/layout | Teste add/edit; teclado; erro com `role=alert` | |
@@ -71,14 +72,15 @@ Fora de escopo:
 4. UI-02
 5. UI-03
 6. UI-04
-7. UI-05
-8. UI-06
-9. UI-08
-10. UI-09
-11. UI-07
-12. UI-10
-13. UI-11
-14. UI-12
+7. UI-04B
+8. UI-05
+9. UI-06
+10. UI-08
+11. UI-09
+12. UI-07
+13. UI-10
+14. UI-11
+15. UI-12
 
 Motivo da ordem: primeiro estabilizar tokens e padrão de styling, depois criar componentes e shell; em seguida entregar o Command Center; depois adaptar telas existentes; por fim refinar modal, placeholders e acessibilidade.
 
@@ -106,3 +108,7 @@ Motivo da ordem: primeiro estabilizar tokens e padrão de styling, depois criar 
 | 2026-05-01 | Componentes base criados antes da troca de telas | `IconButton`, `StatusPill`, `Panel`, `MetricTile`, `Toolbar`, `ActivityRow` e `AppCommandRow` foram adicionados sem integrar telas existentes. |
 | 2026-05-01 | Navegação V0 atualizada sem `Integrations` | Runtime V0 usa apenas `command`, `apps`, `logs`, `settings` via constants centralizadas; `profiles` e `automation` permanecem somente no roadmap futuro. |
 | 2026-05-01 | App shell V0 separado das telas | `AppShell`, `TopBar` e `BottomStatusBar` concentram layout, perfil ativo e status operacional sem alterar as telas existentes. |
+| 2026-05-01 | Command Center estrutural com ações por app já conectadas | Per-app start/stop e toggles foram conectados em UI-04 em vez de UI-05; bulk start/stop permanece em UI-05. `computeAppSummary` e `computeReadiness` exportadas como funções puras para teste isolado. |
+| 2026-05-02 | `AppCommandRow` migrado para CSS subgrid | Cada row era um grid independente; tracks `auto` resolviam por row, causando desalinhamento de colunas. Solução: parent grid em `ApplicationsPanel` + `grid-cols-subgrid` nos rows. Layout final: `[auto 1fr auto auto]` — identity auto, status absorve espaço livre, toggles+actions content-sized à direita. |
+| 2026-05-02 | Tamanho de ícones centralizado em Button/IconButton | `[&_svg]` por variante de size elimina `h-*/w-*` nos call sites e garante consistência global. |
+| 2026-05-02 | Versão de apps fora do V0 | `ManagedApp` não possui `version` e extrair versão de executáveis adicionaria custo e complexidade sem valor claro para o Command Center; UI-04B remove o placeholder `v--` em vez de criar suporte backend. |

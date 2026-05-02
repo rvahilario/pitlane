@@ -62,6 +62,44 @@
       "saved": "Saved"
     }
   },
+  "command": {
+    "readiness": {
+      "ready": "Ready for session",
+      "needs_attention": "Needs attention",
+      "no_iracing": "iRacing not detected"
+    },
+    "iracing_detected": "Detected",
+    "iracing_offline": "Not detected",
+    "ready": "READY",
+    "automation": "Automation",
+    "auto_launch": "Auto-launch",
+    "auto_stop": "Auto-stop",
+    "on": "ON",
+    "off": "OFF",
+    "start_all": "Start All",
+    "stop_all": "Stop All",
+    "restart": "Restart",
+    "add_app": "Add App",
+    "filters": "Filters",
+    "clear_activity": "Clear",
+    "metrics": {
+      "running": "Running",
+      "crashed": "Crashed",
+      "idle": "Idle",
+      "disabled": "Disabled",
+      "ready": "Ready"
+    },
+    "apps_panel": "Applications",
+    "no_apps": "No apps configured",
+    "no_apps_action": "Add your first app",
+    "activity_panel": "Recent Activity",
+    "log_events": {
+      "launch": "LAUNCH",
+      "stop": "STOP",
+      "iracing_start": "iRACING ON",
+      "iracing_stop": "iRACING OFF"
+    }
+  },
   "common": {
     "cancel": "Cancel"
   },

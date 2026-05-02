@@ -33,7 +33,7 @@ Tela de gerenciamento da biblioteca de apps cadastrados.
 Conteúdo:
 
 - Lista completa de apps
-- Nome, versão, caminho do executável, argumentos, working directory
+- Nome, caminho do executável, argumentos, working directory
 - Status cadastral: ativo/desativado
 - Configurações individuais de execução
 - Regras de start/stop por app
@@ -203,7 +203,7 @@ Funcionalidades:
 - Trocar idioma
 - Ativar/desativar launch on startup
 - Definir minimizar ao fechar
-- Ver versão do app
+- Ver versão do Pitlane
 - Checar atualização
 - Exportar/importar configuração
 - Resetar configurações

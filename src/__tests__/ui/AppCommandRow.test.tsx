@@ -41,7 +41,7 @@ describe('AppCommandRow', () => {
         )
 
         expect(screen.getByText('SimHub')).toBeInTheDocument()
-        expect(screen.getByText('C:\\SimHub\\SimHub.exe')).toBeInTheDocument()
+        expect(screen.queryByText('v--')).not.toBeInTheDocument()
         expect(screen.getByText('Idle')).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
     })

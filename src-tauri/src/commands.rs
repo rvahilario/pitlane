@@ -7,7 +7,9 @@ use tauri_plugin_autostart::ManagerExt;
 use crate::config::save_config;
 use crate::controller::{AppStatus, Controller, LogEntry};
 use crate::models::{AppConfig, ManagedApp, Profile, Settings};
+use crate::monitor::{PROCESS_IRACING_SIM, PROCESS_IRACING_UI};
 use crate::{MENU_ITEM_QUIT, MENU_ITEM_SHOW, TRAY_ID};
+use sysinfo::{ProcessesToUpdate, System};
 
 #[derive(Debug, Deserialize)]
 pub struct NewApp {
@@ -221,6 +223,27 @@ pub fn get_iracing_status(state: State<ControllerState>) -> bool {
 }
 
 #[tauri::command]
+pub fn get_iracing_exe_path() -> Option<String> {
+    let mut sys = System::new();
+    sys.refresh_processes(ProcessesToUpdate::All, true);
+
+    sys.processes().values().find_map(|process| {
+        let name = process.name().to_string_lossy();
+        let bare_name = name.trim_end_matches(".exe");
+        let is_iracing = name.eq_ignore_ascii_case(PROCESS_IRACING_UI)
+            || name.eq_ignore_ascii_case(PROCESS_IRACING_SIM)
+            || bare_name.eq_ignore_ascii_case("iRacingUI")
+            || bare_name.eq_ignore_ascii_case("iRacingSim64DX11");
+
+        if is_iracing {
+            process.exe().map(|path| path.to_string_lossy().into_owned())
+        } else {
+            None
+        }
+    })
+}
+
+#[tauri::command]
 pub fn get_app_statuses(state: State<ControllerState>) -> Vec<AppStatus> {
     state.0.app_statuses()
 }
@@ -296,4 +319,3 @@ pub fn delete_app(state: State<ConfigState>, app_id: String) -> Result<(), Strin
 #[cfg(test)]
 #[path = "commands_test.rs"]
 mod tests;
-
