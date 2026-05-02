@@ -2,7 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/cn'
 
 const iconButton = cva(
-    'inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:shrink-0',
     {
         variants: {
             variant: {
@@ -13,8 +13,8 @@ const iconButton = cva(
                 accent: 'border-accent-solid text-accent hover:bg-accent/10',
             },
             size: {
-                sm: 'h-11 w-11',
-                md: 'h-12 w-12',
+                sm: 'h-11 w-11 [&_svg]:h-6 [&_svg]:w-6',
+                md: 'h-12 w-12 [&_svg]:h-6 [&_svg]:w-6',
             },
         },
         defaultVariants: {
