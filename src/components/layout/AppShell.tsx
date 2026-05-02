@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn'
 interface AppShellProps {
     topBar: React.ReactNode
     sidebar: React.ReactNode
-    bottomBar: React.ReactNode
+    bottomBar?: React.ReactNode
     children: React.ReactNode
     className?: string
 }
