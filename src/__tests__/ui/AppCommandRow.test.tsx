@@ -99,6 +99,30 @@ describe('AppCommandRow', () => {
         expect(screen.queryByRole('button', { name: 'SimHub actions' })).not.toBeInTheDocument()
     })
 
+    it('renders edit and delete actions when handlers are provided', async () => {
+        const user = userEvent.setup()
+        const onEdit = vi.fn()
+        const onDelete = vi.fn()
+        render(
+            <AppCommandRow
+                app={app}
+                onStart={vi.fn()}
+                onStop={vi.fn()}
+                onToggleAutoLaunch={vi.fn()}
+                onToggleAutoStop={vi.fn()}
+                onEdit={onEdit}
+                onDelete={onDelete}
+            />,
+        )
+
+        await user.click(screen.getByRole('button', { name: 'SimHub edit' }))
+        await user.click(screen.getByRole('button', { name: 'SimHub delete' }))
+
+        expect(onEdit).toHaveBeenCalledOnce()
+        expect(onDelete).toHaveBeenCalledOnce()
+        expect(screen.queryByRole('button', { name: 'SimHub actions' })).not.toBeInTheDocument()
+    })
+
     it('calls action handlers', async () => {
         const user = userEvent.setup()
         const onStart = vi.fn()
