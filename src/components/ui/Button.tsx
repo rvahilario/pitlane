@@ -14,8 +14,8 @@ const button = cva(
                 icon: 'rounded p-1.5 text-text-secondary hover:text-text hover:bg-elevated',
             },
             size: {
-                sm: 'px-2.5 py-1 text-xs [&_svg]:h-4 [&_svg]:w-4',
-                md: 'px-3 py-1.5 text-sm [&_svg]:h-5 [&_svg]:w-5',
+                sm: 'px-2.5 py-1 text-sm [&_svg]:h-4 [&_svg]:w-4',
+                md: 'px-3 py-1.5 text-md [&_svg]:h-5 [&_svg]:w-5',
             },
         },
         defaultVariants: {
