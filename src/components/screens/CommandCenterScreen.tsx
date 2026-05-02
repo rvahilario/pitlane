@@ -43,7 +43,7 @@ export function CommandCenterScreen({ onNavigateToApps }: CommandCenterScreenPro
     }
 
     return (
-        <div className="flex h-full min-h-0 flex-col gap-panel-gap overflow-hidden p-content-pad">
+        <div className="flex h-full min-h-0 flex-col gap-panel-gap overflow-hidden p-content-pad pb-4">
             <ReadinessHero
                 activeProfileName={activeProfile?.name}
                 autoLaunchOn={autoLaunchOn}
