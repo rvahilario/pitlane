@@ -102,6 +102,7 @@ export const api = {
     getAutoStop: () => invoke<boolean>('get_auto_stop'),
     setAutoStop: (enabled: boolean) => invoke<void>('set_auto_stop', { enabled }),
     getIRacingStatus: () => invoke<boolean>('get_iracing_status'),
+    getIRacingExePath: () => invoke<string | null>('get_iracing_exe_path'),
     getAppStatuses: () => invoke<AppStatus[]>('get_app_statuses'),
     forceLaunchApp: (appId: string) => invoke<void>('force_launch_app', { appId }),
     forceKillApp: (appId: string) => invoke<void>('force_kill_app', { appId }),

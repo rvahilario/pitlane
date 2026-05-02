@@ -145,6 +145,7 @@ pub fn run() {
             commands::set_auto_stop,
             commands::set_tray_labels,
             commands::get_autostart_enabled,
+            commands::get_iracing_exe_path,
             commands::extract_icon,
         ])
         .run(tauri::generate_context!())
