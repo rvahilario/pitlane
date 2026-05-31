@@ -173,6 +173,21 @@ fn should_return_stub_pid_when_process_is_still_alive() {
 }
 
 #[test]
+fn should_prefer_real_pid_when_stub_is_alive_but_handoff_detected() {
+    // Squirrel scenario: stub is alive temporarily, but exe_path search
+    // finds the real process in a versioned subdirectory.
+    let pid = resolve_real_pid_impl(
+        1234,
+        None,
+        "C:/Kapps/Kapps.exe",
+        |_| true,       // stub is alive
+        |_| vec![],     // no track name
+        |_| vec![5678], // real process found via Squirrel subdir
+    );
+    assert_eq!(pid, 5678, "should return real PID, not the temporary stub");
+}
+
+#[test]
 fn should_find_by_track_name_when_stub_dies() {
     let pid = resolve_real_pid_impl(
         1234,
