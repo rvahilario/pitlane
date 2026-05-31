@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
 import { Pencil, Play, Square, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
-import { api, type AppStatus, type ManagedApp } from '@/lib/api'
+import type { AppStatus, ManagedApp } from '@/lib/api'
 import { StatusBadge, Button, Toggle } from '@/components/ui'
 import { AppAvatar } from '@/components/AppAvatar'
+import { useIconUrl } from './screens/command-center/useAppIconUrls'
 
 interface AppCardProps {
     app: ManagedApp
@@ -36,13 +36,7 @@ export function AppCard({
     const running = status?.state.type === 'running'
     const detail = pidDetail(status)
     const appDisabled = !app.enabled
-    const [iconUrl, setIconUrl] = useState<string | undefined>(undefined)
-
-    useEffect(() => {
-        api.extractIcon(app.exe_path).then((b64) => {
-            setIconUrl(b64 ? `data:image/png;base64,${b64}` : undefined)
-        })
-    }, [app.exe_path])
+    const iconUrl = useIconUrl(app.exe_path)
 
     const statusLabel = !app.enabled
         ? t('apps.status.disabled')

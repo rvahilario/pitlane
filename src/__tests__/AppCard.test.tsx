@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { AppCard } from '@/components/AppCard'
 import { api } from '@/lib/api'
+import { resetAppIconUrlCacheForTests } from '@/components/screens/command-center/useAppIconUrls'
 import type { ManagedApp, AppStatus } from '@/lib/api'
 
 vi.mock('@/lib/api')
@@ -27,6 +28,7 @@ const mockApp: ManagedApp = {
 const noop = vi.fn()
 
 beforeEach(() => {
+    resetAppIconUrlCacheForTests()
     vi.mocked(api.extractIcon).mockResolvedValue(null)
 })
 
