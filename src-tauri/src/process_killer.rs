@@ -85,9 +85,17 @@ pub fn kill_by_exe_path(exe_path: &str, grace_secs: f64) {
     }
 }
 
+/// Returns the prefix of an executable name (before the first separator).
+///
+/// "lghub_system_tray.exe" → "lghub"
+/// "SimHub.exe"            → "SimHub"
+fn exe_prefix(name: &str) -> Option<&str> {
+    name.split(|c: char| c == '_' || c == '-').next()
+}
+
 /// Kills all processes matching `exe_path`, plus their entire child process trees.
-/// Also kills every process with the same image name (e.g. G Hub spawns multiple
-/// independent lghub.exe instances) via `taskkill /F /IM`.
+/// Also kills every process with the same prefix (e.g. G Hub spawns multiple
+/// independent lghub_*.exe instances) via `taskkill /F /FI "IMAGENAME eq prefix*"`.
 pub fn kill_tree_by_exe_path(exe_path: &str, grace_secs: f64) {
     let pids: Vec<u32> = find_pids_by_exe_path(exe_path);
 
@@ -96,12 +104,19 @@ pub fn kill_tree_by_exe_path(exe_path: &str, grace_secs: f64) {
     }
 
     // Fallback: some apps (e.g. G Hub) spawn sibling processes that are not
-    // children of the tracked PID. taskkill /F /IM catches every process with
-    // the same executable name regardless of hierarchy.
+    // children of the tracked PID. Use a wildcard filter to catch every process
+    // whose image name starts with the same prefix (e.g. lghub*).
     if let Some(file_name) = Path::new(exe_path).file_name().and_then(|n| n.to_str()) {
         let _ = std::process::Command::new("taskkill")
             .args(["/F", "/IM", file_name])
             .output();
+
+        if let Some(prefix) = exe_prefix(file_name) {
+            let filter = format!("IMAGENAME eq {prefix}*");
+            let _ = std::process::Command::new("taskkill")
+                .args(["/F", "/FI", &filter])
+                .output();
+        }
     }
 }
 
