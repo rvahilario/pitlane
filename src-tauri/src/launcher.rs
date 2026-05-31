@@ -122,8 +122,13 @@ fn launch_elevated(exe_path: &str, args: &[String], cwd: &str) -> Result<u32, St
     }
 }
 
-/// Spawns the process described by `app`. Returns the PID on success.
-pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
+/// Internal launch with injectable spawner and elevator for testability.
+pub fn launch_with_deps(
+    app: &ManagedApp,
+    mut spawn: impl FnMut(&mut std::process::Command) -> Result<u32, std::io::Error>,
+    mut elevate: impl FnMut(&str, &[String], &str) -> Result<u32, String>,
+) -> Result<u32, LaunchError> {
+    #[cfg(windows)]
     use std::os::windows::process::CommandExt;
     use std::process::{Command, Stdio};
 
@@ -155,9 +160,8 @@ pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
     // TODO: spawn_minimized() is disabled — causes issues with some apps.
     // Re-enable when fixed: if app.start_minimized { return spawn_minimized(cmd, cwd); }
 
-    match command.spawn() {
-        Ok(c) => {
-            let pid = c.id();
+    match spawn(&mut command) {
+        Ok(pid) => {
             #[cfg(debug_assertions)]
             println!("[launcher] spawn OK — stub_pid={pid}");
             Ok(pid)
@@ -168,7 +172,7 @@ pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
             if e.raw_os_error() == Some(740) {
                 #[cfg(debug_assertions)]
                 println!("[launcher] attempting elevated launch (runas)…");
-                let pid = launch_elevated(&cmd[0], &cmd[1..], cwd)
+                let pid = elevate(&cmd[0], &cmd[1..], cwd)
                     .map_err(LaunchError::SpawnFailed)?;
                 #[cfg(debug_assertions)]
                 println!("[launcher] elevated launch OK — pid={pid}");
@@ -178,6 +182,15 @@ pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
             }
         }
     }
+}
+
+/// Spawns the process described by `app`. Returns the PID on success.
+pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
+    launch_with_deps(
+        app,
+        |cmd| cmd.spawn().map(|c| c.id()),
+        |exe, args, cwd| launch_elevated(exe, args, cwd),
+    )
 }
 
 // ── Stub launcher / child process resolution ─────────────────────────────────
