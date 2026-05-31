@@ -46,7 +46,7 @@ export function ActivityRow({
                 aria-label={event}
             />
             <span className="w-24 shrink-0 font-medium text-text">{source}</span>
-            <span className="min-w-0 truncate text-text-muted">{message}</span>
+            <span className={cn('min-w-0 truncate', iconClass)}>{message}</span>
         </div>
     )
 }
