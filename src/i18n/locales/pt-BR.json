@@ -50,6 +50,7 @@
       "startup_delay": "Atraso de inicialização (segundos)",
       "args": "Argumentos",
       "working_dir": "Diretório de trabalho",
+      "working_dir_hint": "Pasta onde o app será executado. Se vazio, usa a pasta do executável.",
       "restart_on_crash": "Reiniciar ao travar",
       "max_retries": "Máximo de tentativas",
       "track_process_name": "Rastrear por nome de processo",

@@ -50,6 +50,7 @@
       "startup_delay": "Startup delay (seconds)",
       "args": "Arguments",
       "working_dir": "Working directory",
+      "working_dir_hint": "Folder where the app runs. If empty, uses the folder containing the executable.",
       "restart_on_crash": "Restart on crash",
       "max_retries": "Max retries",
       "track_process_name": "Track process name",

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, ChevronDown, FolderOpen, X } from 'lucide-react'
+import { Check, ChevronDown, FolderOpen, Info, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { type ManagedApp, type NewApp } from '@/lib/api'
@@ -199,7 +199,20 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                             <TextInput value={form.args} onChange={(v) => patch('args', v)} mono />
                         </FormField>
 
-                        <FormField label={t('apps.form.working_dir')} id="app-form-working-dir">
+                        <FormField
+                            label={
+                                <span className="flex items-center gap-1">
+                                    {t('apps.form.working_dir')}
+                                    <span
+                                        title={t('apps.form.working_dir_hint')}
+                                        className="inline-flex cursor-help"
+                                    >
+                                        <Info className="w-3 h-3 text-text-muted" />
+                                    </span>
+                                </span>
+                            }
+                            id="app-form-working-dir"
+                        >
                             <TextInput
                                 id="app-form-working-dir"
                                 value={form.working_dir}

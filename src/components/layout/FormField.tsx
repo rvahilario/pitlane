@@ -1,5 +1,5 @@
 interface FormFieldProps {
-    label: string
+    label: React.ReactNode
     hint?: string
     id?: string
     error?: string
