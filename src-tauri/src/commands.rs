@@ -301,8 +301,14 @@ pub fn update_app(
 }
 
 #[tauri::command]
-pub fn extract_icon(state: State<IconCacheState>, exe_path: String) -> Option<String> {
-    crate::icon_extractor::extract(&exe_path, &state.0)
+pub async fn extract_icon(
+    state: State<'_, IconCacheState>,
+    exe_path: String,
+) -> Result<Option<String>, String> {
+    let cache = state.0.clone();
+    tauri::async_runtime::spawn_blocking(move || crate::icon_extractor::extract(&exe_path, &cache))
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

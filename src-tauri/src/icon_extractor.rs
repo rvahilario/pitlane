@@ -23,6 +23,9 @@ pub fn extract(exe_path: &str, cache: &IconCache) -> Option<String> {
 }
 
 fn run_powershell(exe_path: &str) -> Option<String> {
+    #[cfg(windows)]
+    use std::os::windows::process::CommandExt;
+
     let escaped = exe_path.replace('\'', "''");
     let script = format!(
         "try {{ \
@@ -38,9 +41,22 @@ fn run_powershell(exe_path: &str) -> Option<String> {
          }} catch {{ Write-Error $_.Exception.Message; exit 99 }}"
     );
 
-    let output = std::process::Command::new("powershell.exe")
+    #[cfg(windows)]
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+    let mut command = std::process::Command::new("powershell.exe");
+    command
         .args(["-NonInteractive", "-NoProfile", "-Command", &script])
-        .output();
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    #[cfg(windows)]
+    {
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = command.output();
 
     match output {
         Err(e) => {
@@ -62,4 +78,3 @@ fn run_powershell(exe_path: &str) -> Option<String> {
 #[cfg(test)]
 #[path = "icon_extractor_test.rs"]
 mod tests;
-
