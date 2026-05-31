@@ -188,6 +188,7 @@ pub struct Controller {
     iracing_online: Arc<AtomicBool>,
     auto_stop: Arc<AtomicBool>,
     sink: Arc<LogSink>,
+    jobs: Arc<Mutex<HashMap<String, process_killer::ProcessJob>>>,
     _monitor: std::sync::OnceLock<Monitor>,
 }
 
@@ -229,6 +230,7 @@ impl Controller {
             iracing_online: Arc::clone(&iracing_online),
             auto_stop: Arc::clone(&auto_stop),
             sink,
+            jobs: Arc::new(Mutex::new(HashMap::new())),
             _monitor: std::sync::OnceLock::new(),
         });
 
@@ -323,6 +325,7 @@ impl Controller {
             let logic = Arc::clone(&self.logic);
             let watchdog = Arc::clone(&self.watchdog);
             let sink = Arc::clone(&self.sink);
+            let jobs = Arc::clone(&self.jobs);
 
             thread::spawn(move || {
                 if app.startup_delay_secs > 0.0 {
@@ -335,6 +338,10 @@ impl Controller {
                         let pid = launcher::resolve_real_pid(stub_pid, &app);
                         #[cfg(debug_assertions)]
                         println!("[controller] '{}' pid={pid}", app.name);
+                        if let Ok(job) = process_killer::ProcessJob::new() {
+                            let _ = job.assign(pid);
+                            jobs.lock().unwrap().insert(app.id.clone(), job);
+                        }
                         watchdog.watch(app.clone(), pid);
                         logic.lock().unwrap().on_app_launched(&app.id, pid);
                         sink.push(
@@ -385,6 +392,7 @@ impl Controller {
             ids
         };
 
+        let jobs = Arc::clone(&self.jobs);
         let handles: Vec<_> = ids_to_kill
             .iter()
             .filter_map(|app_id| {
@@ -399,10 +407,15 @@ impl Controller {
                     .find(|a| a.id == *app_id)
                     .cloned()?;
                 let sink = Arc::clone(&self.sink);
+                let jobs = Arc::clone(&jobs);
 
                 Some(thread::spawn(move || {
-                    let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
-                    kill_app(&app, grace);
+                    if let Some(job) = jobs.lock().unwrap().remove(&app.id) {
+                        job.kill_all();
+                    } else {
+                        let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
+                        kill_app(&app, grace);
+                    }
                     sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
                 }))
             })
@@ -452,6 +465,10 @@ impl Controller {
 
         let stub_pid = launcher::launch(&app).map_err(|e| e.to_string())?;
         let pid = launcher::resolve_real_pid(stub_pid, &app);
+        if let Ok(job) = process_killer::ProcessJob::new() {
+            let _ = job.assign(pid);
+            self.jobs.lock().unwrap().insert(app.id.clone(), job);
+        }
         self.watchdog.watch(app.clone(), pid);
         self.logic.lock().unwrap().on_app_launched(app_id, pid);
         Ok(())
@@ -467,7 +484,9 @@ impl Controller {
         }
         self.watchdog.unwatch(app_id);
 
-        if let Some(app) = self
+        if let Some(job) = self.jobs.lock().unwrap().remove(app_id) {
+            job.kill_all();
+        } else if let Some(app) = self
             .config
             .lock()
             .unwrap()
@@ -477,6 +496,16 @@ impl Controller {
             .cloned()
         {
             kill_app(&app, DEFAULT_GRACE_SECS);
+        }
+
+        if let Some(app) = self
+            .config
+            .lock()
+            .unwrap()
+            .apps
+            .iter()
+            .find(|a| a.id == app_id)
+        {
             self.sink
                 .push(LogKind::Stop, Some(app.name.clone()), String::new());
         }

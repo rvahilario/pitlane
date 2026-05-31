@@ -314,3 +314,86 @@ pub fn graceful_kill(pid: u32, grace_secs: f64) {
         force_kill(pid);
     }
 }
+
+// ── Windows Job Objects ──────────────────────────────────────────────────────
+
+/// A Windows Job Object that automatically kills all assigned processes
+/// when the handle is closed (KILL_ON_JOB_CLOSE).
+pub struct ProcessJob {
+    handle: windows::Win32::Foundation::HANDLE,
+}
+
+// Job Object handles are thread-safe in Windows; these are just opaque
+// pointers and all Win32 Job Object APIs are safe to call concurrently.
+unsafe impl Send for ProcessJob {}
+unsafe impl Sync for ProcessJob {}
+
+impl ProcessJob {
+    /// Creates a new Job Object configured to kill all processes on close.
+    pub fn new() -> Result<Self, String> {
+        use windows::Win32::System::JobObjects::{
+            CreateJobObjectW, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, SetInformationJobObject,
+        };
+        use windows::Win32::System::JobObjects::JobObjectExtendedLimitInformation;
+
+        let handle = unsafe {
+            CreateJobObjectW(None, None).map_err(|e| e.to_string())?
+        };
+
+        let mut info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
+        info.BasicLimitInformation.LimitFlags =
+            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+        unsafe {
+            SetInformationJobObject(
+                handle,
+                JobObjectExtendedLimitInformation,
+                &info as *const _ as *const _,
+                std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            )
+            .map_err(|e| e.to_string())?;
+        }
+
+        Ok(Self { handle })
+    }
+
+    /// Assigns a running process (by PID) to this Job Object.
+    pub fn assign(&self, pid: u32) -> Result<(), String> {
+        use windows::Win32::Foundation::CloseHandle;
+        use windows::Win32::System::JobObjects::AssignProcessToJobObject;
+        use windows::Win32::System::Threading::{OpenProcess, PROCESS_TERMINATE};
+
+        let proc_handle = unsafe {
+            match OpenProcess(PROCESS_TERMINATE, false, pid) {
+                Ok(h) => h,
+                Err(_) => return Err(format!("failed to open process {pid}")),
+            }
+        };
+
+        let result = unsafe {
+            AssignProcessToJobObject(self.handle, proc_handle)
+                .map_err(|e| e.to_string())
+        };
+
+        unsafe {
+            let _ = CloseHandle(proc_handle);
+        }
+
+        result
+    }
+
+    /// Closes the Job handle, causing Windows to terminate all processes in the Job.
+    pub fn kill_all(self) {
+        // Drop will close the handle
+    }
+}
+
+impl Drop for ProcessJob {
+    fn drop(&mut self) {
+        use windows::Win32::Foundation::CloseHandle;
+        unsafe {
+            let _ = CloseHandle(self.handle);
+        }
+    }
+}
