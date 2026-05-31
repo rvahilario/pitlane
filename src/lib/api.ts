@@ -67,7 +67,7 @@ export interface UpdateApp {
     stop_with_iracing?: boolean
 }
 
-export type LogKind = 'launch' | 'stop' | 'iracing_start' | 'iracing_stop'
+export type LogKind = 'launch' | 'stop' | 'crashed' | 'iracing_start' | 'iracing_stop'
 
 export interface LogEntry {
     seq: number

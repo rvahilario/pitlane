@@ -10,13 +10,15 @@ import { EmptyState } from '@/components/ui'
 const kindStyle: Record<LogKind, string> = {
     launch: 'text-success',
     stop: 'text-warning',
+    crashed: 'text-danger',
     iracing_start: 'text-accent',
     iracing_stop: 'text-accent/75',
 }
 
 const kindLabel: Record<LogKind, string> = {
-    launch: 'LAUNCH',
-    stop: 'STOP',
+    launch: 'STARTED',
+    stop: 'STOPPED',
+    crashed: 'CRASHED',
     iracing_start: 'iRACING ▶',
     iracing_stop: 'iRACING ■',
 }

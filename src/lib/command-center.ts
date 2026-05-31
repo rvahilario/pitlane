@@ -35,9 +35,10 @@ export function computeReadiness(iRacingRunning: boolean, crashed: number): Read
     return 'ready'
 }
 
-export const KIND_VARIANT: Record<LogKind, 'launch' | 'stop' | 'iracing' | 'error' | 'info'> = {
+export const KIND_VARIANT: Record<LogKind, 'launch' | 'stop' | 'crashed' | 'iracing' | 'error' | 'info'> = {
     launch: 'launch',
     stop: 'stop',
+    crashed: 'crashed',
     iracing_start: 'iracing',
     iracing_stop: 'iracing',
 }

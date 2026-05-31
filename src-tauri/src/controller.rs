@@ -20,6 +20,7 @@ const MAX_LOG_ENTRIES: usize = 200;
 pub enum LogKind {
     Launch,
     Stop,
+    Crashed,
     IracingStart,
     IracingStop,
 }
@@ -124,8 +125,13 @@ impl ControllerLogic {
         );
     }
 
-    pub fn on_app_gave_up(&mut self, app_id: &str) {
+    pub fn on_app_gave_up(&mut self, app_id: &str) -> u32 {
+        let last_restart_count = match self.states.get(app_id) {
+            Some(AppState::Running { restart_count, .. }) => *restart_count,
+            _ => 0,
+        };
         self.states.insert(app_id.to_string(), AppState::Crashed);
+        last_restart_count
     }
 
     pub fn app_state(&self, app_id: &str) -> AppState {
@@ -236,6 +242,7 @@ impl Controller {
 
         // Thread: consume watchdog events and update logic state
         let ctrl_wd = Arc::clone(&ctrl);
+        let sink_wd = Arc::clone(&ctrl.sink);
         thread::spawn(move || {
             for event in watchdog_rx {
                 match event {
@@ -251,7 +258,23 @@ impl Controller {
                             .on_app_restarted(&app_id, new_pid, attempt);
                     }
                     WatchdogEvent::GaveUp { app_id } | WatchdogEvent::RestartFailed { app_id } => {
-                        ctrl_wd.logic.lock().unwrap().on_app_gave_up(&app_id);
+                        let restart_count = ctrl_wd.logic.lock().unwrap().on_app_gave_up(&app_id);
+                        // Log the crash
+                        if let Some(app) = ctrl_wd
+                            .config
+                            .lock()
+                            .unwrap()
+                            .apps
+                            .iter()
+                            .find(|a| a.id == app_id)
+                            .cloned()
+                        {
+                            sink_wd.push(
+                                LogKind::Crashed,
+                                Some(app.name.clone()),
+                                format!("crashed (restart {restart_count}/{})", app.max_restart_attempts),
+                            );
+                        }
                     }
                 }
             }
@@ -259,13 +282,14 @@ impl Controller {
 
         // Monitor callback — spawns threads so the monitor is never blocked
         let ctrl_mon = Arc::clone(&ctrl);
+        let process_name = crate::monitor::process_name_for(&trigger).to_string();
         let monitor = Monitor::start(trigger, poll_interval, move |event| match event {
             MonitorEvent::Started => {
                 iracing_online.store(true, Ordering::Relaxed);
                 on_status(true);
                 let c = Arc::clone(&ctrl_mon);
                 c.sink
-                    .push(LogKind::IracingStart, None, "iRacing detected".into());
+                    .push(LogKind::IracingStart, None, format!("{process_name} started"));
                 thread::spawn(move || c.launch_active_apps());
             }
             MonitorEvent::Stopped => {
@@ -273,7 +297,7 @@ impl Controller {
                 on_status(false);
                 let c = Arc::clone(&ctrl_mon);
                 c.sink
-                    .push(LogKind::IracingStop, None, "iRacing closed".into());
+                    .push(LogKind::IracingStop, None, format!("{process_name} stopped"));
                 if auto_stop.load(Ordering::Relaxed) {
                     thread::spawn(move || c.kill_all_running());
                 }
@@ -362,16 +386,16 @@ impl Controller {
                         sink.push(
                             LogKind::Launch,
                             Some(app.name.clone()),
-                            format!("pid {pid}"),
+                            format!("started (pid {pid})"),
                         );
                     }
                     Err(e) => {
                         #[cfg(debug_assertions)]
                         eprintln!("[controller] FAILED to launch '{}': {e}", app.name);
                         sink.push(
-                            LogKind::Launch,
+                            LogKind::Crashed,
                             Some(app.name.clone()),
-                            format!("FAILED: {e}"),
+                            format!("failed to start: {e}"),
                         );
                     }
                 }
@@ -434,7 +458,7 @@ impl Controller {
                     println!("[controller] killing '{}' via exe_path fallback", app.name);
                     let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
                     process_killer::kill_by_exe_path(&app.exe_path, grace);
-                    sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
+                    sink.push(LogKind::Stop, Some(app.name.clone()), "stopped".into());
                 }))
             })
             .collect();

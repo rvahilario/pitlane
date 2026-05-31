@@ -98,8 +98,9 @@
     "no_apps_action": "Add your first app",
     "activity_panel": "Recent Activity",
     "log_events": {
-      "launch": "LAUNCH",
-      "stop": "STOP",
+      "launch": "STARTED",
+      "stop": "STOPPED",
+      "crashed": "CRASHED",
       "iracing_start": "iRACING ON",
       "iracing_stop": "iRACING OFF"
     }

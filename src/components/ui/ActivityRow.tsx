@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn'
 const VARIANT_CONFIG = {
     launch: { icon: CheckCircle2, className: 'text-success' },
     stop: { icon: MinusCircle, className: 'text-text-muted' },
+    crashed: { icon: AlertTriangle, className: 'text-danger' },
     iracing: { icon: CheckCircle2, className: 'text-accent' },
     error: { icon: AlertTriangle, className: 'text-danger' },
     info: { icon: Circle, className: 'text-text-muted' },
