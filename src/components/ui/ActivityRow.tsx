@@ -5,6 +5,7 @@ const VARIANT_CONFIG = {
     launch: { icon: CheckCircle2, className: 'text-success' },
     stop: { icon: MinusCircle, className: 'text-text-muted' },
     crashed: { icon: AlertTriangle, className: 'text-danger' },
+    restarted: { icon: CheckCircle2, className: 'text-warning' },
     iracing: { icon: CheckCircle2, className: 'text-accent' },
     error: { icon: AlertTriangle, className: 'text-danger' },
     info: { icon: Circle, className: 'text-text-muted' },

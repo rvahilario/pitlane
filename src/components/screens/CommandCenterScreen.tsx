@@ -10,7 +10,7 @@ import { useAppIconUrls } from './command-center/useAppIconUrls'
 export { computeAppSummary, computeReadiness } from '@/lib/command-center'
 export type { AppSummary, Readiness } from '@/lib/command-center'
 
-const RECENT_COUNT = 6
+const RECENT_COUNT = 30
 
 interface CommandCenterScreenProps {
     onAddApp?: () => void

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityRow, Button, Panel } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import type { LogEntry } from '@/lib/api'
-import { formatTime, KIND_VARIANT } from '@/lib/command-center'
+import { formatTime, formatLogMessage, KIND_VARIANT } from '@/lib/command-center'
 
 interface RecentActivityPanelProps {
     entries: LogEntry[]
@@ -68,7 +68,7 @@ export function RecentActivityPanel({ entries }: RecentActivityPanelProps) {
                             event={t(`command.log_events.${entry.kind}`)}
                             variant={KIND_VARIANT[entry.kind]}
                             source={entry.app ?? undefined}
-                            message={entry.msg}
+                            message={formatLogMessage(entry)}
                         />
                     ))
                 ) : (
