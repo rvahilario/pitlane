@@ -77,8 +77,58 @@ fn split_args(args: &str) -> Vec<String> {
 
 // ── Launch ───────────────────────────────────────────────────────────────────
 
-/// Spawns the process described by `app`. Returns the PID on success.
-pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
+#[cfg(windows)]
+fn launch_elevated(exe_path: &str, args: &[String], cwd: &str) -> Result<u32, String> {
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Threading::GetProcessId;
+    use windows::Win32::UI::Shell::{
+        ShellExecuteExW, SHELLEXECUTEINFOW, SEE_MASK_NOCLOSEPROCESS,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::SW_SHOWDEFAULT;
+
+    let verb: Vec<u16> = "runas\0".encode_utf16().collect();
+    let file: Vec<u16> = exe_path.encode_utf16().chain(std::iter::once(0)).collect();
+    let parameters: Vec<u16> = args.join(" ").encode_utf16().chain(std::iter::once(0)).collect();
+    let directory: Vec<u16> = cwd.encode_utf16().chain(std::iter::once(0)).collect();
+
+    let mut sei = SHELLEXECUTEINFOW {
+        cbSize: std::mem::size_of::<SHELLEXECUTEINFOW>() as u32,
+        fMask: SEE_MASK_NOCLOSEPROCESS,
+        hwnd: windows::Win32::Foundation::HWND(std::ptr::null_mut()),
+        lpVerb: windows::core::PCWSTR(verb.as_ptr()),
+        lpFile: windows::core::PCWSTR(file.as_ptr()),
+        lpParameters: windows::core::PCWSTR(parameters.as_ptr()),
+        lpDirectory: windows::core::PCWSTR(directory.as_ptr()),
+        nShow: SW_SHOWDEFAULT.0,
+        hInstApp: windows::Win32::Foundation::HINSTANCE(std::ptr::null_mut()),
+        lpIDList: std::ptr::null_mut(),
+        lpClass: windows::core::PCWSTR(std::ptr::null()),
+        hkeyClass: windows::Win32::System::Registry::HKEY(std::ptr::null_mut()),
+        dwHotKey: 0,
+        Anonymous: windows::Win32::UI::Shell::SHELLEXECUTEINFOW_0 {
+            hMonitor: windows::Win32::Foundation::HANDLE(std::ptr::null_mut()),
+        },
+        hProcess: windows::Win32::Foundation::HANDLE(std::ptr::null_mut()),
+    };
+
+    unsafe {
+        ShellExecuteExW(&mut sei).map_err(|e| e.to_string())?;
+        if sei.hProcess.is_invalid() || sei.hProcess.0.is_null() {
+            return Err("ShellExecuteExW did not return a process handle".into());
+        }
+        let pid = GetProcessId(sei.hProcess);
+        let _ = CloseHandle(sei.hProcess);
+        Ok(pid)
+    }
+}
+
+/// Internal launch with injectable spawner and elevator for testability.
+pub fn launch_with_deps(
+    app: &ManagedApp,
+    mut spawn: impl FnMut(&mut std::process::Command) -> Result<u32, std::io::Error>,
+    mut elevate: impl FnMut(&str, &[String], &str) -> Result<u32, String>,
+) -> Result<u32, LaunchError> {
+    #[cfg(windows)]
     use std::os::windows::process::CommandExt;
     use std::process::{Command, Stdio};
 
@@ -88,6 +138,12 @@ pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
 
     let cmd = build_command(&app.exe_path, app.args.as_deref());
     let cwd = resolve_working_dir(&app.exe_path, app.working_dir.as_deref());
+
+    #[cfg(debug_assertions)]
+    println!(
+        "[launcher] exe_path={} | cwd={} | args={:?}",
+        app.exe_path, cwd, cmd
+    );
 
     // CREATE_NEW_PROCESS_GROUP — child doesn't inherit Ctrl+C from parent
     const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
@@ -104,10 +160,37 @@ pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
     // TODO: spawn_minimized() is disabled — causes issues with some apps.
     // Re-enable when fixed: if app.start_minimized { return spawn_minimized(cmd, cwd); }
 
-    command
-        .spawn()
-        .map(|c| c.id())
-        .map_err(|e| LaunchError::SpawnFailed(e.to_string()))
+    match spawn(&mut command) {
+        Ok(pid) => {
+            #[cfg(debug_assertions)]
+            println!("[launcher] spawn OK — stub_pid={pid}");
+            Ok(pid)
+        }
+        Err(e) => {
+            #[cfg(debug_assertions)]
+            eprintln!("[launcher] spawn FAILED — {e}");
+            if e.raw_os_error() == Some(740) {
+                #[cfg(debug_assertions)]
+                println!("[launcher] attempting elevated launch (runas)…");
+                let pid = elevate(&cmd[0], &cmd[1..], cwd)
+                    .map_err(LaunchError::SpawnFailed)?;
+                #[cfg(debug_assertions)]
+                println!("[launcher] elevated launch OK — pid={pid}");
+                Ok(pid)
+            } else {
+                Err(LaunchError::SpawnFailed(e.to_string()))
+            }
+        }
+    }
+}
+
+/// Spawns the process described by `app`. Returns the PID on success.
+pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
+    launch_with_deps(
+        app,
+        |cmd| cmd.spawn().map(|c| c.id()),
+        |exe, args, cwd| launch_elevated(exe, args, cwd),
+    )
 }
 
 // ── Stub launcher / child process resolution ─────────────────────────────────
@@ -129,19 +212,29 @@ pub fn resolve_real_pid_impl(
     find_by_exe_path: impl Fn(&str) -> Vec<u32>,
 ) -> u32 {
     if is_alive(stub_pid) {
+        #[cfg(debug_assertions)]
+        println!("[launcher] resolve: stub_pid={stub_pid} still alive");
         return stub_pid;
     }
 
     if let Some(name) = track_name {
-        if let Some(&pid) = find_by_name(name).first() {
+        let pids = find_by_name(name);
+        if let Some(&pid) = pids.first() {
+            #[cfg(debug_assertions)]
+            println!("[launcher] resolve: found by track_name='{name}' pid={pid}");
             return pid;
         }
     }
 
-    if let Some(&pid) = find_by_exe_path(exe_path).first() {
+    let pids = find_by_exe_path(exe_path);
+    if let Some(&pid) = pids.first() {
+        #[cfg(debug_assertions)]
+        println!("[launcher] resolve: found by exe_path='{exe_path}' pid={pid}");
         return pid;
     }
 
+    #[cfg(debug_assertions)]
+    println!("[launcher] resolve: fallback to stub_pid={stub_pid} (dead)");
     stub_pid
 }
 

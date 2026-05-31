@@ -1,6 +1,6 @@
 use pitlane_lib::launcher::{
-    build_command, launch, resolve_real_pid, resolve_real_pid_impl, resolve_working_dir,
-    LaunchError,
+    build_command, launch, launch_with_deps, resolve_real_pid, resolve_real_pid_impl,
+    resolve_working_dir, LaunchError,
 };
 use pitlane_lib::models::ManagedApp;
 
@@ -66,6 +66,95 @@ fn should_return_exe_not_found_when_path_does_not_exist() {
         result,
         Err(LaunchError::ExeNotFound("C:/nonexistent/ghost.exe".into()))
     );
+}
+
+// ── launch_with_deps (injected spawner / elevator) ───────────────────────────
+
+fn dummy_exe_path() -> (std::path::PathBuf, ManagedApp) {
+    let tmp = std::env::temp_dir().join("pitlane_dummy_app.exe");
+    std::fs::write(&tmp, b"").unwrap();
+    let path = tmp.to_string_lossy().to_string();
+    let app = ManagedApp::new("p1", "App", &path);
+    (tmp, app)
+}
+
+#[test]
+fn should_return_pid_when_spawn_succeeds() {
+    let (_tmp, app) = dummy_exe_path();
+    let result = launch_with_deps(
+        &app,
+        |_cmd| Ok(1234),
+        |_exe, _args, _cwd| panic!("elevator should not be called"),
+    );
+    assert_eq!(result, Ok(1234));
+}
+
+#[test]
+fn should_return_spawn_failed_when_spawn_fails_with_generic_error() {
+    let (_tmp, app) = dummy_exe_path();
+    let result = launch_with_deps(
+        &app,
+        |_cmd| Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "access denied")),
+        |_exe, _args, _cwd| panic!("elevator should not be called"),
+    );
+    assert_eq!(
+        result,
+        Err(LaunchError::SpawnFailed("access denied".into()))
+    );
+}
+
+#[test]
+fn should_attempt_elevation_when_spawn_fails_with_error_740() {
+    let (_tmp, app) = dummy_exe_path();
+    let result = launch_with_deps(
+        &app,
+        |_cmd| Err(std::io::Error::from_raw_os_error(740)),
+        |_exe, _args, _cwd| Ok(5678),
+    );
+    assert_eq!(result, Ok(5678));
+}
+
+#[test]
+fn should_return_spawn_failed_when_elevation_fails() {
+    let (_tmp, app) = dummy_exe_path();
+    let result = launch_with_deps(
+        &app,
+        |_cmd| Err(std::io::Error::from_raw_os_error(740)),
+        |_exe, _args, _cwd| Err("user cancelled UAC".into()),
+    );
+    assert_eq!(
+        result,
+        Err(LaunchError::SpawnFailed("user cancelled UAC".into()))
+    );
+}
+
+#[test]
+fn should_forward_exe_args_and_cwd_to_elevator() {
+    let (tmp, mut app) = dummy_exe_path();
+    app.args = Some("--fullscreen".into());
+    app.working_dir = Some("C:/custom".into());
+
+    let captured = std::sync::Arc::new(std::sync::Mutex::new(None));
+    let captured_clone = std::sync::Arc::clone(&captured);
+
+    let result = launch_with_deps(
+        &app,
+        |_cmd| Err(std::io::Error::from_raw_os_error(740)),
+        move |exe, args, cwd| {
+            *captured_clone.lock().unwrap() = Some((
+                exe.to_string(),
+                args.to_vec(),
+                cwd.to_string(),
+            ));
+            Ok(9999)
+        },
+    );
+
+    assert_eq!(result, Ok(9999));
+    let data = captured.lock().unwrap().take().unwrap();
+    assert_eq!(data.0, tmp.to_string_lossy().to_string());
+    assert_eq!(data.1, vec!["--fullscreen"]);
+    assert_eq!(data.2, "C:/custom");
 }
 
 // ── resolve_real_pid_impl ────────────────────────────────────────────────────
