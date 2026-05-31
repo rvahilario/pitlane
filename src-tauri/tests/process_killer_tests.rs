@@ -1,5 +1,6 @@
 use pitlane_lib::process_killer::{
-    exe_path_matches, force_kill, graceful_kill, is_pid_alive, needs_graceful_close,
+    exe_path_matches, force_kill, graceful_kill, has_visible_windows, is_pid_alive,
+    needs_graceful_close,
 };
 use std::time::Duration;
 
@@ -88,6 +89,29 @@ fn should_not_panic_when_force_killing_nonexistent_pid() {
 fn should_not_panic_when_graceful_killing_nonexistent_pid() {
     graceful_kill(0, 0.0);
     graceful_kill(u32::MAX, 5.0);
+}
+
+// ── has_visible_windows ──────────────────────────────────────────────────────
+
+#[test]
+fn should_return_false_for_nonexistent_pid() {
+    assert!(!has_visible_windows(0));
+    assert!(!has_visible_windows(u32::MAX));
+}
+
+#[test]
+fn should_return_false_for_process_without_windows() {
+    // Spawn a windowless console fixture
+    let child = std::process::Command::new("cmd")
+        .args(["/C", "timeout /t 3 > nul"])
+        .spawn()
+        .expect("failed to spawn cmd");
+    let pid = child.id();
+
+    std::thread::sleep(Duration::from_millis(100));
+    assert!(!has_visible_windows(pid), "cmd should have no visible windows");
+
+    force_kill(pid);
 }
 
 // ── Manual integration tests (require a real spawned process) ────────────────

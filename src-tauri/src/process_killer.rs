@@ -215,6 +215,41 @@ pub fn force_kill(pid: u32) {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+/// Returns true if the given PID owns any visible top-level window.
+pub fn has_visible_windows(pid: u32) -> bool {
+    use windows::Win32::Foundation::{BOOL, HWND, LPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        EnumWindows, GetWindowThreadProcessId, IsWindowVisible,
+    };
+
+    struct Context {
+        target_pid: u32,
+        found: bool,
+    }
+
+    let mut ctx = Context {
+        target_pid: pid,
+        found: false,
+    };
+
+    unsafe extern "system" fn enum_cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        let ctx = &mut *(lparam.0 as *mut Context);
+        let mut window_pid: u32 = 0;
+        unsafe { GetWindowThreadProcessId(hwnd, Some(&mut window_pid)) };
+        if window_pid == ctx.target_pid && unsafe { IsWindowVisible(hwnd).as_bool() } {
+            ctx.found = true;
+            return BOOL(0); // stop enumeration
+        }
+        BOOL(1)
+    }
+
+    unsafe {
+        let _ = EnumWindows(Some(enum_cb), LPARAM(&mut ctx as *mut _ as isize));
+    }
+
+    ctx.found
+}
+
 /// Graceful shutdown: WM_CLOSE → grace period → force kill.
 /// When `grace_secs` is 0, skips straight to force kill.
 pub fn graceful_kill(pid: u32, grace_secs: f64) {
@@ -224,6 +259,17 @@ pub fn graceful_kill(pid: u32, grace_secs: f64) {
     }
 
     send_wm_close(pid);
+
+    // Fast-fail: some apps (e.g. Trading Paints) intercept WM_CLOSE and
+    // minimise to tray, firing a notification. If the process is still alive
+    // but has no visible windows after a brief wait, force-kill immediately.
+    std::thread::sleep(Duration::from_millis(250));
+    if is_pid_alive(pid) && !has_visible_windows(pid) {
+        #[cfg(debug_assertions)]
+        println!("[process_killer] pid={pid} alive but no visible windows after WM_CLOSE — force killing");
+        force_kill(pid);
+        return;
+    }
 
     let grace = Duration::from_secs_f64(grace_secs);
     if !wait_for_exit(pid, grace) {

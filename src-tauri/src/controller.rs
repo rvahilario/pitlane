@@ -68,7 +68,7 @@ impl LogSink {
     }
 }
 
-const DEFAULT_GRACE_SECS: f64 = 5.0;
+const DEFAULT_GRACE_SECS: f64 = 2.0;
 
 // ── App state ─────────────────────────────────────────────────────────────────
 
