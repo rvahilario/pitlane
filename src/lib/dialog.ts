@@ -1,9 +1,10 @@
 import { open } from '@tauri-apps/plugin-dialog'
 
-export async function pickExecutable(): Promise<string | null> {
+export async function pickExecutable(defaultPath?: string): Promise<string | null> {
     const selected = await open({
         multiple: false,
         directory: false,
+        defaultPath,
         filters: [{ name: 'Executable', extensions: ['exe'] }],
     })
     if (Array.isArray(selected)) {

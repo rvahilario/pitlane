@@ -64,7 +64,10 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
     }
 
     async function handleBrowseExe() {
-        const path = await pickExecutable()
+        const defaultDir = form.exe_path.trim()
+            ? form.exe_path.replace(/\\/g, '/').split('/').slice(0, -1).join('/')
+            : undefined
+        const path = await pickExecutable(defaultDir)
         if (path) {
             patch('exe_path', path)
             if (!form.working_dir.trim()) {

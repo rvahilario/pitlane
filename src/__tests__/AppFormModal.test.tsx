@@ -190,4 +190,44 @@ describe('AppFormModal exe browse', () => {
         })
         expect(screen.getByLabelText(/working directory/i)).toHaveValue('C:\\Old')
     })
+
+    it('opens file dialog at exe_path directory when exe_path is set', async () => {
+        vi.mocked(open).mockResolvedValueOnce(null)
+        renderModal({
+            initial: {
+                id: '1',
+                name: 'App',
+                exe_path: 'C:\\Program Files\\App\\app.exe',
+                working_dir: '',
+                enabled: true,
+                startup_delay_secs: 0,
+                args: '',
+                restart_on_crash: false,
+                max_restart_attempts: 3,
+                track_process_name: '',
+                force_kill_on_stop: false,
+                kill_process_tree: false,
+                stop_with_iracing: true,
+            },
+        })
+
+        fireEvent.click(screen.getByLabelText(/browse/i))
+        await waitFor(() => {
+            expect(open).toHaveBeenCalledWith(
+                expect.objectContaining({ defaultPath: 'C:/Program Files/App' }),
+            )
+        })
+    })
+
+    it('does not pass defaultPath when exe_path is empty', async () => {
+        vi.mocked(open).mockResolvedValueOnce(null)
+        renderModal()
+
+        fireEvent.click(screen.getByLabelText(/browse/i))
+        await waitFor(() => {
+            expect(open).toHaveBeenCalledWith(
+                expect.objectContaining({ defaultPath: undefined }),
+            )
+        })
+    })
 })
