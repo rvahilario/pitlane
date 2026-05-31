@@ -35,6 +35,7 @@ windows = { version = "0.58", features = [
 ] }
 log = "0.4"
 tauri-plugin-autostart = "2"
+tauri-plugin-dialog = "2"
 
 [[bin]]
 name = "fixture-dummy"

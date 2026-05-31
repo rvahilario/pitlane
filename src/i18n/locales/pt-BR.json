@@ -60,6 +60,7 @@
       "kill_tree_hint": "Encerrar o app e todos os processos filhos",
       "name_required": "Nome é obrigatório",
       "exe_path_required": "Caminho do executável é obrigatório",
+      "browse": "Procurar",
       "cancel": "Cancelar",
       "save": "Salvar",
       "saved": "Salvo"

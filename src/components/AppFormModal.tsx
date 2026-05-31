@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Check, ChevronDown, X } from 'lucide-react'
+import { Check, ChevronDown, FolderOpen, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { type ManagedApp, type NewApp } from '@/lib/api'
+import { pickExecutable } from '@/lib/dialog'
 import { Button, Modal, TextInput, NumberInput, Checkbox, SectionDivider } from '@/components/ui'
 import { FormField } from '@/components/layout'
 
@@ -60,6 +61,17 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
 
     function markTouched(field: 'name' | 'exe_path') {
         setTouched((prev) => new Set(prev).add(field))
+    }
+
+    async function handleBrowseExe() {
+        const path = await pickExecutable()
+        if (path) {
+            patch('exe_path', path)
+            if (!form.working_dir.trim()) {
+                const dir = path.replace(/\\/g, '/').split('/').slice(0, -1).join('/')
+                patch('working_dir', dir)
+            }
+        }
     }
 
     function patch<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -139,14 +151,26 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                             id="app-form-exe"
                             error={exePathInvalid ? t('apps.form.exe_path_required') : undefined}
                         >
-                            <TextInput
-                                id="app-form-exe"
-                                value={form.exe_path}
-                                onChange={(v) => patch('exe_path', v)}
-                                mono
-                                aria-invalid={exePathInvalid}
-                                onBlur={() => markTouched('exe_path')}
-                            />
+                            <div className="flex gap-2">
+                                <TextInput
+                                    id="app-form-exe"
+                                    value={form.exe_path}
+                                    onChange={(v) => patch('exe_path', v)}
+                                    mono
+                                    aria-invalid={exePathInvalid}
+                                    onBlur={() => markTouched('exe_path')}
+                                    className="flex-1"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={handleBrowseExe}
+                                    aria-label={t('apps.form.browse')}
+                                    title={t('apps.form.browse')}
+                                >
+                                    <FolderOpen className="w-4 h-4" />
+                                </Button>
+                            </div>
                         </FormField>
 
                         <Checkbox
@@ -175,8 +199,9 @@ export function AppFormModal({ mode, initial, onClose, onSubmit }: AppFormModalP
                             <TextInput value={form.args} onChange={(v) => patch('args', v)} mono />
                         </FormField>
 
-                        <FormField label={t('apps.form.working_dir')}>
+                        <FormField label={t('apps.form.working_dir')} id="app-form-working-dir">
                             <TextInput
+                                id="app-form-working-dir"
                                 value={form.working_dir}
                                 onChange={(v) => patch('working_dir', v)}
                                 mono

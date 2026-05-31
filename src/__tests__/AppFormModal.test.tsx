@@ -9,6 +9,10 @@ const defaultProps = {
     onSubmit: vi.fn().mockResolvedValue(undefined),
 }
 
+vi.mock('@tauri-apps/plugin-dialog', () => ({
+    open: vi.fn(),
+}))
+
 function renderModal(overrides = {}) {
     return render(<AppFormModal {...defaultProps} {...overrides} />)
 }
@@ -136,5 +140,54 @@ describe('AppFormModal validation', () => {
         await waitFor(() => {
             expect(screen.getByRole('alert')).toHaveTextContent('backend error')
         })
+    })
+})
+
+import { open } from '@tauri-apps/plugin-dialog'
+
+describe('AppFormModal exe browse', () => {
+    it('renders browse button next to exe_path input', () => {
+        renderModal()
+        expect(screen.getByLabelText(/browse/i)).toBeInTheDocument()
+    })
+
+    it('fills exe_path and working_dir when user picks a file', async () => {
+        vi.mocked(open).mockResolvedValueOnce('C:\\Program Files\\App\\app.exe')
+        renderModal()
+
+        fireEvent.click(screen.getByLabelText(/browse/i))
+
+        await waitFor(() => {
+            expect(screen.getByLabelText(/executable/i)).toHaveValue('C:\\Program Files\\App\\app.exe')
+        })
+        expect(screen.getByLabelText(/working directory/i)).toHaveValue('C:/Program Files/App')
+    })
+
+    it('does not overwrite working_dir if it already has a value', async () => {
+        vi.mocked(open).mockResolvedValueOnce('C:\\New\\app.exe')
+        renderModal({
+            initial: {
+                id: '1',
+                name: 'Old',
+                exe_path: 'C:\\Old\\old.exe',
+                working_dir: 'C:\\Old',
+                enabled: true,
+                startup_delay_secs: 0,
+                args: '',
+                restart_on_crash: false,
+                max_restart_attempts: 3,
+                track_process_name: '',
+                force_kill_on_stop: false,
+                kill_process_tree: false,
+                stop_with_iracing: true,
+            },
+        })
+
+        fireEvent.click(screen.getByLabelText(/browse/i))
+
+        await waitFor(() => {
+            expect(screen.getByLabelText(/executable/i)).toHaveValue('C:\\New\\app.exe')
+        })
+        expect(screen.getByLabelText(/working directory/i)).toHaveValue('C:\\Old')
     })
 })

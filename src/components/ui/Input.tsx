@@ -11,6 +11,7 @@ interface TextInputProps {
     mono?: boolean
     'aria-invalid'?: boolean
     onBlur?: () => void
+    className?: string
 }
 
 export function TextInput({
@@ -21,6 +22,7 @@ export function TextInput({
     mono = false,
     'aria-invalid': ariaInvalid,
     onBlur,
+    className,
 }: TextInputProps) {
     return (
         <input
@@ -31,7 +33,7 @@ export function TextInput({
             onBlur={onBlur}
             placeholder={placeholder}
             aria-invalid={ariaInvalid}
-            className={cn(inputBase, mono && 'font-mono text-xs', ariaInvalid && 'border-danger')}
+            className={cn(inputBase, mono && 'font-mono text-xs', ariaInvalid && 'border-danger', className)}
         />
     )
 }

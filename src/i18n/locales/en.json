@@ -60,6 +60,7 @@
       "kill_tree_hint": "Kill app and all child processes",
       "name_required": "Name is required",
       "exe_path_required": "Executable path is required",
+      "browse": "Browse",
       "cancel": "Cancel",
       "save": "Save",
       "saved": "Saved"
