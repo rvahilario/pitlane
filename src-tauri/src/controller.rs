@@ -335,25 +335,28 @@ impl Controller {
                 println!("[controller] launching '{}'", app.name);
                 match launcher::launch(&app) {
                     Ok(stub_pid) => {
+                        // Create job immediately so any child processes spawned
+                        // by the app will inherit the job.
+                        let job = process_killer::ProcessJob::new().ok();
+                        if let Some(ref j) = job {
+                            if let Err(e) = j.assign(stub_pid) {
+                                println!("[controller] '{}' stub job assign failed: {e}", app.name);
+                            }
+                        }
+
                         let pid = launcher::resolve_real_pid(stub_pid, &app);
                         #[cfg(debug_assertions)]
                         println!("[controller] '{}' pid={pid}", app.name);
-                        match process_killer::ProcessJob::new() {
-                            Ok(job) => {
-                                match job.assign(pid) {
-                                    Ok(()) => {
-                                        println!("[controller] '{}' assigned to job object", app.name);
-                                        jobs.lock().unwrap().insert(app.id.clone(), job);
-                                    }
-                                    Err(e) => {
-                                        println!("[controller] '{}' job assign failed: {e}", app.name);
-                                    }
+
+                        if let Some(j) = job {
+                            if pid != stub_pid {
+                                if let Err(e) = j.assign(pid) {
+                                    println!("[controller] '{}' resolved job assign failed: {e}", app.name);
                                 }
                             }
-                            Err(e) => {
-                                println!("[controller] '{}' job creation failed: {e}", app.name);
-                            }
+                            jobs.lock().unwrap().insert(app.id.clone(), j);
                         }
+
                         watchdog.watch(app.clone(), pid);
                         logic.lock().unwrap().on_app_launched(&app.id, pid);
                         sink.push(
@@ -425,11 +428,12 @@ impl Controller {
                     if let Some(job) = jobs.lock().unwrap().remove(&app.id) {
                         println!("[controller] killing '{}' via job object", app.name);
                         job.kill_all();
-                    } else {
-                        println!("[controller] killing '{}' via legacy kill_app (no job found)", app.name);
-                        let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
-                        kill_app(&app, grace);
                     }
+                    // Fallback: kill any processes that escaped the job (e.g. spawned
+                    // before we could assign, or with CREATE_BREAKAWAY_FROM_JOB).
+                    println!("[controller] killing '{}' via exe_path fallback", app.name);
+                    let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
+                    process_killer::kill_by_exe_path(&app.exe_path, grace);
                     sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
                 }))
             })
@@ -478,23 +482,23 @@ impl Controller {
         }
 
         let stub_pid = launcher::launch(&app).map_err(|e| e.to_string())?;
-        let pid = launcher::resolve_real_pid(stub_pid, &app);
-        match process_killer::ProcessJob::new() {
-            Ok(job) => {
-                match job.assign(pid) {
-                    Ok(()) => {
-                        println!("[controller] force_launch '{}' assigned to job object", app.name);
-                        self.jobs.lock().unwrap().insert(app.id.clone(), job);
-                    }
-                    Err(e) => {
-                        println!("[controller] force_launch '{}' job assign failed: {e}", app.name);
-                    }
-                }
-            }
-            Err(e) => {
-                println!("[controller] force_launch '{}' job creation failed: {e}", app.name);
+        let job = process_killer::ProcessJob::new().ok();
+        if let Some(ref j) = job {
+            if let Err(e) = j.assign(stub_pid) {
+                println!("[controller] force_launch '{}' stub job assign failed: {e}", app.name);
             }
         }
+
+        let pid = launcher::resolve_real_pid(stub_pid, &app);
+        if let Some(j) = job {
+            if pid != stub_pid {
+                if let Err(e) = j.assign(pid) {
+                    println!("[controller] force_launch '{}' resolved job assign failed: {e}", app.name);
+                }
+            }
+            self.jobs.lock().unwrap().insert(app.id.clone(), j);
+        }
+
         self.watchdog.watch(app.clone(), pid);
         self.logic.lock().unwrap().on_app_launched(app_id, pid);
         Ok(())
@@ -510,18 +514,21 @@ impl Controller {
         }
         self.watchdog.unwatch(app_id);
 
-        if let Some(job) = self.jobs.lock().unwrap().remove(app_id) {
-            job.kill_all();
-        } else if let Some(app) = self
+        let app = self
             .config
             .lock()
             .unwrap()
             .apps
             .iter()
             .find(|a| a.id == app_id)
-            .cloned()
-        {
-            kill_app(&app, DEFAULT_GRACE_SECS);
+            .cloned();
+
+        if let Some(job) = self.jobs.lock().unwrap().remove(app_id) {
+            job.kill_all();
+        }
+        if let Some(ref app) = app {
+            let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
+            process_killer::kill_by_exe_path(&app.exe_path, grace);
         }
 
         if let Some(app) = self
