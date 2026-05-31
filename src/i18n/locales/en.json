@@ -98,8 +98,10 @@
     "no_apps_action": "Add your first app",
     "activity_panel": "Recent Activity",
     "log_events": {
-      "launch": "LAUNCH",
-      "stop": "STOP",
+      "launch": "STARTED",
+      "stop": "STOPPED",
+      "crashed": "CRASHED",
+      "restarted": "RESTART",
       "iracing_start": "iRACING ON",
       "iracing_stop": "iRACING OFF"
     }
@@ -117,6 +119,17 @@
     "title": "Event log",
     "clear": "Clear",
     "empty": "No events yet — start iRacing to begin logging.",
+    "msg": {
+      "started": "started (pid {{pid}})",
+      "stopped": "stopped",
+      "crashed": "crashed (restart {{restart_count}}/{{max_restarts}})",
+      "crashed_simple": "crashed",
+      "restarted": "restarted (attempt {{attempt}}/{{max_restarts}}, pid {{pid}})",
+      "restarted_simple": "restarted",
+      "failed_to_start": "failed to start: {{msg}}",
+      "iracing_started": "started",
+      "iracing_stopped": "stopped"
+    },
     "types": {
       "launch": "LAUNCH",
       "stop": "STOP",

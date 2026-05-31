@@ -85,10 +85,38 @@ pub fn kill_by_exe_path(exe_path: &str, grace_secs: f64) {
     }
 }
 
+/// Returns the prefix of an executable name (before the first separator).
+///
+/// "lghub_system_tray.exe" → "lghub"
+/// "SimHub.exe"            → "SimHub"
+fn exe_prefix(name: &str) -> Option<&str> {
+    name.split(|c: char| c == '_' || c == '-').next()
+}
+
 /// Kills all processes matching `exe_path`, plus their entire child process trees.
+/// Also kills every process with the same prefix (e.g. G Hub spawns multiple
+/// independent lghub_*.exe instances) via `taskkill /F /FI "IMAGENAME eq prefix*"`.
 pub fn kill_tree_by_exe_path(exe_path: &str, grace_secs: f64) {
-    for pid in find_pids_by_exe_path(exe_path) {
-        kill_tree(pid, grace_secs);
+    let pids: Vec<u32> = find_pids_by_exe_path(exe_path);
+
+    for pid in &pids {
+        kill_tree(*pid, grace_secs);
+    }
+
+    // Fallback: some apps (e.g. G Hub) spawn sibling processes that are not
+    // children of the tracked PID. Use a wildcard filter to catch every process
+    // whose image name starts with the same prefix (e.g. lghub*).
+    if let Some(file_name) = Path::new(exe_path).file_name().and_then(|n| n.to_str()) {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/IM", file_name])
+            .output();
+
+        if let Some(prefix) = exe_prefix(file_name) {
+            let filter = format!("IMAGENAME eq {prefix}*");
+            let _ = std::process::Command::new("taskkill")
+                .args(["/F", "/FI", &filter])
+                .output();
+        }
     }
 }
 
@@ -215,6 +243,41 @@ pub fn force_kill(pid: u32) {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+/// Returns true if the given PID owns any visible top-level window.
+pub fn has_visible_windows(pid: u32) -> bool {
+    use windows::Win32::Foundation::{BOOL, HWND, LPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        EnumWindows, GetWindowThreadProcessId, IsWindowVisible,
+    };
+
+    struct Context {
+        target_pid: u32,
+        found: bool,
+    }
+
+    let mut ctx = Context {
+        target_pid: pid,
+        found: false,
+    };
+
+    unsafe extern "system" fn enum_cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        let ctx = &mut *(lparam.0 as *mut Context);
+        let mut window_pid: u32 = 0;
+        unsafe { GetWindowThreadProcessId(hwnd, Some(&mut window_pid)) };
+        if window_pid == ctx.target_pid && unsafe { IsWindowVisible(hwnd).as_bool() } {
+            ctx.found = true;
+            return BOOL(0); // stop enumeration
+        }
+        BOOL(1)
+    }
+
+    unsafe {
+        let _ = EnumWindows(Some(enum_cb), LPARAM(&mut ctx as *mut _ as isize));
+    }
+
+    ctx.found
+}
+
 /// Graceful shutdown: WM_CLOSE → grace period → force kill.
 /// When `grace_secs` is 0, skips straight to force kill.
 pub fn graceful_kill(pid: u32, grace_secs: f64) {
@@ -223,10 +286,117 @@ pub fn graceful_kill(pid: u32, grace_secs: f64) {
         return;
     }
 
+    // If the process has no visible windows it is likely already minimised
+    // to the system tray. Sending WM_CLOSE in that state just gives the app
+    // a chance to show a tray notification instead of exiting. Force-kill
+    // immediately in that case.
+    if !has_visible_windows(pid) {
+        #[cfg(debug_assertions)]
+        println!("[process_killer] pid={pid} has no visible windows — skipping WM_CLOSE, force killing");
+        force_kill(pid);
+        return;
+    }
+
     send_wm_close(pid);
+
+    // Fast-fail: some apps intercept WM_CLOSE and minimise to tray. If the
+    // window disappears but the process is still alive, force-kill immediately.
+    std::thread::sleep(Duration::from_millis(100));
+    if is_pid_alive(pid) && !has_visible_windows(pid) {
+        #[cfg(debug_assertions)]
+        println!("[process_killer] pid={pid} alive but no visible windows after WM_CLOSE — force killing");
+        force_kill(pid);
+        return;
+    }
 
     let grace = Duration::from_secs_f64(grace_secs);
     if !wait_for_exit(pid, grace) {
         force_kill(pid);
+    }
+}
+
+// ── Windows Job Objects ──────────────────────────────────────────────────────
+
+/// A Windows Job Object that automatically kills all assigned processes
+/// when the handle is closed (KILL_ON_JOB_CLOSE).
+pub struct ProcessJob {
+    handle: windows::Win32::Foundation::HANDLE,
+}
+
+// Job Object handles are thread-safe in Windows; these are just opaque
+// pointers and all Win32 Job Object APIs are safe to call concurrently.
+unsafe impl Send for ProcessJob {}
+unsafe impl Sync for ProcessJob {}
+
+impl ProcessJob {
+    /// Creates a new Job Object configured to kill all processes on close.
+    pub fn new() -> Result<Self, String> {
+        use windows::Win32::System::JobObjects::{
+            CreateJobObjectW, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, SetInformationJobObject,
+        };
+        use windows::Win32::System::JobObjects::JobObjectExtendedLimitInformation;
+
+        let handle = unsafe {
+            CreateJobObjectW(None, None).map_err(|e| e.to_string())?
+        };
+
+        let mut info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
+        info.BasicLimitInformation.LimitFlags =
+            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+        unsafe {
+            SetInformationJobObject(
+                handle,
+                JobObjectExtendedLimitInformation,
+                &info as *const _ as *const _,
+                std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            )
+            .map_err(|e| e.to_string())?;
+        }
+
+        Ok(Self { handle })
+    }
+
+    /// Assigns a running process (by PID) to this Job Object.
+    pub fn assign(&self, pid: u32) -> Result<(), String> {
+        use windows::Win32::Foundation::CloseHandle;
+        use windows::Win32::System::JobObjects::AssignProcessToJobObject;
+        use windows::Win32::System::Threading::{OpenProcess, PROCESS_TERMINATE, PROCESS_SET_QUOTA};
+
+        let access = PROCESS_TERMINATE | PROCESS_SET_QUOTA;
+        let proc_handle = unsafe {
+            match OpenProcess(access, false, pid) {
+                Ok(h) => h,
+                Err(e) => return Err(format!("failed to open process {pid}: {e}")),
+            }
+        };
+
+        let result = unsafe {
+            AssignProcessToJobObject(self.handle, proc_handle)
+                .map_err(|e| format!("AssignProcessToJobObject failed for pid {pid}: {e}"))
+        };
+
+        unsafe {
+            let _ = CloseHandle(proc_handle);
+        }
+
+        result
+    }
+
+    /// Closes the Job handle, causing Windows to terminate all processes in the Job.
+    pub fn kill_all(self) {
+        #[cfg(debug_assertions)]
+        println!("[process_killer] closing job handle — all assigned processes will be terminated");
+        // Drop will close the handle
+    }
+}
+
+impl Drop for ProcessJob {
+    fn drop(&mut self) {
+        use windows::Win32::Foundation::CloseHandle;
+        unsafe {
+            let _ = CloseHandle(self.handle);
+        }
     }
 }

@@ -67,7 +67,7 @@ export interface UpdateApp {
     stop_with_iracing?: boolean
 }
 
-export type LogKind = 'launch' | 'stop' | 'iracing_start' | 'iracing_stop'
+export type LogKind = 'launch' | 'stop' | 'crashed' | 'restarted' | 'iracing_start' | 'iracing_stop'
 
 export interface LogEntry {
     seq: number
@@ -75,6 +75,9 @@ export interface LogEntry {
     kind: LogKind
     app: string | null
     msg: string
+    pid: number | null
+    restart_count: number | null
+    max_restarts: number | null
 }
 
 export type AppStateType =

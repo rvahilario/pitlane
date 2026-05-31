@@ -40,4 +40,11 @@ describe('ActivityRow', () => {
         const icon = screen.getByRole('img', { name: 'ERROR' })
         expect(icon.getAttribute('class')).toContain('text-danger')
     })
+
+    it('applies crashed variant with danger color', () => {
+        render(<ActivityRow time="10:24:45" event="CRASHED" variant="crashed" />)
+
+        const icon = screen.getByRole('img', { name: 'CRASHED' })
+        expect(icon.getAttribute('class')).toContain('text-danger')
+    })
 })

@@ -4,19 +4,24 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { useLog } from '@/hooks'
 import type { LogKind } from '@/lib/api'
+import { formatLogMessage } from '@/lib/command-center'
 import { ScreenHeader } from '@/components/layout'
 import { EmptyState } from '@/components/ui'
 
 const kindStyle: Record<LogKind, string> = {
     launch: 'text-success',
     stop: 'text-warning',
+    crashed: 'text-danger',
+    restarted: 'text-warning',
     iracing_start: 'text-accent',
     iracing_stop: 'text-accent/75',
 }
 
 const kindLabel: Record<LogKind, string> = {
-    launch: 'LAUNCH',
-    stop: 'STOP',
+    launch: 'STARTED',
+    stop: 'STOPPED',
+    crashed: 'CRASHED',
+    restarted: 'RESTART',
     iracing_start: 'iRACING ▶',
     iracing_stop: 'iRACING ■',
 }
@@ -45,31 +50,31 @@ export function LogScreen() {
                 {entries.length === 0 ? (
                     <EmptyState icon={ScrollText} message={t('log.empty')} />
                 ) : (
-                    entries.map((entry) => (
-                        <div
-                            key={entry.seq}
-                            className={cn(
-                                'flex items-start gap-2 py-0.5 px-1 rounded',
-                                (entry.kind === 'iracing_start' || entry.kind === 'iracing_stop') &&
-                                    'bg-accent/5',
-                            )}
-                        >
-                            <span className="text-text-muted shrink-0 w-16">
-                                {formatTime(entry.timestamp_ms)}
-                            </span>
-                            <span
-                                className={cn('shrink-0 w-14 font-semibold', kindStyle[entry.kind])}
+                    <div className="grid grid-cols-[4rem_5.5rem_7.5rem_1fr] gap-2">
+                        {entries.map((entry) => (
+                            <div
+                                key={entry.seq}
+                                className={cn(
+                                    'col-span-4 grid grid-cols-subgrid items-start py-0.5 px-1 rounded',
+                                    (entry.kind === 'iracing_start' || entry.kind === 'iracing_stop') &&
+                                        'bg-accent/5',
+                                )}
                             >
-                                {kindLabel[entry.kind]}
-                            </span>
-                            {entry.app && (
-                                <span className="text-text-secondary shrink-0 max-w-28 truncate">
-                                    {entry.app}
+                                <span className="text-text-muted">
+                                    {formatTime(entry.timestamp_ms)}
                                 </span>
-                            )}
-                            {entry.msg && <span className="text-text-muted">{entry.msg}</span>}
-                        </div>
-                    ))
+                                <span className={cn('font-semibold', kindStyle[entry.kind])}>
+                                    {kindLabel[entry.kind]}
+                                </span>
+                                <span className="text-text-secondary truncate">
+                                    {entry.app ?? ''}
+                                </span>
+                                <span className={cn('truncate', kindStyle[entry.kind])}>
+                                    {formatLogMessage(entry)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 )}
                 <div ref={bottomRef} />
             </div>

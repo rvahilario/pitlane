@@ -4,6 +4,8 @@ import { cn } from '@/lib/cn'
 const VARIANT_CONFIG = {
     launch: { icon: CheckCircle2, className: 'text-success' },
     stop: { icon: MinusCircle, className: 'text-text-muted' },
+    crashed: { icon: AlertTriangle, className: 'text-danger' },
+    restarted: { icon: CheckCircle2, className: 'text-warning' },
     iracing: { icon: CheckCircle2, className: 'text-accent' },
     error: { icon: AlertTriangle, className: 'text-danger' },
     info: { icon: Circle, className: 'text-text-muted' },
@@ -45,7 +47,7 @@ export function ActivityRow({
                 aria-label={event}
             />
             <span className="w-24 shrink-0 font-medium text-text">{source}</span>
-            <span className="min-w-0 truncate text-text-muted">{message}</span>
+            <span className={cn('min-w-0 truncate', iconClass)}>{message}</span>
         </div>
     )
 }

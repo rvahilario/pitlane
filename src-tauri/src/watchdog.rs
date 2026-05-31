@@ -4,8 +4,21 @@ use std::thread;
 use std::time::Duration;
 
 use crate::models::ManagedApp;
+use crate::process_killer;
 
 const POLL_INTERVAL_MS: u64 = 2000;
+
+/// Attempts to find the current PID of a running app when the tracked PID
+/// no longer matches (e.g. Squirrel stub died, app self-restarted).
+/// Returns the new PID if a living process is found, otherwise None.
+fn reconcile_pid(app: &ManagedApp) -> Option<u32> {
+    let pids = if let Some(ref name) = app.track_process_name {
+        process_killer::find_pids_by_name(name)
+    } else {
+        process_killer::find_pids_by_exe_path(&app.exe_path)
+    };
+    pids.into_iter().find(|&pid| process_killer::is_pid_alive(pid))
+}
 
 // ── Events ────────────────────────────────────────────────────────────────────
 
@@ -18,9 +31,15 @@ pub enum WatchdogEvent {
         attempt: u32,
     },
     /// Process crashed and all restart attempts were exhausted (or restart disabled).
-    GaveUp { app_id: String },
+    GaveUp {
+        app_id: String,
+        restart_count: u32,
+    },
     /// Relaunch after crash failed (exe not found, spawn error, etc.).
-    RestartFailed { app_id: String },
+    RestartFailed {
+        app_id: String,
+        restart_count: u32,
+    },
 }
 
 // ── Pure tick logic ───────────────────────────────────────────────────────────
@@ -110,29 +129,86 @@ impl Watchdog {
                         entries_bg.lock().unwrap().remove(&id);
                     }
                     TickAction::GiveUp => {
-                        entries_bg.lock().unwrap().remove(&id);
-                        let _ = tx.send(WatchdogEvent::GaveUp { app_id: id });
-                    }
-                    TickAction::Restart => match crate::launcher::launch(&entry.app) {
-                        Ok(stub_pid) => {
-                            let real_pid = crate::launcher::resolve_real_pid(stub_pid, &entry.app);
-                            let attempt = entry.restart_count + 1;
-                            let mut map = entries_bg.lock().unwrap();
-                            if let Some(e) = map.get_mut(&id) {
-                                e.pid = real_pid;
-                                e.restart_count = attempt;
+                        // Re-check current state inside the mutex — unwatch may have
+                        // been called between the clone above and now.
+                        {
+                            let map = entries_bg.lock().unwrap();
+                            if let Some(e) = map.get(&id) {
+                                if e.stopping {
+                                    drop(map);
+                                    entries_bg.lock().unwrap().remove(&id);
+                                    continue;
+                                }
                             }
-                            let _ = tx.send(WatchdogEvent::Restarted {
-                                app_id: id,
-                                new_pid: real_pid,
-                                attempt,
-                            });
                         }
-                        Err(_) => {
-                            entries_bg.lock().unwrap().remove(&id);
-                            let _ = tx.send(WatchdogEvent::RestartFailed { app_id: id });
+                        // Before giving up, try to reconcile: the app may have
+                        // self-restarted or done a Squirrel handoff to a new PID.
+                        if let Some(new_pid) = reconcile_pid(&entry.app) {
+                            if new_pid != entry.pid {
+                                #[cfg(debug_assertions)]
+                                println!("[watchdog] reconciled '{app}' pid {old} → {new}",
+                                    app = entry.app.name, old = entry.pid, new = new_pid);
+                                let mut map = entries_bg.lock().unwrap();
+                                if let Some(e) = map.get_mut(&id) {
+                                    e.pid = new_pid;
+                                }
+                                continue;
+                            }
                         }
-                    },
+                        let rc = entry.restart_count;
+                        entries_bg.lock().unwrap().remove(&id);
+                        let _ = tx.send(WatchdogEvent::GaveUp { app_id: id, restart_count: rc });
+                    }
+                    TickAction::Restart => {
+                        // Re-check current state inside the mutex — unwatch may have
+                        // been called between the clone above and now.
+                        {
+                            let map = entries_bg.lock().unwrap();
+                            if let Some(e) = map.get(&id) {
+                                if e.stopping {
+                                    drop(map);
+                                    entries_bg.lock().unwrap().remove(&id);
+                                    continue;
+                                }
+                            }
+                        }
+                        // Same reconciliation check before attempting restart.
+                        if let Some(new_pid) = reconcile_pid(&entry.app) {
+                            if new_pid != entry.pid {
+                                #[cfg(debug_assertions)]
+                                println!("[watchdog] reconciled '{app}' pid {old} → {new}",
+                                    app = entry.app.name, old = entry.pid, new = new_pid);
+                                let mut map = entries_bg.lock().unwrap();
+                                if let Some(e) = map.get_mut(&id) {
+                                    e.pid = new_pid;
+                                    // Reset restart count — the app is alive, just under a new PID.
+                                    e.restart_count = 0;
+                                }
+                                continue;
+                            }
+                        }
+                        match crate::launcher::launch(&entry.app) {
+                            Ok(stub_pid) => {
+                                let real_pid = crate::launcher::resolve_real_pid(stub_pid, &entry.app);
+                                let attempt = entry.restart_count + 1;
+                                let mut map = entries_bg.lock().unwrap();
+                                if let Some(e) = map.get_mut(&id) {
+                                    e.pid = real_pid;
+                                    e.restart_count = attempt;
+                                }
+                                let _ = tx.send(WatchdogEvent::Restarted {
+                                    app_id: id,
+                                    new_pid: real_pid,
+                                    attempt,
+                                });
+                            }
+                            Err(_) => {
+                                let rc = entry.restart_count;
+                                entries_bg.lock().unwrap().remove(&id);
+                                let _ = tx.send(WatchdogEvent::RestartFailed { app_id: id, restart_count: rc });
+                            }
+                        }
+                    }
                 }
             }
         });

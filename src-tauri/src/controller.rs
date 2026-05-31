@@ -20,6 +20,8 @@ const MAX_LOG_ENTRIES: usize = 200;
 pub enum LogKind {
     Launch,
     Stop,
+    Crashed,
+    Restarted,
     IracingStart,
     IracingStop,
 }
@@ -31,6 +33,9 @@ pub struct LogEntry {
     pub kind: LogKind,
     pub app: Option<String>,
     pub msg: String,
+    pub pid: Option<u32>,
+    pub restart_count: Option<u32>,
+    pub max_restarts: Option<u32>,
 }
 
 pub struct LogSink {
@@ -40,7 +45,7 @@ pub struct LogSink {
 }
 
 impl LogSink {
-    fn push(&self, kind: LogKind, app: Option<String>, msg: String) {
+    fn push(&self, kind: LogKind, app: Option<String>, msg: String, pid: Option<u32>, restart_count: Option<u32>, max_restarts: Option<u32>) {
         let s = self.seq.fetch_add(1, Ordering::Relaxed);
         let ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -52,6 +57,9 @@ impl LogSink {
             kind,
             app,
             msg,
+            pid,
+            restart_count,
+            max_restarts,
         };
         let mut log = self.log.lock().unwrap();
         log.push(entry.clone());
@@ -68,7 +76,7 @@ impl LogSink {
     }
 }
 
-const DEFAULT_GRACE_SECS: f64 = 5.0;
+const DEFAULT_GRACE_SECS: f64 = 0.5;
 
 // ── App state ─────────────────────────────────────────────────────────────────
 
@@ -124,8 +132,13 @@ impl ControllerLogic {
         );
     }
 
-    pub fn on_app_gave_up(&mut self, app_id: &str) {
+    pub fn on_app_gave_up(&mut self, app_id: &str) -> u32 {
+        let last_restart_count = match self.states.get(app_id) {
+            Some(AppState::Running { restart_count, .. }) => *restart_count,
+            _ => 0,
+        };
         self.states.insert(app_id.to_string(), AppState::Crashed);
+        last_restart_count
     }
 
     pub fn app_state(&self, app_id: &str) -> AppState {
@@ -188,6 +201,7 @@ pub struct Controller {
     iracing_online: Arc<AtomicBool>,
     auto_stop: Arc<AtomicBool>,
     sink: Arc<LogSink>,
+    jobs: Arc<Mutex<HashMap<String, process_killer::ProcessJob>>>,
     _monitor: std::sync::OnceLock<Monitor>,
 }
 
@@ -229,11 +243,13 @@ impl Controller {
             iracing_online: Arc::clone(&iracing_online),
             auto_stop: Arc::clone(&auto_stop),
             sink,
+            jobs: Arc::new(Mutex::new(HashMap::new())),
             _monitor: std::sync::OnceLock::new(),
         });
 
         // Thread: consume watchdog events and update logic state
         let ctrl_wd = Arc::clone(&ctrl);
+        let sink_wd = Arc::clone(&ctrl.sink);
         thread::spawn(move || {
             for event in watchdog_rx {
                 match event {
@@ -247,9 +263,52 @@ impl Controller {
                             .lock()
                             .unwrap()
                             .on_app_restarted(&app_id, new_pid, attempt);
+                        if let Some(app) = ctrl_wd
+                            .config
+                            .lock()
+                            .unwrap()
+                            .apps
+                            .iter()
+                            .find(|a| a.id == app_id)
+                            .cloned()
+                        {
+                            sink_wd.push(
+                                LogKind::Restarted,
+                                Some(app.name.clone()),
+                                String::new(),
+                                Some(new_pid),
+                                Some(attempt),
+                                Some(app.max_restart_attempts),
+                            );
+                        }
                     }
-                    WatchdogEvent::GaveUp { app_id } | WatchdogEvent::RestartFailed { app_id } => {
+                    WatchdogEvent::GaveUp { app_id, restart_count }
+                    | WatchdogEvent::RestartFailed { app_id, restart_count } => {
                         ctrl_wd.logic.lock().unwrap().on_app_gave_up(&app_id);
+                        if let Some(app) = ctrl_wd
+                            .config
+                            .lock()
+                            .unwrap()
+                            .apps
+                            .iter()
+                            .find(|a| a.id == app_id)
+                            .cloned()
+                        {
+                            // Include restart details only when restart_on_crash is enabled.
+                            let (rc, mr) = if app.restart_on_crash {
+                                (Some(restart_count), Some(app.max_restart_attempts))
+                            } else {
+                                (None, None)
+                            };
+                            sink_wd.push(
+                                LogKind::Crashed,
+                                Some(app.name.clone()),
+                                String::new(),
+                                None,
+                                rc,
+                                mr,
+                            );
+                        }
                     }
                 }
             }
@@ -257,13 +316,14 @@ impl Controller {
 
         // Monitor callback — spawns threads so the monitor is never blocked
         let ctrl_mon = Arc::clone(&ctrl);
+
         let monitor = Monitor::start(trigger, poll_interval, move |event| match event {
             MonitorEvent::Started => {
                 iracing_online.store(true, Ordering::Relaxed);
                 on_status(true);
                 let c = Arc::clone(&ctrl_mon);
                 c.sink
-                    .push(LogKind::IracingStart, None, "iRacing detected".into());
+                    .push(LogKind::IracingStart, Some("iRacing".into()), String::new(), None, None, None);
                 thread::spawn(move || c.launch_active_apps());
             }
             MonitorEvent::Stopped => {
@@ -271,7 +331,7 @@ impl Controller {
                 on_status(false);
                 let c = Arc::clone(&ctrl_mon);
                 c.sink
-                    .push(LogKind::IracingStop, None, "iRacing closed".into());
+                    .push(LogKind::IracingStop, Some("iRacing".into()), String::new(), None, None, None);
                 if auto_stop.load(Ordering::Relaxed) {
                     thread::spawn(move || c.kill_all_running());
                 }
@@ -323,6 +383,7 @@ impl Controller {
             let logic = Arc::clone(&self.logic);
             let watchdog = Arc::clone(&self.watchdog);
             let sink = Arc::clone(&self.sink);
+            let jobs = Arc::clone(&self.jobs);
 
             thread::spawn(move || {
                 if app.startup_delay_secs > 0.0 {
@@ -332,24 +393,49 @@ impl Controller {
                 println!("[controller] launching '{}'", app.name);
                 match launcher::launch(&app) {
                     Ok(stub_pid) => {
+                        // Create job immediately so any child processes spawned
+                        // by the app will inherit the job.
+                        let job = process_killer::ProcessJob::new().ok();
+                        if let Some(ref j) = job {
+                            if let Err(e) = j.assign(stub_pid) {
+                                println!("[controller] '{}' stub job assign failed: {e}", app.name);
+                            }
+                        }
+
                         let pid = launcher::resolve_real_pid(stub_pid, &app);
                         #[cfg(debug_assertions)]
                         println!("[controller] '{}' pid={pid}", app.name);
+
+                        if let Some(j) = job {
+                            if pid != stub_pid {
+                                if let Err(e) = j.assign(pid) {
+                                    println!("[controller] '{}' resolved job assign failed: {e}", app.name);
+                                }
+                            }
+                            jobs.lock().unwrap().insert(app.id.clone(), j);
+                        }
+
                         watchdog.watch(app.clone(), pid);
                         logic.lock().unwrap().on_app_launched(&app.id, pid);
                         sink.push(
                             LogKind::Launch,
                             Some(app.name.clone()),
-                            format!("pid {pid}"),
+                            String::new(),
+                            Some(pid),
+                            None,
+                            None,
                         );
                     }
                     Err(e) => {
                         #[cfg(debug_assertions)]
                         eprintln!("[controller] FAILED to launch '{}': {e}", app.name);
                         sink.push(
-                            LogKind::Launch,
+                            LogKind::Crashed,
                             Some(app.name.clone()),
-                            format!("FAILED: {e}"),
+                            e.to_string(),
+                            None,
+                            None,
+                            None,
                         );
                     }
                 }
@@ -385,6 +471,7 @@ impl Controller {
             ids
         };
 
+        let jobs = Arc::clone(&self.jobs);
         let handles: Vec<_> = ids_to_kill
             .iter()
             .filter_map(|app_id| {
@@ -399,11 +486,19 @@ impl Controller {
                     .find(|a| a.id == *app_id)
                     .cloned()?;
                 let sink = Arc::clone(&self.sink);
+                let jobs = Arc::clone(&jobs);
 
                 Some(thread::spawn(move || {
+                    if let Some(job) = jobs.lock().unwrap().remove(&app.id) {
+                        println!("[controller] killing '{}' via job object", app.name);
+                        job.kill_all();
+                    }
+                    // Fallback: kill any processes that escaped the job (e.g. spawned
+                    // before we could assign, or with CREATE_BREAKAWAY_FROM_JOB).
+                    println!("[controller] killing '{}' via exe_path fallback", app.name);
                     let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
-                    kill_app(&app, grace);
-                    sink.push(LogKind::Stop, Some(app.name.clone()), String::new());
+                    process_killer::kill_by_exe_path(&app.exe_path, grace);
+                    sink.push(LogKind::Stop, Some(app.name.clone()), String::new(), None, None, None);
                 }))
             })
             .collect();
@@ -451,7 +546,23 @@ impl Controller {
         }
 
         let stub_pid = launcher::launch(&app).map_err(|e| e.to_string())?;
+        let job = process_killer::ProcessJob::new().ok();
+        if let Some(ref j) = job {
+            if let Err(e) = j.assign(stub_pid) {
+                println!("[controller] force_launch '{}' stub job assign failed: {e}", app.name);
+            }
+        }
+
         let pid = launcher::resolve_real_pid(stub_pid, &app);
+        if let Some(j) = job {
+            if pid != stub_pid {
+                if let Err(e) = j.assign(pid) {
+                    println!("[controller] force_launch '{}' resolved job assign failed: {e}", app.name);
+                }
+            }
+            self.jobs.lock().unwrap().insert(app.id.clone(), j);
+        }
+
         self.watchdog.watch(app.clone(), pid);
         self.logic.lock().unwrap().on_app_launched(app_id, pid);
         Ok(())
@@ -467,6 +578,23 @@ impl Controller {
         }
         self.watchdog.unwatch(app_id);
 
+        let app = self
+            .config
+            .lock()
+            .unwrap()
+            .apps
+            .iter()
+            .find(|a| a.id == app_id)
+            .cloned();
+
+        if let Some(job) = self.jobs.lock().unwrap().remove(app_id) {
+            job.kill_all();
+        }
+        if let Some(ref app) = app {
+            let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
+            process_killer::kill_by_exe_path(&app.exe_path, grace);
+        }
+
         if let Some(app) = self
             .config
             .lock()
@@ -474,11 +602,9 @@ impl Controller {
             .apps
             .iter()
             .find(|a| a.id == app_id)
-            .cloned()
         {
-            kill_app(&app, DEFAULT_GRACE_SECS);
             self.sink
-                .push(LogKind::Stop, Some(app.name.clone()), String::new());
+                .push(LogKind::Stop, Some(app.name.clone()), String::new(), None, None, None);
         }
 
         self.logic.lock().unwrap().on_app_stopped(app_id);

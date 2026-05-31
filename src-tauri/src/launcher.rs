@@ -211,12 +211,7 @@ pub fn resolve_real_pid_impl(
     find_by_name: impl Fn(&str) -> Vec<u32>,
     find_by_exe_path: impl Fn(&str) -> Vec<u32>,
 ) -> u32 {
-    if is_alive(stub_pid) {
-        #[cfg(debug_assertions)]
-        println!("[launcher] resolve: stub_pid={stub_pid} still alive");
-        return stub_pid;
-    }
-
+    // 1. Prefer track_process_name if configured.
     if let Some(name) = track_name {
         let pids = find_by_name(name);
         if let Some(&pid) = pids.first() {
@@ -226,11 +221,31 @@ pub fn resolve_real_pid_impl(
         }
     }
 
+    // 2. Search by exe_path (handles Squirrel versioned subdirs).
     let pids = find_by_exe_path(exe_path);
     if let Some(&pid) = pids.first() {
+        if pid != stub_pid {
+            #[cfg(debug_assertions)]
+            println!("[launcher] resolve: found by exe_path='{exe_path}' pid={pid} (different from stub)");
+            return pid;
+        }
+        // PID matches stub and stub is alive → no handoff, use stub.
+        if is_alive(stub_pid) {
+            #[cfg(debug_assertions)]
+            println!("[launcher] resolve: stub_pid={stub_pid} still alive, no handoff detected");
+            return stub_pid;
+        }
+        // PID matches stub but stub is dead → return it anyway (last resort).
         #[cfg(debug_assertions)]
-        println!("[launcher] resolve: found by exe_path='{exe_path}' pid={pid}");
-        return pid;
+        println!("[launcher] resolve: stub_pid={stub_pid} dead, no real process found");
+        return stub_pid;
+    }
+
+    // 3. Fallback: stub is alive but no real process found yet.
+    if is_alive(stub_pid) {
+        #[cfg(debug_assertions)]
+        println!("[launcher] resolve: stub_pid={stub_pid} still alive (no handoff yet)");
+        return stub_pid;
     }
 
     #[cfg(debug_assertions)]

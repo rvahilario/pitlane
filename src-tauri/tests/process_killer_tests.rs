@@ -1,5 +1,6 @@
 use pitlane_lib::process_killer::{
-    exe_path_matches, force_kill, graceful_kill, is_pid_alive, needs_graceful_close,
+    exe_path_matches, force_kill, graceful_kill, has_visible_windows, is_pid_alive,
+    needs_graceful_close, ProcessJob,
 };
 use std::time::Duration;
 
@@ -90,6 +91,29 @@ fn should_not_panic_when_graceful_killing_nonexistent_pid() {
     graceful_kill(u32::MAX, 5.0);
 }
 
+// ── has_visible_windows ──────────────────────────────────────────────────────
+
+#[test]
+fn should_return_false_for_nonexistent_pid() {
+    assert!(!has_visible_windows(0));
+    assert!(!has_visible_windows(u32::MAX));
+}
+
+#[test]
+fn should_return_false_for_process_without_windows() {
+    // Spawn a windowless console fixture
+    let child = std::process::Command::new("cmd")
+        .args(["/C", "timeout /t 3 > nul"])
+        .spawn()
+        .expect("failed to spawn cmd");
+    let pid = child.id();
+
+    std::thread::sleep(Duration::from_millis(100));
+    assert!(!has_visible_windows(pid), "cmd should have no visible windows");
+
+    force_kill(pid);
+}
+
 // ── Manual integration tests (require a real spawned process) ────────────────
 //
 // Run with:
@@ -138,4 +162,96 @@ fn manual_should_force_kill_winver() {
 
     assert!(!is_pid_alive(pid), "winver should be dead after force_kill");
     println!("[killer integration] ✓ process killed");
+}
+
+
+// ── ProcessJob ───────────────────────────────────────────────────────────────
+
+#[test]
+fn should_create_job_object() {
+    let job = ProcessJob::new();
+    assert!(job.is_ok(), "ProcessJob::new should succeed");
+}
+
+#[test]
+fn should_not_panic_when_assigning_nonexistent_pid() {
+    let job = ProcessJob::new().unwrap();
+    // PID 0 and u32::MAX are never valid
+    assert!(job.assign(0).is_err());
+    assert!(job.assign(u32::MAX).is_err());
+}
+
+fn fixture_path(name: &str) -> String {
+    let dir = env!("CARGO_MANIFEST_DIR");
+    format!("{dir}\\target\\debug\\{name}.exe")
+}
+
+#[test]
+#[ignore]
+fn manual_should_kill_assigned_process_when_job_dropped() {
+    use std::process::Command;
+    use std::time::Duration;
+
+    let path = fixture_path("fixture-dummy");
+    let child = Command::new(&path).spawn().expect("failed to spawn fixture-dummy");
+    let pid = child.id();
+    println!("[job integration] spawned dummy PID: {pid}");
+
+    std::thread::sleep(Duration::from_millis(200));
+
+    let job = ProcessJob::new().expect("failed to create job");
+    job.assign(pid).expect("failed to assign process to job");
+    println!("[job integration] assigned PID {pid} to job");
+
+    // Drop the job — this should terminate the process
+    drop(job);
+    println!("[job integration] dropped job handle");
+
+    std::thread::sleep(Duration::from_millis(500));
+
+    assert!(!is_pid_alive(pid), "dummy should be dead after job handle closed");
+    println!("[job integration] ✓ process killed by job close");
+}
+
+#[test]
+#[ignore]
+fn manual_should_kill_child_processes_inherited_from_job() {
+    use std::process::Command;
+    use std::time::Duration;
+
+    // fixture-stub spawns fixture-dummy as a child
+    let stub_path = fixture_path("fixture-stub");
+    let child = Command::new(&stub_path).spawn().expect("failed to spawn fixture-stub");
+    let stub_pid = child.id();
+    println!("[job integration] spawned stub PID: {stub_pid}");
+
+    // Give fixture-stub time to spawn fixture-dummy
+    std::thread::sleep(Duration::from_millis(500));
+
+    let job = ProcessJob::new().expect("failed to create job");
+    job.assign(stub_pid).expect("failed to assign stub to job");
+    println!("[job integration] assigned stub PID {stub_pid} to job");
+
+    // Find the child PID spawned by stub
+    let child_pid = pitlane_lib::process_killer::find_pids_by_name("fixture-dummy.exe")
+        .into_iter()
+        .find(|&p| p != stub_pid);
+
+    if let Some(cp) = child_pid {
+        println!("[job integration] found child PID: {cp}");
+    }
+
+    drop(job);
+    println!("[job integration] dropped job handle");
+
+    std::thread::sleep(Duration::from_millis(500));
+
+    assert!(!is_pid_alive(stub_pid), "stub should be dead after job close");
+    if let Some(cp) = child_pid {
+        assert!(
+            !is_pid_alive(cp),
+            "child dummy should also be dead after job close"
+        );
+    }
+    println!("[job integration] ✓ stub and child killed by job close");
 }
