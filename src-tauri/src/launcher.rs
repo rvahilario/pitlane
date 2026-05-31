@@ -89,6 +89,12 @@ pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
     let cmd = build_command(&app.exe_path, app.args.as_deref());
     let cwd = resolve_working_dir(&app.exe_path, app.working_dir.as_deref());
 
+    #[cfg(debug_assertions)]
+    println!(
+        "[launcher] exe_path={} | cwd={} | args={:?}",
+        app.exe_path, cwd, cmd
+    );
+
     // CREATE_NEW_PROCESS_GROUP — child doesn't inherit Ctrl+C from parent
     const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
 
@@ -104,10 +110,19 @@ pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
     // TODO: spawn_minimized() is disabled — causes issues with some apps.
     // Re-enable when fixed: if app.start_minimized { return spawn_minimized(cmd, cwd); }
 
-    command
-        .spawn()
-        .map(|c| c.id())
-        .map_err(|e| LaunchError::SpawnFailed(e.to_string()))
+    match command.spawn() {
+        Ok(c) => {
+            let pid = c.id();
+            #[cfg(debug_assertions)]
+            println!("[launcher] spawn OK — stub_pid={pid}");
+            Ok(pid)
+        }
+        Err(e) => {
+            #[cfg(debug_assertions)]
+            eprintln!("[launcher] spawn FAILED — {e}");
+            Err(LaunchError::SpawnFailed(e.to_string()))
+        }
+    }
 }
 
 // ── Stub launcher / child process resolution ─────────────────────────────────
@@ -129,19 +144,29 @@ pub fn resolve_real_pid_impl(
     find_by_exe_path: impl Fn(&str) -> Vec<u32>,
 ) -> u32 {
     if is_alive(stub_pid) {
+        #[cfg(debug_assertions)]
+        println!("[launcher] resolve: stub_pid={stub_pid} still alive");
         return stub_pid;
     }
 
     if let Some(name) = track_name {
-        if let Some(&pid) = find_by_name(name).first() {
+        let pids = find_by_name(name);
+        if let Some(&pid) = pids.first() {
+            #[cfg(debug_assertions)]
+            println!("[launcher] resolve: found by track_name='{name}' pid={pid}");
             return pid;
         }
     }
 
-    if let Some(&pid) = find_by_exe_path(exe_path).first() {
+    let pids = find_by_exe_path(exe_path);
+    if let Some(&pid) = pids.first() {
+        #[cfg(debug_assertions)]
+        println!("[launcher] resolve: found by exe_path='{exe_path}' pid={pid}");
         return pid;
     }
 
+    #[cfg(debug_assertions)]
+    println!("[launcher] resolve: fallback to stub_pid={stub_pid} (dead)");
     stub_pid
 }
 

@@ -346,7 +346,11 @@ impl Controller {
                     Err(e) => {
                         #[cfg(debug_assertions)]
                         eprintln!("[controller] FAILED to launch '{}': {e}", app.name);
-                        let _ = e;
+                        sink.push(
+                            LogKind::Launch,
+                            Some(app.name.clone()),
+                            format!("FAILED: {e}"),
+                        );
                     }
                 }
             });
