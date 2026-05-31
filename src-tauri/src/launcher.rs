@@ -77,6 +77,51 @@ fn split_args(args: &str) -> Vec<String> {
 
 // ── Launch ───────────────────────────────────────────────────────────────────
 
+#[cfg(windows)]
+fn launch_elevated(exe_path: &str, args: &[String], cwd: &str) -> Result<u32, String> {
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Threading::GetProcessId;
+    use windows::Win32::UI::Shell::{
+        ShellExecuteExW, SHELLEXECUTEINFOW, SEE_MASK_NOCLOSEPROCESS,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::SW_SHOWDEFAULT;
+
+    let verb: Vec<u16> = "runas\0".encode_utf16().collect();
+    let file: Vec<u16> = exe_path.encode_utf16().chain(std::iter::once(0)).collect();
+    let parameters: Vec<u16> = args.join(" ").encode_utf16().chain(std::iter::once(0)).collect();
+    let directory: Vec<u16> = cwd.encode_utf16().chain(std::iter::once(0)).collect();
+
+    let mut sei = SHELLEXECUTEINFOW {
+        cbSize: std::mem::size_of::<SHELLEXECUTEINFOW>() as u32,
+        fMask: SEE_MASK_NOCLOSEPROCESS,
+        hwnd: windows::Win32::Foundation::HWND(std::ptr::null_mut()),
+        lpVerb: windows::core::PCWSTR(verb.as_ptr()),
+        lpFile: windows::core::PCWSTR(file.as_ptr()),
+        lpParameters: windows::core::PCWSTR(parameters.as_ptr()),
+        lpDirectory: windows::core::PCWSTR(directory.as_ptr()),
+        nShow: SW_SHOWDEFAULT.0,
+        hInstApp: windows::Win32::Foundation::HINSTANCE(std::ptr::null_mut()),
+        lpIDList: std::ptr::null_mut(),
+        lpClass: windows::core::PCWSTR(std::ptr::null()),
+        hkeyClass: windows::Win32::System::Registry::HKEY(std::ptr::null_mut()),
+        dwHotKey: 0,
+        Anonymous: windows::Win32::UI::Shell::SHELLEXECUTEINFOW_0 {
+            hMonitor: windows::Win32::Foundation::HANDLE(std::ptr::null_mut()),
+        },
+        hProcess: windows::Win32::Foundation::HANDLE(std::ptr::null_mut()),
+    };
+
+    unsafe {
+        ShellExecuteExW(&mut sei).map_err(|e| e.to_string())?;
+        if sei.hProcess.is_invalid() || sei.hProcess.0.is_null() {
+            return Err("ShellExecuteExW did not return a process handle".into());
+        }
+        let pid = GetProcessId(sei.hProcess);
+        let _ = CloseHandle(sei.hProcess);
+        Ok(pid)
+    }
+}
+
 /// Spawns the process described by `app`. Returns the PID on success.
 pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
     use std::os::windows::process::CommandExt;
@@ -120,7 +165,17 @@ pub fn launch(app: &ManagedApp) -> Result<u32, LaunchError> {
         Err(e) => {
             #[cfg(debug_assertions)]
             eprintln!("[launcher] spawn FAILED — {e}");
-            Err(LaunchError::SpawnFailed(e.to_string()))
+            if e.raw_os_error() == Some(740) {
+                #[cfg(debug_assertions)]
+                println!("[launcher] attempting elevated launch (runas)…");
+                let pid = launch_elevated(&cmd[0], &cmd[1..], cwd)
+                    .map_err(LaunchError::SpawnFailed)?;
+                #[cfg(debug_assertions)]
+                println!("[launcher] elevated launch OK — pid={pid}");
+                Ok(pid)
+            } else {
+                Err(LaunchError::SpawnFailed(e.to_string()))
+            }
         }
     }
 }
