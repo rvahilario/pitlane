@@ -258,12 +258,22 @@ pub fn graceful_kill(pid: u32, grace_secs: f64) {
         return;
     }
 
+    // If the process has no visible windows it is likely already minimised
+    // to the system tray. Sending WM_CLOSE in that state just gives the app
+    // a chance to show a tray notification instead of exiting. Force-kill
+    // immediately in that case.
+    if !has_visible_windows(pid) {
+        #[cfg(debug_assertions)]
+        println!("[process_killer] pid={pid} has no visible windows — skipping WM_CLOSE, force killing");
+        force_kill(pid);
+        return;
+    }
+
     send_wm_close(pid);
 
-    // Fast-fail: some apps (e.g. Trading Paints) intercept WM_CLOSE and
-    // minimise to tray, firing a notification. If the process is still alive
-    // but has no visible windows after a brief wait, force-kill immediately.
-    std::thread::sleep(Duration::from_millis(250));
+    // Fast-fail: some apps intercept WM_CLOSE and minimise to tray. If the
+    // window disappears but the process is still alive, force-kill immediately.
+    std::thread::sleep(Duration::from_millis(100));
     if is_pid_alive(pid) && !has_visible_windows(pid) {
         #[cfg(debug_assertions)]
         println!("[process_killer] pid={pid} alive but no visible windows after WM_CLOSE — force killing");
