@@ -21,6 +21,7 @@ pub enum LogKind {
     Launch,
     Stop,
     Crashed,
+    Restarted,
     IracingStart,
     IracingStop,
 }
@@ -32,6 +33,9 @@ pub struct LogEntry {
     pub kind: LogKind,
     pub app: Option<String>,
     pub msg: String,
+    pub pid: Option<u32>,
+    pub restart_count: Option<u32>,
+    pub max_restarts: Option<u32>,
 }
 
 pub struct LogSink {
@@ -41,7 +45,7 @@ pub struct LogSink {
 }
 
 impl LogSink {
-    fn push(&self, kind: LogKind, app: Option<String>, msg: String) {
+    fn push(&self, kind: LogKind, app: Option<String>, msg: String, pid: Option<u32>, restart_count: Option<u32>, max_restarts: Option<u32>) {
         let s = self.seq.fetch_add(1, Ordering::Relaxed);
         let ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -53,6 +57,9 @@ impl LogSink {
             kind,
             app,
             msg,
+            pid,
+            restart_count,
+            max_restarts,
         };
         let mut log = self.log.lock().unwrap();
         log.push(entry.clone());
@@ -256,10 +263,6 @@ impl Controller {
                             .lock()
                             .unwrap()
                             .on_app_restarted(&app_id, new_pid, attempt);
-                    }
-                    WatchdogEvent::GaveUp { app_id } | WatchdogEvent::RestartFailed { app_id } => {
-                        let restart_count = ctrl_wd.logic.lock().unwrap().on_app_gave_up(&app_id);
-                        // Log the crash
                         if let Some(app) = ctrl_wd
                             .config
                             .lock()
@@ -270,9 +273,40 @@ impl Controller {
                             .cloned()
                         {
                             sink_wd.push(
+                                LogKind::Restarted,
+                                Some(app.name.clone()),
+                                String::new(),
+                                Some(new_pid),
+                                Some(attempt),
+                                Some(app.max_restart_attempts),
+                            );
+                        }
+                    }
+                    WatchdogEvent::GaveUp { app_id, restart_count }
+                    | WatchdogEvent::RestartFailed { app_id, restart_count } => {
+                        ctrl_wd.logic.lock().unwrap().on_app_gave_up(&app_id);
+                        if let Some(app) = ctrl_wd
+                            .config
+                            .lock()
+                            .unwrap()
+                            .apps
+                            .iter()
+                            .find(|a| a.id == app_id)
+                            .cloned()
+                        {
+                            // Include restart details only when restart_on_crash is enabled.
+                            let (rc, mr) = if app.restart_on_crash {
+                                (Some(restart_count), Some(app.max_restart_attempts))
+                            } else {
+                                (None, None)
+                            };
+                            sink_wd.push(
                                 LogKind::Crashed,
                                 Some(app.name.clone()),
-                                format!("crashed (restart {restart_count}/{})", app.max_restart_attempts),
+                                String::new(),
+                                None,
+                                rc,
+                                mr,
                             );
                         }
                     }
@@ -289,7 +323,7 @@ impl Controller {
                 on_status(true);
                 let c = Arc::clone(&ctrl_mon);
                 c.sink
-                    .push(LogKind::IracingStart, Some("iRacing".into()), "started".into());
+                    .push(LogKind::IracingStart, Some("iRacing".into()), String::new(), None, None, None);
                 thread::spawn(move || c.launch_active_apps());
             }
             MonitorEvent::Stopped => {
@@ -297,7 +331,7 @@ impl Controller {
                 on_status(false);
                 let c = Arc::clone(&ctrl_mon);
                 c.sink
-                    .push(LogKind::IracingStop, Some("iRacing".into()), "stopped".into());
+                    .push(LogKind::IracingStop, Some("iRacing".into()), String::new(), None, None, None);
                 if auto_stop.load(Ordering::Relaxed) {
                     thread::spawn(move || c.kill_all_running());
                 }
@@ -386,7 +420,10 @@ impl Controller {
                         sink.push(
                             LogKind::Launch,
                             Some(app.name.clone()),
-                            format!("started (pid {pid})"),
+                            String::new(),
+                            Some(pid),
+                            None,
+                            None,
                         );
                     }
                     Err(e) => {
@@ -395,7 +432,10 @@ impl Controller {
                         sink.push(
                             LogKind::Crashed,
                             Some(app.name.clone()),
-                            format!("failed to start: {e}"),
+                            e.to_string(),
+                            None,
+                            None,
+                            None,
                         );
                     }
                 }
@@ -458,7 +498,7 @@ impl Controller {
                     println!("[controller] killing '{}' via exe_path fallback", app.name);
                     let grace = if app.force_kill_on_stop { 0.0 } else { DEFAULT_GRACE_SECS };
                     process_killer::kill_by_exe_path(&app.exe_path, grace);
-                    sink.push(LogKind::Stop, Some(app.name.clone()), "stopped".into());
+                    sink.push(LogKind::Stop, Some(app.name.clone()), String::new(), None, None, None);
                 }))
             })
             .collect();
@@ -564,7 +604,7 @@ impl Controller {
             .find(|a| a.id == app_id)
         {
             self.sink
-                .push(LogKind::Stop, Some(app.name.clone()), String::new());
+                .push(LogKind::Stop, Some(app.name.clone()), String::new(), None, None, None);
         }
 
         self.logic.lock().unwrap().on_app_stopped(app_id);
