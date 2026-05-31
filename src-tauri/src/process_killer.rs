@@ -86,9 +86,22 @@ pub fn kill_by_exe_path(exe_path: &str, grace_secs: f64) {
 }
 
 /// Kills all processes matching `exe_path`, plus their entire child process trees.
+/// Also kills every process with the same image name (e.g. G Hub spawns multiple
+/// independent lghub.exe instances) via `taskkill /F /IM`.
 pub fn kill_tree_by_exe_path(exe_path: &str, grace_secs: f64) {
-    for pid in find_pids_by_exe_path(exe_path) {
-        kill_tree(pid, grace_secs);
+    let pids: Vec<u32> = find_pids_by_exe_path(exe_path);
+
+    for pid in &pids {
+        kill_tree(*pid, grace_secs);
+    }
+
+    // Fallback: some apps (e.g. G Hub) spawn sibling processes that are not
+    // children of the tracked PID. taskkill /F /IM catches every process with
+    // the same executable name regardless of hierarchy.
+    if let Some(file_name) = Path::new(exe_path).file_name().and_then(|n| n.to_str()) {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/IM", file_name])
+            .output();
     }
 }
 
