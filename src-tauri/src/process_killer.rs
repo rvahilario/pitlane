@@ -362,18 +362,19 @@ impl ProcessJob {
     pub fn assign(&self, pid: u32) -> Result<(), String> {
         use windows::Win32::Foundation::CloseHandle;
         use windows::Win32::System::JobObjects::AssignProcessToJobObject;
-        use windows::Win32::System::Threading::{OpenProcess, PROCESS_TERMINATE};
+        use windows::Win32::System::Threading::{OpenProcess, PROCESS_TERMINATE, PROCESS_SET_QUOTA};
 
+        let access = PROCESS_TERMINATE | PROCESS_SET_QUOTA;
         let proc_handle = unsafe {
-            match OpenProcess(PROCESS_TERMINATE, false, pid) {
+            match OpenProcess(access, false, pid) {
                 Ok(h) => h,
-                Err(_) => return Err(format!("failed to open process {pid}")),
+                Err(e) => return Err(format!("failed to open process {pid}: {e}")),
             }
         };
 
         let result = unsafe {
             AssignProcessToJobObject(self.handle, proc_handle)
-                .map_err(|e| e.to_string())
+                .map_err(|e| format!("AssignProcessToJobObject failed for pid {pid}: {e}"))
         };
 
         unsafe {
@@ -385,6 +386,8 @@ impl ProcessJob {
 
     /// Closes the Job handle, causing Windows to terminate all processes in the Job.
     pub fn kill_all(self) {
+        #[cfg(debug_assertions)]
+        println!("[process_killer] closing job handle — all assigned processes will be terminated");
         // Drop will close the handle
     }
 }
