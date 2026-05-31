@@ -69,7 +69,11 @@ export function LogScreen() {
                                     {entry.app}
                                 </span>
                             )}
-                            {entry.msg && <span className="text-text-muted">{entry.msg}</span>}
+                            {entry.msg && (
+                                <span className={cn('text-text-muted', kindStyle[entry.kind])}>
+                                    {entry.msg}
+                                </span>
+                            )}
                         </div>
                     ))
                 )}

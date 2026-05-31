@@ -56,7 +56,10 @@ export function RecentActivityPanel({ entries }: RecentActivityPanelProps) {
                     </Button>
                 </div>
             </div>
-            <div id="recent-activity-content" className="flex flex-1 flex-col bg-base">
+            <div
+                id="recent-activity-content"
+                className="flex flex-1 flex-col overflow-y-auto bg-base"
+            >
                 {entries.length > 0 ? (
                     entries.map((entry) => (
                         <ActivityRow
