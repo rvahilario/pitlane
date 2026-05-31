@@ -18,7 +18,8 @@
     "test:e2e:ui": "playwright test --project=ui --ui",
     "test:e2e:report": "playwright show-report",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "prepare": "husky"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -46,6 +47,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
     "@vitest/coverage-v8": "^4.1.4",
+    "husky": "^9.1.7",
     "jsdom": "^29.0.2",
     "prettier": "^3.8.3",
     "typescript": "~5.8.3",
