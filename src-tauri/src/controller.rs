@@ -282,14 +282,14 @@ impl Controller {
 
         // Monitor callback — spawns threads so the monitor is never blocked
         let ctrl_mon = Arc::clone(&ctrl);
-        let process_name = crate::monitor::process_name_for(&trigger).to_string();
+
         let monitor = Monitor::start(trigger, poll_interval, move |event| match event {
             MonitorEvent::Started => {
                 iracing_online.store(true, Ordering::Relaxed);
                 on_status(true);
                 let c = Arc::clone(&ctrl_mon);
                 c.sink
-                    .push(LogKind::IracingStart, None, format!("{process_name} started"));
+                    .push(LogKind::IracingStart, Some("iRacing".into()), "started".into());
                 thread::spawn(move || c.launch_active_apps());
             }
             MonitorEvent::Stopped => {
@@ -297,7 +297,7 @@ impl Controller {
                 on_status(false);
                 let c = Arc::clone(&ctrl_mon);
                 c.sink
-                    .push(LogKind::IracingStop, None, format!("{process_name} stopped"));
+                    .push(LogKind::IracingStop, Some("iRacing".into()), "stopped".into());
                 if auto_stop.load(Ordering::Relaxed) {
                     thread::spawn(move || c.kill_all_running());
                 }
